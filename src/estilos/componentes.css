@@ -1,0 +1,125 @@
+/* Piezas que usan varias pantallas: tarjetas, títulos, chips, campos,
+   resumen de pago y botones. */
+
+/* ---------- screen transition ---------- */
+.screen{ animation:screenIn .35s ease both; }
+@keyframes screenIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none; } }
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:20px;
+  box-shadow:var(--shadow);
+}
+.card + .card{ margin-top:12px; }
+
+h2.section-title{
+  font-family:'Unbounded', system-ui, sans-serif;
+  font-weight:700;
+  font-size:1.08rem;
+  letter-spacing:-.01em;
+  margin:0 0 4px;
+  text-wrap:balance;
+}
+.section-hint{ font-size:.8rem; color:var(--ink-soft); margin:0 0 14px; }
+
+/* ---------- chips / segmented ---------- */
+.chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+.chip{
+  position:relative;
+  border:1.5px solid var(--line);
+  background:var(--surface-2);
+  color:var(--ink);
+  border-radius:999px;
+  padding:9px 16px;
+  font:inherit; font-size:.82rem; font-weight:600;
+  cursor:pointer;
+  transition:border-color .15s, background .15s, color .15s, transform .1s;
+}
+.chip:active{ transform:scale(.96); }
+.chip .badge{
+  position:absolute; top:-9px; right:-6px;
+  background:var(--teal); color:#04231f;
+  font-size:.56rem; font-weight:700;
+  padding:2px 6px; border-radius:999px;
+  letter-spacing:.02em;
+}
+.chip.selected{
+  border-color:transparent;
+  background:linear-gradient(95deg, var(--accent), var(--accent-2));
+  color:var(--accent-ink);
+}
+
+/* display:block porque en Tus datos es un <label> (tocarlo enfoca el campo)
+   y un label es de línea: sin esto, el margen de arriba no se aplicaba. */
+.field-label{
+  display:block;
+  font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--ink-faint); font-weight:700; margin:18px 0 9px;
+}
+.field-label:first-child{ margin-top:0; }
+
+input[type=text], input[type=tel]{
+  width:100%;
+  border:1.5px solid var(--line);
+  background:var(--surface-2);
+  color:var(--ink);
+  border-radius:12px;
+  padding:12px 13px;
+  font:inherit; font-size:.9rem;
+  transition:box-shadow .15s, border-color .15s;
+}
+input:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-soft); }
+.error-text{ font-size:.72rem; color:var(--accent); margin-top:5px; min-height:1em; }
+
+.summary-row{
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-size:.85rem; padding:7px 0; border-bottom:1px dashed var(--line);
+}
+.summary-row:last-of-type{ border-bottom:none; }
+.summary-row .label{ color:var(--ink-soft); }
+.summary-row .value{ font-family:'IBM Plex Mono', monospace; font-variant-numeric:tabular-nums; font-weight:600; }
+.summary-total{
+  display:flex; justify-content:space-between; align-items:baseline;
+  margin-top:10px; padding-top:14px; border-top:1.5px solid var(--line);
+}
+.summary-total .label{ font-weight:700; font-size:.9rem; }
+.summary-total .value{
+  font-family:'IBM Plex Mono', monospace; font-variant-numeric:tabular-nums; font-weight:800; font-size:1.3rem;
+  background:linear-gradient(95deg, var(--accent), var(--accent-2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.split-note{
+  display:flex; gap:10px; margin-top:12px;
+}
+.split-box{
+  flex:1; border-radius:12px; padding:10px 11px;
+  background:var(--surface-2); border:1px solid var(--line);
+}
+.split-box .k{ font-size:.63rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); font-weight:700; }
+.split-box .v{ font-family:'IBM Plex Mono', monospace; font-variant-numeric:tabular-nums; font-weight:700; font-size:.95rem; margin-top:3px; }
+.split-box.now{ background:var(--accent-soft); border-color:transparent; }
+.split-box.now .v{ color:var(--accent); }
+
+.btn{
+  width:100%;
+  border:none; border-radius:14px;
+  padding:15px; font:inherit; font-weight:700; font-size:.92rem;
+  letter-spacing:.01em;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .1s, opacity .15s, box-shadow .15s;
+}
+.btn:active{ transform:scale(.98); }
+.btn-primary{
+  background:linear-gradient(95deg, var(--accent), var(--accent-2));
+  color:var(--accent-ink);
+  box-shadow:0 10px 22px -10px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.btn-primary:disabled{ background:var(--busy); color:var(--ink-faint); cursor:not-allowed; box-shadow:none; }
+.btn-ghost{ background:transparent; color:var(--ink-soft); border:1.5px solid var(--line); }
+
+.nav-row{ display:flex; gap:10px; margin-top:16px; }
+.nav-row .btn-ghost{ flex:0 0 auto; width:auto; padding-inline:18px; }
+.nav-row .btn-primary{ flex:1; }

@@ -1,25 +1,9 @@
-# El sitio es HTML suelto: no hay nada que compilar, se publica la raiz tal cual.
+# Netlify compila con Vite y publica solo lo compilado (dist/). Lo demás del
+# repositorio —README, referencia/, el código fuente— nunca llega al sitio.
 [build]
-  publish = "."
+  command = "npm run build"
+  publish = "dist"
 
-# recepcion.html no se sirve todavia: validaba la contrasena en el navegador
-# (cualquiera la leia con "ver codigo fuente") y habla con api.anthropic.com
-# sin llave, cosa que solo funciona dentro de claude.ai. Se abre cuando el panel
-# tenga acceso de verdad del lado del servidor.
-[[redirects]]
-  from = "/recepcion*"
-  to = "/404.html"
-  status = 404
-  force = true
-
-# Que no se publiquen los archivos internos del repositorio.
-[[redirects]]
-  from = "/README.md"
-  to = "/404.html"
-  status = 404
-  force = true
-[[redirects]]
-  from = "/netlify.toml"
-  to = "/404.html"
-  status = 404
-  force = true
+[build.environment]
+  # Vite 8 pide Node 20.19 o más nuevo; se fija para que Netlify no use otro.
+  NODE_VERSION = "24"

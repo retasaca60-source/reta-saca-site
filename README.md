@@ -1,13 +1,20 @@
 # Reta Saca
 
-Sitio de reservas de Reta Saca (ping pong, cornhole y popdarts) y panel de
-recepción.
+Sitio de reservas de Reta Saca (ping pong, cornhole y popdarts).
 
-| Archivo | Qué es | Estado |
-|---|---|---|
-| `index.html` | Página de reservas para clientes | Demostración: no guarda nada |
-| `recepcion.html` | Panel de recepción (copia del artefacto de Claude) | Solo funciona dentro de claude.ai; no se publica (ver `netlify.toml`) |
-| `logo.png`, `bag-icon.png`, `paddle-icon.png` | Imágenes | — |
+Hecho con Vite + React + TypeScript, organizado igual que CiTerritorio: las
+reglas del negocio (precios, promos, anticipos) separadas de las pantallas, y
+una carpeta por paso de la reserva. **El mapa de qué hay en cada archivo y
+dónde buscar un error está en [`src/README.md`](src/README.md).**
+
+| Carpeta | Qué es |
+|---|---|
+| `src/` | El sitio. Ver `src/README.md`. |
+| `public/imagenes/` | Logo e íconos, se sirven tal cual. |
+| `referencia/` | El panel de recepción que se hizo como artefacto de Claude. No se publica: solo funciona dentro de claude.ai. Queda como referencia para rehacerlo. |
+
+Estado: **demostración**. Las reservas no se guardan y la disponibilidad es de
+ejemplo (`src/negocio/disponibilidad.ts`).
 
 ## Dónde está
 
@@ -45,9 +52,33 @@ git push                      # 2. subirlo para que el otro lo vea
 
 ## Ver el sitio en tu computadora
 
-Abrir `index.html` en el navegador basta. Para que carguen bien las imágenes
-y las fuentes, mejor con un servidor local:
+La primera vez, instalar lo necesario (pide Node 20.19 o más nuevo):
 
 ```bash
-npx serve .
+npm install
 ```
+
+Después, cada vez:
+
+```bash
+npm run dev
+```
+
+y abrir http://localhost:5190. Los cambios se ven al guardar, sin recargar.
+
+## Antes de subir un cambio
+
+```bash
+npm test
+```
+
+```bash
+npm run build
+```
+
+`npm test` revisa las reglas de cobro en segundos; `npm run build` revisa los
+tipos y compila igual que Netlify. Si alguno falla aquí, fallaría en Netlify:
+mejor verlo antes del `git push`.
+
+Para saber qué versión está publicada: en el sitio, "ver código fuente" y
+buscar `<meta name="compilacion">`, que trae la fecha y hora de compilación.

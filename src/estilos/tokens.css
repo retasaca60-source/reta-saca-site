@@ -1,0 +1,65 @@
+/* Colores de la marca y su versión oscura. Un color nuevo se declara aquí
+   como variable; ningún otro archivo escribe colores sueltos. */
+
+:root{
+  --bg:#eef1f4;
+  --surface:#ffffff;
+  --surface-2:#f5f6f8;
+  --ink:#1a1a1a;
+  --ink-soft:#666b76;
+  --ink-faint:#9aa1ac;
+  --line:#e2e5ea;
+  --accent:#ed1c24;
+  --accent-2:#ff8a1e;
+  --accent-ink:#ffffff;
+  --accent-soft:#ffe9ec;
+  --teal:#0fb6a6;
+  --teal-soft:#e3faf6;
+  --warn:#b4650a;
+  --warn-soft:#fdf0dd;
+  --busy:#dfe2e7;
+  --shadow: 0 1px 2px rgba(20,20,25,.04), 0 10px 24px -12px rgba(20,20,25,.14);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c0d10;
+    --surface:#15171c;
+    --surface-2:#1b1e24;
+    --ink:#f2f3f5;
+    --ink-soft:#9aa0ab;
+    --ink-faint:#5c626d;
+    --line:#262932;
+    --accent:#ed1c24;
+    --accent-2:#ff9f1c;
+    --accent-ink:#ffffff;
+    --accent-soft:#3a1620;
+    --teal:#2fd9c5;
+    --teal-soft:#0f2b28;
+    --warn:#f4b350;
+    --warn-soft:#302109;
+    --busy:#23262d;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 14px 30px -14px rgba(0,0,0,.55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c0d10;
+  --surface:#15171c;
+  --surface-2:#1b1e24;
+  --ink:#f2f3f5;
+  --ink-soft:#9aa0ab;
+  --ink-faint:#5c626d;
+  --line:#262932;
+  --accent:#ed1c24;
+  --accent-2:#ff9f1c;
+  --accent-ink:#ffffff;
+  --accent-soft:#3a1620;
+  --teal:#2fd9c5;
+  --teal-soft:#0f2b28;
+  --warn:#f4b350;
+  --warn-soft:#302109;
+  --busy:#23262d;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 14px 30px -14px rgba(0,0,0,.55);
+  color-scheme: dark;
+}

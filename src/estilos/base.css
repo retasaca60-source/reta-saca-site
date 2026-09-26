@@ -1,0 +1,18 @@
+/* Lo que aplica a toda la página. */
+
+*{ box-sizing:border-box; }
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Sora', system-ui, sans-serif;
+  padding-inline:16px;
+  padding-block:16px 40px;
+  display:flex;
+  justify-content:center;
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+}
+.app{ width:100%; max-width:460px; }
+
+[hidden]{ display:none !important; }

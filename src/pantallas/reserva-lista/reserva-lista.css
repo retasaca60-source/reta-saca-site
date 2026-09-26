@@ -1,0 +1,18 @@
+.success-wrap{ text-align:center; padding-block:6px; }
+.success-icon{
+  width:64px; height:64px; border-radius:50%;
+  background:linear-gradient(160deg, var(--teal), #0aa093);
+  color:#04231f;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 14px;
+  box-shadow:0 12px 26px -12px color-mix(in srgb, var(--teal) 60%, transparent);
+}
+.success-title{ font-family:'Unbounded', sans-serif; font-weight:700; font-size:1.35rem; letter-spacing:-.01em; }
+.code-box{
+  position:relative;
+  font-family:'IBM Plex Mono', monospace;
+  background:var(--surface-2);
+  border:1.5px dashed var(--line);
+  border-radius:12px; padding:12px; margin:16px 0;
+  font-size:1.2rem; font-weight:700; letter-spacing:.08em;
+}

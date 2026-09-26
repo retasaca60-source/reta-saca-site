@@ -1,0 +1,32 @@
+/* ---------- masthead: logo mark ---------- */
+.masthead{
+  display:flex; flex-direction:column; align-items:center;
+  text-align:center;
+  padding-block:4px 6px;
+}
+.logo{
+  width:132px; height:132px;
+  border-radius:50%;
+  box-shadow:var(--shadow);
+}
+.tagline{
+  margin-top:12px;
+  font-size:.76rem;
+  font-weight:600;
+  letter-spacing:.04em;
+  color:var(--ink-soft);
+}
+.tagline .dot{ color:var(--accent); margin-inline:6px; }
+
+.demo-banner{
+  display:flex; align-items:flex-start; gap:8px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  color:var(--ink-soft);
+  border-radius:14px;
+  font-size:.74rem; line-height:1.45;
+  padding:10px 12px;
+  margin-top:14px;
+  box-shadow:var(--shadow);
+}
+.demo-banner svg{ flex:none; margin-top:1px; color:var(--warn); }
