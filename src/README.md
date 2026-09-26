@@ -18,7 +18,9 @@ src/
 │   └── precios.test.ts      Las reglas de arriba, escritas como pruebas.
 │
 ├── mecanismos/
-│   └── reserva/estado.ts    En qué va la reserva y cómo cambia con cada toque.
+│   └── reserva/
+│       ├── estado.ts        En qué va la reserva y cómo cambia con cada toque.
+│       └── estado.test.ts   Los errores que ya se corrigieron, para que no regresen.
 │
 ├── pantallas/               Lo que se ve. Una carpeta por paso.
 │   ├── deporte/             Paso 1: deporte y jugadores.
@@ -49,6 +51,8 @@ Cada pantalla trae su propio `.css` al lado; lo que usan varias vive en
 | El anticipo o "en el lugar" no cuadra | `negocio/precios.ts` → `anticipoPara` |
 | Aparece una hora que termina después del cierre | `negocio/catalogo.ts` → `CIERRE_EN_MINUTOS` |
 | "Lleno" o "Quedan 2" raros | `negocio/disponibilidad.ts` |
+| Deja reservar una hora llena | `negocio/disponibilidad.ts` → `horaDisponible` y `mecanismos/reserva/estado.ts` → `alHorario` |
+| Asigna una mesa que estaba ocupada | `negocio/disponibilidad.ts` → `mesaLibre` |
 | Se borra la hora elegida, o salta de paso | `mecanismos/reserva/estado.ts` → `reducir` |
 | No deja confirmar con los datos bien puestos | `mecanismos/reserva/estado.ts` → `datosCompletos` |
 | Un texto o botón de un paso se ve mal | `pantallas/<paso>/` |

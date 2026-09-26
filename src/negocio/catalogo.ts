@@ -18,6 +18,11 @@ export interface Deporte {
   /** Opciones que se ofrecen y la que va marcada como "Recomendado". */
   personas: readonly Personas[]
   recomendado: Personas
+  /**
+   * Si el número de jugadores no cambia el precio, se deja marcado de entrada
+   * para no obligar a un toque que no decide nada. Se puede cambiar igual.
+   */
+  personasPorOmision?: Personas
   /** Lo que se le dice al cliente debajo de "¿Cuántos jugadores?". */
   pistaPersonas: string
   duraciones: readonly Duracion[]
@@ -79,11 +84,11 @@ export const DEPORTES: Record<DeporteId, Deporte> = {
     clave: 'PD',
     mesas: 3,
     icono: 'diana',
-    // Se ofrecen 2 y 4 como en la versión original, pero el precio no cambia
-    // y la reserva siempre queda en 2 (ver estado.ts). Pendiente de decidir
-    // con el negocio si la opción de 4 debe desaparecer.
+    // 2 o 4 cuestan lo mismo, pero se guarda cuántos vienen de verdad: el
+    // cliente lo ve en su resumen y recepción sabe para cuántos preparar.
     personas: [2, 4],
     recomendado: 2,
+    personasPorOmision: 2,
     pistaPersonas: 'La cantidad de jugadores no afecta el precio.',
     duraciones: [60, 90, 120],
     precios: {

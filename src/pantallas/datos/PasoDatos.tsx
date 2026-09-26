@@ -2,7 +2,7 @@
 
 import type { Dispatch } from 'react'
 import { DEPORTES } from '../../negocio/catalogo'
-import { folioDeReserva, mesaAlAzar } from '../../negocio/disponibilidad'
+import { folioDeReserva, mesaLibre } from '../../negocio/disponibilidad'
 import { esDomingo, etiquetaFecha, formatoDinero, formatoHora } from '../../negocio/formato'
 import { anticipoPara, esHorarioPromo, precioPara, sePagaTodoAlReservar } from '../../negocio/precios'
 import { datosCompletos, type Accion, type Reserva } from '../../mecanismos/reserva/estado'
@@ -28,7 +28,7 @@ export function PasoDatos({ reserva, despachar }: Props) {
 
   const confirmar = () => {
     if (!listo) return
-    despachar({ tipo: 'confirmar', mesa: mesaAlAzar(deporte), folio: folioDeReserva() })
+    despachar({ tipo: 'confirmar', mesa: mesaLibre(deporte, dia, hora), folio: folioDeReserva() })
   }
 
   return (

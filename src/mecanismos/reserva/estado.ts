@@ -4,6 +4,7 @@
 // aquí está la causa, no en las pantallas: ellas solo piden cambios.
 
 import { DEPORTES, type DeporteId, type Duracion, type Personas } from '../../negocio/catalogo'
+import { horaDisponible } from '../../negocio/disponibilidad'
 
 export type Paso = 1 | 2 | 3 | 4
 
@@ -49,28 +50,16 @@ export type Accion =
   | { tipo: 'confirmar'; mesa: string; folio: string }
   | { tipo: 'otraReserva' }
 
-/**
- * Popdarts cobra igual sin importar cuántos jueguen, y la versión original
- * dejaba la reserva siempre en 2 aunque se tocara "4 personas". Se conserva.
- */
-function personasPara(deporte: DeporteId, pedidas: Personas | null): Personas | null {
-  return deporte === 'popdarts' ? 2 : pedidas
-}
-
 export function reducir(r: Reserva, accion: Accion): Reserva {
   switch (accion.tipo) {
     case 'elegirDeporte':
-      return { ...r, deporte: accion.deporte, personas: personasPara(accion.deporte, null) }
+      return { ...r, deporte: accion.deporte, personas: DEPORTES[accion.deporte].personasPorOmision ?? null }
     case 'elegirPersonas':
-      return r.deporte ? { ...r, personas: personasPara(r.deporte, accion.personas) } : r
-    case 'irAPaso': {
-      // Cornhole y Popdarts no tienen 30 min: si venía de Ping Pong con 30,
-      // al llegar al horario se cambia a la primera duración que sí ofrecen.
-      if (accion.paso === 2 && r.deporte && !DEPORTES[r.deporte].duraciones.includes(r.duracion)) {
-        return { ...r, paso: 2, duracion: DEPORTES[r.deporte].duraciones[0], hora: null }
-      }
+      return r.deporte ? { ...r, personas: accion.personas } : r
+    case 'irAPaso':
+      if (accion.paso === 2) return alHorario(r)
+      if (accion.paso === 3) return listaParaDatos(r) ? { ...r, paso: 3 } : r
       return { ...r, paso: accion.paso }
-    }
     // Cambiar el día o la duración cambia qué horarios hay: se suelta la hora.
     case 'elegirDia':
       return { ...r, dia: accion.dia, hora: null }
@@ -87,6 +76,30 @@ export function reducir(r: Reserva, accion: Accion): Reserva {
     case 'otraReserva':
       return reservaNueva
   }
+}
+
+/**
+ * Al llegar al horario, lo elegido antes tiene que seguir valiendo para el
+ * deporte y la duración de AHORA.
+ *
+ * Antes la hora se quedaba puesta al volver al paso 1 y cambiar de deporte: si
+ * a esa hora el nuevo deporte estaba lleno, la pantalla decía "Lleno" pero el
+ * botón Continuar seguía activo y se llegaba al cobro. Medido: Ping Pong 7 PM
+ * del lunes 28/9, luego Cornhole, que a esa hora está lleno → pasaba a Datos
+ * con $300 a cobrar.
+ */
+function alHorario(r: Reserva): Reserva {
+  if (!r.deporte || !r.personas) return r
+  // Cornhole y Popdarts no tienen 30 min: si venía de Ping Pong con 30, se
+  // cambia a la primera duración que sí ofrecen.
+  const duracion = DEPORTES[r.deporte].duraciones.includes(r.duracion) ? r.duracion : DEPORTES[r.deporte].duraciones[0]
+  const hora = r.hora !== null && horaDisponible(r.deporte, r.dia, r.hora, duracion) ? r.hora : null
+  return { ...r, paso: 2, duracion, hora }
+}
+
+/** Segunda cerradura, por si una pantalla deja pasar algo que no debe. */
+function listaParaDatos(r: Reserva): boolean {
+  return Boolean(r.deporte && r.personas && r.hora !== null && horaDisponible(r.deporte, r.dia, r.hora, r.duracion))
 }
 
 /** Lo mínimo para poder confirmar: nombre de al menos 2 letras y WhatsApp de 10 dígitos. */
