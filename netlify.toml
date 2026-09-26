@@ -2,8 +2,8 @@
 [build]
   publish = "."
 
-# recepcion.html no se sirve todavia: trae la contrasena escrita en el codigo
-# (cualquiera la leeria con "ver codigo fuente") y habla con api.anthropic.com
+# recepcion.html no se sirve todavia: validaba la contrasena en el navegador
+# (cualquiera la leia con "ver codigo fuente") y habla con api.anthropic.com
 # sin llave, cosa que solo funciona dentro de claude.ai. Se abre cuando el panel
 # tenga acceso de verdad del lado del servidor.
 [[redirects]]
