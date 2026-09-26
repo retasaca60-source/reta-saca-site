@@ -1,0 +1,25 @@
+# El sitio es HTML suelto: no hay nada que compilar, se publica la raiz tal cual.
+[build]
+  publish = "."
+
+# recepcion.html no se sirve todavia: trae la contrasena escrita en el codigo
+# (cualquiera la leeria con "ver codigo fuente") y habla con api.anthropic.com
+# sin llave, cosa que solo funciona dentro de claude.ai. Se abre cuando el panel
+# tenga acceso de verdad del lado del servidor.
+[[redirects]]
+  from = "/recepcion*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Que no se publiquen los archivos internos del repositorio.
+[[redirects]]
+  from = "/README.md"
+  to = "/404.html"
+  status = 404
+  force = true
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
