@@ -6,8 +6,18 @@ recepción.
 | Archivo | Qué es | Estado |
 |---|---|---|
 | `index.html` | Página de reservas para clientes | Demostración: no guarda nada |
-| `recepcion.html` | Panel de recepción (copia del artefacto de Claude) | Solo funciona dentro de claude.ai |
+| `recepcion.html` | Panel de recepción (copia del artefacto de Claude) | Solo funciona dentro de claude.ai; no se publica (ver `netlify.toml`) |
 | `logo.png`, `bag-icon.png`, `paddle-icon.png` | Imágenes | — |
+
+## Dónde está
+
+- Código: https://github.com/retasaca60-source/reta-saca-site (privado)
+- Sitio: https://reta-saca.netlify.app — se publica solo con cada `git push`
+  a `main`. Por ahora el proyecto de Netlify es **privado**: solo lo ve quien
+  entra con la cuenta del equipo. Se abre al público con "Make public" en
+  Netlify cuando el sitio esté listo.
+- Un Pull Request genera su propia vista previa en Netlify, con su enlace en
+  el PR, para revisar antes de mezclar a `main`.
 
 ## Cómo trabajamos dos personas sin pisarnos
 
