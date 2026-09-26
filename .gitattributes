@@ -1,0 +1,5 @@
+# Que git no marque cambios fantasma por los finales de linea
+# cuando uno trabaja en Windows y el otro en Mac.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
