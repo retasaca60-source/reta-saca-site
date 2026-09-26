@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reta Saca — Recepcion</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0a;--bg2:#111;--bg3:#1a0808;--border:#222;--text:#e8e8ec;--text2:#aaa;--text3:#666;--text4:#444;--red:#EE1111;--red2:#cc0000;--green:#22c55e;--amber:#f59e0b;--blue:#3b82f6}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.login-box{background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:360px;text-align:center}
+.login-logo{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:.25rem}
+.login-logo span{color:var(--red)}
+.login-sub{font-size:.8rem;color:var(--text3);margin-bottom:1.5rem}
+.login-box input{margin-bottom:1rem;text-align:center;letter-spacing:.2em;width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;color:var(--text);font-size:.88rem;font-family:inherit;outline:none}
+.login-box input:focus{border-color:var(--red)}
+.login-err{font-size:.8rem;color:var(--red);margin-top:.75rem}
+.panel{display:none;flex-direction:column;min-height:100vh}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.topbar-logo{font-size:1.1rem;font-weight:700;color:var(--text)}
+.topbar-logo span{color:var(--red)}
+.topbar-actions{display:flex;gap:.5rem;align-items:center}
+.tbtn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:.35rem .75rem;color:var(--text2);cursor:pointer;font-size:.8rem;transition:all .2s}
+.tbtn:hover{border-color:var(--red);color:var(--red)}
+.tbtn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.tbtn.primary:hover{background:var(--red2)}
+.content{padding:1.25rem;flex:1}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;text-align:center}
+.stat-val{font-size:1.4rem;font-weight:700;color:var(--red)}
+.stat-lbl{font-size:.72rem;color:var(--text3);margin-top:.2rem}
+.mesas-wrap{margin-bottom:1.25rem}
+.mesas-title{font-size:.8rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem}
+.mesas-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-bottom:.5rem}
+.mesa{border-radius:8px;padding:.4rem .2rem;text-align:center;font-size:.72rem;font-weight:600;border:1px solid var(--border);color:var(--text3)}
+.mesa.libre{background:#0a1a0a;border-color:#1a4a1a;color:var(--green)}
+.mesa.ocupada{background:#1a0808;border-color:#4a1a1a;color:var(--red)}
+.section-title{font-size:.85rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;display:flex;align-items:center;justify-content:space-between}
+.badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.68rem;font-weight:600}
+.badge-hoy{background:#1a0808;color:var(--red);border:1px solid var(--red)}
+.badge-sem{background:#111a2a;color:var(--blue);border:1px solid var(--blue)}
+.tbl-wrap{overflow-x:auto;margin-bottom:1.5rem}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{text-align:left;padding:.5rem .75rem;color:var(--text3);font-weight:600;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.02)}
+.mesa-badge{display:inline-block;padding:.15rem .5rem;border-radius:6px;font-size:.72rem;font-weight:700}
+.mesa-pp{background:#1a0808;color:var(--red);border:1px solid #4a1a1a}
+.mesa-ch{background:#0a1a2a;color:var(--blue);border:1px solid #1a3a5a}
+.status-badge{display:inline-block;padding:.15rem .5rem;border-radius:20px;font-size:.68rem;font-weight:600}
+.s-confirmada{background:#0a1a0a;color:var(--green);border:1px solid #1a4a1a}
+.s-llego{background:#1a1a0a;color:var(--amber);border:1px solid #4a4a1a}
+.s-cancelada{background:#1a0808;color:var(--text3);border:1px solid var(--border)}
+.action-btns{display:flex;gap:.3rem}
+.act{background:transparent;border:1px solid var(--border);border-radius:6px;padding:.25rem .5rem;cursor:pointer;font-size:.72rem;color:var(--text2);transition:all .2s}
+.act:hover{border-color:var(--red);color:var(--red)}
+.act.agreen:hover{border-color:var(--green);color:var(--green)}
+.act.adel:hover{border-color:#ef4444;color:#ef4444}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.overlay.on{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.5rem;width:100%;max-width:440px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:1rem;font-weight:600;margin-bottom:1.25rem;color:var(--text)}
+.form-row{margin-bottom:.85rem}
+.form-row label{font-size:.78rem;color:var(--text2);display:block;margin-bottom:.3rem}
+.form-row input,.form-row select{width:100%;background:#0a0a0a;border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;color:var(--text);font-size:.88rem;font-family:inherit;outline:none}
+.form-row input:focus,.form-row select:focus{border-color:var(--red)}
+.form-row select option{background:#111}
+.modal-btns{display:flex;gap:.5rem;margin-top:1.25rem}
+.mbtn{flex:1;background:var(--red);border:none;border-radius:10px;padding:.75rem;font-size:.9rem;font-weight:700;color:#fff;cursor:pointer;transition:background .2s}
+.mbtn:hover{background:var(--red2)}
+.mbtn-cancel{flex:1;background:transparent;border:1px solid var(--border);border-radius:10px;padding:.75rem;font-size:.9rem;color:var(--text2);cursor:pointer;transition:all .2s}
+.mbtn-cancel:hover{border-color:var(--red);color:var(--red)}
+.btn{width:100%;background:var(--red);border:none;border-radius:10px;padding:.75rem;font-size:.9rem;font-weight:700;color:#fff;cursor:pointer;transition:background .2s}
+.btn:hover{background:var(--red2)}
+.loading{text-align:center;padding:2rem;color:var(--text3);font-size:.85rem}
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle;margin-right:.5rem}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:2rem;color:var(--text4);font-size:.85rem}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-box">
+    <div class="login-logo">Reta <span>Saca</span></div>
+    <div class="login-sub">Panel de Recepcion</div>
+    <input type="password" id="pwdInput" placeholder="Contrasena">
+    <button class="btn" id="loginBtn">Entrar</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<div class="panel" id="panel">
+  <div class="topbar">
+    <div class="topbar-logo">Reta <span>Saca</span> <span style="font-size:.7rem;color:var(--text3);font-weight:400;margin-left:.5rem">Recepcion</span></div>
+    <div class="topbar-actions">
+      <button class="tbtn" id="btnActualizar">&#8635; Actualizar</button>
+      <button class="tbtn primary" id="btnNueva">+ Nueva reserva</button>
+      <button class="tbtn" id="btnSalir">Salir</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="st-hoy">0</div><div class="stat-lbl">Reservas hoy</div></div>
+      <div class="stat"><div class="stat-val" id="st-pp">0</div><div class="stat-lbl">PP activas</div></div>
+      <div class="stat"><div class="stat-val" id="st-ch">0</div><div class="stat-lbl">CH activas</div></div>
+      <div class="stat"><div class="stat-val" id="st-sem">0</div><div class="stat-lbl">Esta semana</div></div>
+    </div>
+    <div class="mesas-wrap">
+      <div class="mesas-title">Mesas Ping Pong — ahora</div>
+      <div class="mesas-grid" id="mesas-pp"></div>
+      <div class="mesas-title" style="margin-top:.75rem">Tableros Cornhole — ahora</div>
+      <div class="mesas-grid" id="mesas-ch"></div>
+    </div>
+    <div class="section-title">Reservas de hoy <span class="badge badge-hoy">HOY</span></div>
+    <div class="tbl-wrap"><div id="tbl-hoy"><div class="loading"><span class="spin"></span>Cargando...</div></div></div>
+    <div class="section-title" style="margin-top:1rem">Esta semana <span class="badge badge-sem">7 dias</span></div>
+    <div class="tbl-wrap"><div id="tbl-sem"><div class="loading"><span class="spin"></span>Cargando...</div></div></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modal-title">Nueva reserva</h3>
+    <div class="form-row"><label>Nombre del cliente</label><input type="text" id="f-nombre" placeholder="Nombre"></div>
+    <div class="form-row"><label>WhatsApp</label><input type="tel" id="f-wa" placeholder="6621234567"></div>
+    <div class="form-row"><label>Deporte</label>
+      <select id="f-sport"><option value="pingpong">Ping Pong</option><option value="cornhole">Cornhole</option></select>
+    </div>
+    <div class="form-row"><label>Mesa asignada</label><select id="f-mesa"></select></div>
+    <div class="form-row"><label>Fecha</label><input type="date" id="f-fecha"></div>
+    <div class="form-row"><label>Hora de inicio</label>
+      <select id="f-hora">
+        <option>17:00</option><option>17:30</option><option>18:00</option><option>18:30</option>
+        <option>19:00</option><option>19:30</option><option>20:00</option><option>20:30</option>
+        <option>21:00</option><option>21:30</option><option>22:00</option><option>22:30</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Duracion</label>
+      <select id="f-dur"><option value="60">1 hora</option><option value="90">1.5 horas</option><option value="120">2 horas</option></select>
+    </div>
+    <div class="form-row"><label>Total a cobrar (MXN)</label><input type="number" id="f-total" placeholder="150"></div>
+    <div class="form-row"><label>Estado</label>
+      <select id="f-status"><option value="Confirmada">Confirmada</option><option value="Llego">Llego</option><option value="Cancelada">Cancelada</option></select>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn-cancel" id="btnCancelarModal">Cancelar</button>
+      <button class="mbtn" id="btnGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var PWD = 'retasaca2025';
+var editingId = null;
+var allEvents = [];
+
+function p2(n) { return n < 10 ? '0' + n : '' + n; }
+
+function todayIso() {
+  var d = new Date();
+  return d.getFullYear() + '-' + p2(d.getMonth()+1) + '-' + p2(d.getDate());
+}
+
+function nowMin() {
+  var n = new Date();
+  return n.getHours() * 60 + n.getMinutes();
+}
+
+function doLogin() {
+  var v = document.getElementById('pwdInput').value;
+  if (v === PWD) {
+    document.getElementById('loginWrap').style.display = 'none';
+    document.getElementById('panel').style.display = 'flex';
+    loadData();
+  } else {
+    document.getElementById('loginErr').textContent = 'Contrasena incorrecta.';
+  }
+}
+
+function doLogout() {
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('panel').style.display = 'none';
+  document.getElementById('pwdInput').value = '';
+  document.getElementById('loginErr').textContent = '';
+}
+
+function parseEvent(ev) {
+  var title = ev.summary || '';
+  var sport = title.indexOf('Ping Pong') !== -1 ? 'pingpong' : 'cornhole';
+  var mesa = '';
+  var mi = title.indexOf('[');
+  var mi2 = title.indexOf(']');
+  if (mi !== -1 && mi2 !== -1) mesa = title.substring(mi+1, mi2).replace(/\s/g,'');
+  var nombre = '';
+  var pi = title.indexOf('(');
+  var pi2 = title.indexOf(')');
+  if (pi !== -1 && pi2 !== -1) nombre = title.substring(pi+1, pi2);
+  var desc = ev.description || '';
+  var wa = '';
+  var wai = desc.indexOf('WhatsApp:');
+  if (wai !== -1) { var waEnd = desc.indexOf(',', wai); wa = desc.substring(wai+9, waEnd !== -1 ? waEnd : desc.length).trim(); }
+  var total = '';
+  var ti = desc.indexOf('Total: $');
+  if (ti !== -1) { var tEnd = desc.indexOf(' MXN', ti); total = desc.substring(ti+8, tEnd !== -1 ? tEnd : ti+12).trim(); }
+  var status = 'Confirmada';
+  var si = desc.indexOf('Estado:');
+  if (si !== -1) { var sEnd = desc.indexOf(',', si); status = desc.substring(si+7, sEnd !== -1 ? sEnd : desc.length).trim(); }
+  var start = ev.start && ev.start.dateTime ? ev.start.dateTime : '';
+  var end = ev.end && ev.end.dateTime ? ev.end.dateTime : '';
+  var startDate = start ? start.substring(0,10) : '';
+  var startTime = start ? start.substring(11,16) : '';
+  var dur = 60;
+  if (start && end) {
+    var sd = new Date(start);
+    var ed = new Date(end);
+    dur = Math.round((ed - sd) / 60000);
+  }
+  return {id:ev.id,title:title,sport:sport,mesa:mesa,nombre:nombre,wa:wa,total:total,status:status,startDate:startDate,startTime:startTime,dur:dur,rawDesc:desc};
+}
+
+function loadData() {
+  document.getElementById('tbl-hoy').innerHTML = '<div class="loading"><span class="spin"></span>Consultando Google Calendar...</div>';
+  document.getElementById('tbl-sem').innerHTML = '<div class="loading"><span class="spin"></span>Cargando...</div>';
+  var today = todayIso();
+  var d7 = new Date(); d7.setDate(d7.getDate()+7);
+  var week = d7.getFullYear() + '-' + p2(d7.getMonth()+1) + '-' + p2(d7.getDate());
+  var prompt = 'Usa Google Calendar para listar todos los eventos del calendario principal entre ' + today + 'T00:00:00-07:00 y ' + week + 'T23:59:59-07:00. Para CADA evento incluye estos campos en el JSON: id, summary, description, start (con dateTime), end (con dateTime). Devuelve SOLO un array JSON puro sin texto adicional, sin bloques de codigo, sin explicaciones. Ejemplo del formato exacto: [{"id":"abc123","summary":"Titulo","description":"desc","start":{"dateTime":"2025-04-23T17:00:00-07:00"},"end":{"dateTime":"2025-04-23T18:00:00-07:00"}}]. Si no hay eventos devuelve exactamente: []';
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      mcp_servers: [{type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'google-calendar'}],
+      messages: [{role:'user',content:prompt}]
+    })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var text = '';
+    for (var i = 0; i < data.content.length; i++) {
+      if (data.content[i].type === 'text') text += data.content[i].text;
+    }
+    text = text.trim();
+    var match = text.match(/\[[\s\S]*\]/);
+    var raw = [];
+    try {
+      raw = match ? JSON.parse(match[0]) : [];
+    } catch(e) {
+      console.error('Parse error:', e, 'Text:', text.substring(0,300));
+      raw = [];
+    }
+    console.log('Eventos recibidos:', raw.length, raw);
+    allEvents = [];
+    for (var j = 0; j < raw.length; j++) {
+      var parsed = parseEvent(raw[j]);
+      if (parsed.startDate >= today) allEvents.push(parsed);
+    }
+    renderAll();
+  })
+  .catch(function() { allEvents = []; renderAll(); });
+}
+
+function renderAll() {
+  var today = todayIso();
+  var curMin = nowMin();
+  var hoy = [];
+  var sem = [];
+  for (var i = 0; i < allEvents.length; i++) {
+    if (allEvents[i].startDate === today) hoy.push(allEvents[i]);
+    else sem.push(allEvents[i]);
+  }
+  hoy.sort(function(a,b) { return a.startTime > b.startTime ? 1 : -1; });
+  sem.sort(function(a,b) { return (a.startDate+a.startTime) > (b.startDate+b.startTime) ? 1 : -1; });
+
+  var ppActive = [];
+  var chActive = [];
+  for (var i = 0; i < hoy.length; i++) {
+    var e = hoy[i];
+    if (e.status === 'Cancelada') continue;
+    var parts = e.startTime.split(':');
+    var sm = parseInt(parts[0])*60 + parseInt(parts[1]);
+    if (sm <= curMin && sm + e.dur > curMin) {
+      if (e.sport === 'pingpong') ppActive.push(e);
+      else chActive.push(e);
+    }
+  }
+
+  var hoyNoCanc = 0;
+  for (var i = 0; i < hoy.length; i++) { if (hoy[i].status !== 'Cancelada') hoyNoCanc++; }
+  var semNoCanc = 0;
+  for (var i = 0; i < allEvents.length; i++) { if (allEvents[i].status !== 'Cancelada') semNoCanc++; }
+
+  document.getElementById('st-hoy').textContent = hoyNoCanc;
+  document.getElementById('st-pp').textContent = ppActive.length;
+  document.getElementById('st-ch').textContent = chActive.length;
+  document.getElementById('st-sem').textContent = semNoCanc;
+
+  var ppH = '';
+  for (var i = 1; i <= 6; i++) {
+    var key = 'PP' + i;
+    var occ = false;
+    for (var j = 0; j < ppActive.length; j++) { if (ppActive[j].mesa === key) { occ = true; break; } }
+    ppH += '<div class="mesa ' + (occ ? 'ocupada' : 'libre') + '">' + key + '</div>';
+  }
+  document.getElementById('mesas-pp').innerHTML = ppH;
+
+  var chH = '';
+  for (var i = 1; i <= 8; i++) {
+    var key2 = 'CH' + i;
+    var occ2 = false;
+    for (var j = 0; j < chActive.length; j++) { if (chActive[j].mesa === key2) { occ2 = true; break; } }
+    chH += '<div class="mesa ' + (occ2 ? 'ocupada' : 'libre') + '">' + key2 + '</div>';
+  }
+  document.getElementById('mesas-ch').innerHTML = chH;
+
+  document.getElementById('tbl-hoy').innerHTML = renderTable(hoy, false);
+  document.getElementById('tbl-sem').innerHTML = renderTable(sem, true);
+}
+
+function renderTable(events, showDate) {
+  if (events.length === 0) return '<div class="empty">No hay reservas.</div>';
+  var h = '<table><thead><tr><th>Hora</th>';
+  if (showDate) h += '<th>Fecha</th>';
+  h += '<th>Mesa</th><th>Nombre</th><th>Deporte</th><th>Dur.</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>';
+  for (var i = 0; i < events.length; i++) {
+    var e = events[i];
+    var mc = e.sport === 'pingpong' ? 'mesa-pp' : 'mesa-ch';
+    var sc = e.status === 'Llego' ? 's-llego' : (e.status === 'Cancelada' ? 's-cancelada' : 's-confirmada');
+    var sl = e.status === 'Llego' ? 'Llego' : e.status;
+    var dl = e.dur === 60 ? '1 hr' : (e.dur === 90 ? '1.5 hrs' : '2 hrs');
+    var eid = e.id;
+    h += '<tr><td>' + (e.startTime||'—') + '</td>';
+    if (showDate) h += '<td>' + e.startDate + '</td>';
+    h += '<td>' + (e.mesa ? '<span class="mesa-badge ' + mc + '">' + e.mesa + '</span>' : '<span style="color:var(--text4)">—</span>') + '</td>';
+    h += '<td>' + (e.nombre||'—') + '</td>';
+    h += '<td style="color:' + (e.sport==='pingpong'?'var(--red)':'var(--blue)') + '">' + (e.sport==='pingpong'?'Ping Pong':'Cornhole') + '</td>';
+    h += '<td>' + dl + '</td>';
+    h += '<td>' + (e.total?'$'+e.total:'—') + '</td>';
+    h += '<td><span class="status-badge ' + sc + '">' + sl + '</span></td>';
+    var idx = allEvents.indexOf(e);
+    h += '<td><div class="action-btns">';
+    h += '<button class="act" data-idx="' + idx + '" data-action="edit">Editar</button>';
+    h += '<button class="act agreen" data-idx="' + idx + '" data-action="llego">&#10003;</button>';
+    h += '<button class="act adel" data-idx="' + idx + '" data-action="del">&#10005;</button>';
+    h += '</div></td></tr>';
+  }
+  h += '</tbody></table>';
+  return h;
+}
+
+function updateMesaOpts() {
+  var sp = document.getElementById('f-sport').value;
+  var sel = document.getElementById('f-mesa');
+  sel.innerHTML = '';
+  var prefix = sp === 'pingpong' ? 'PP' : 'CH';
+  var count = sp === 'pingpong' ? 6 : 8;
+  for (var i = 1; i <= count; i++) {
+    var o = document.createElement('option');
+    o.value = prefix + i; o.textContent = prefix + i;
+    sel.appendChild(o);
+  }
+}
+
+function openModal(id) {
+  editingId = id;
+  updateMesaOpts();
+  document.getElementById('f-fecha').value = todayIso();
+  document.getElementById('f-hora').value = '17:00';
+  document.getElementById('f-dur').value = '60';
+  document.getElementById('f-total').value = '';
+  document.getElementById('f-nombre').value = '';
+  document.getElementById('f-wa').value = '';
+  document.getElementById('f-status').value = 'Confirmada';
+  document.getElementById('modal-title').textContent = id ? 'Editar reserva' : 'Nueva reserva';
+  if (id) {
+    var ev = null;
+    for (var i = 0; i < allEvents.length; i++) { if (allEvents[i].id === id) { ev = allEvents[i]; break; } }
+    if (ev) {
+      document.getElementById('f-nombre').value = ev.nombre || '';
+      document.getElementById('f-wa').value = ev.wa || '';
+      document.getElementById('f-sport').value = ev.sport;
+      updateMesaOpts();
+      document.getElementById('f-mesa').value = ev.mesa || '';
+      document.getElementById('f-fecha').value = ev.startDate || todayIso();
+      document.getElementById('f-hora').value = ev.startTime || '17:00';
+      document.getElementById('f-dur').value = String(ev.dur) || '60';
+      document.getElementById('f-total').value = ev.total || '';
+      document.getElementById('f-status').value = ev.status || 'Confirmada';
+    }
+  }
+  document.getElementById('overlay').classList.add('on');
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('on'); }
+
+function saveReservation() {
+  var nombre = document.getElementById('f-nombre').value;
+  var wa = document.getElementById('f-wa').value;
+  var sport = document.getElementById('f-sport').value;
+  var mesa = document.getElementById('f-mesa').value;
+  var fecha = document.getElementById('f-fecha').value;
+  var hora = document.getElementById('f-hora').value;
+  var dur = parseInt(document.getElementById('f-dur').value);
+  var total = document.getElementById('f-total').value;
+  var status = document.getElementById('f-status').value;
+  var sLabel = sport === 'pingpong' ? 'Ping Pong' : 'Cornhole';
+  var durLbl = dur === 60 ? '1 hora' : (dur === 90 ? '1.5 hrs' : '2 horas');
+  var hparts = hora.split(':');
+  var startM = parseInt(hparts[0])*60 + parseInt(hparts[1]);
+  var endM = startM + dur;
+  var eh = Math.floor(endM/60); var em = endM%60;
+  var startDT = fecha + 'T' + hora + ':00-07:00';
+  var endDT = fecha + 'T' + p2(eh) + ':' + p2(em) + ':00-07:00';
+  var title = 'Reta Saca - ' + sLabel + ' [' + mesa + '] (' + nombre + ')';
+  var desc = 'Cliente: ' + nombre + ', WhatsApp: ' + wa + ', Deporte: ' + sLabel + ', Mesa: ' + mesa + ', Duracion: ' + durLbl + ', Total: $' + total + ' MXN, Estado: ' + status;
+  var prompt = '';
+  if (editingId) {
+    prompt = 'Actualiza el evento de Google Calendar con id ' + editingId + '. Nuevo titulo: ' + title + '. Nuevo inicio: ' + startDT + '. Nuevo fin: ' + endDT + '. Nueva descripcion: ' + desc + '. Confirma cuando lo hayas actualizado.';
+  } else {
+    prompt = 'Crea un evento en Google Calendar. Titulo: ' + title + '. Inicio: ' + startDT + '. Fin: ' + endDT + '. Descripcion: ' + desc + '. Color: Banana si Ping Pong, Sage si Cornhole. Confirma cuando lo hayas creado.';
+  }
+  closeModal();
+  document.getElementById('tbl-hoy').innerHTML = '<div class="loading"><span class="spin"></span>Guardando...</div>';
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      mcp_servers: [{type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'google-calendar'}],
+      messages: [{role:'user',content:prompt}]
+    })
+  })
+  .then(function() { setTimeout(loadData, 2000); })
+  .catch(function() { setTimeout(loadData, 2000); });
+}
+
+function deleteRes(id) {
+  if (!confirm('Eliminar esta reserva?')) return;
+  var prompt = 'Elimina el evento de Google Calendar con id ' + id + '. Confirma cuando lo hayas eliminado.';
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      mcp_servers: [{type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'google-calendar'}],
+      messages: [{role:'user',content:prompt}]
+    })
+  })
+  .then(function() { setTimeout(loadData, 2000); })
+  .catch(function() { setTimeout(loadData, 2000); });
+}
+
+function markLlego(id) {
+  var ev = null;
+  for (var i = 0; i < allEvents.length; i++) { if (allEvents[i].id === id) { ev = allEvents[i]; break; } }
+  if (!ev) return;
+  var newDesc = ev.rawDesc;
+  if (newDesc.indexOf('Estado:') !== -1) {
+    var si = newDesc.indexOf('Estado:');
+    var sEnd = newDesc.indexOf(',', si);
+    if (sEnd !== -1) newDesc = newDesc.substring(0,si) + 'Estado: Llego' + newDesc.substring(sEnd);
+    else newDesc = newDesc.substring(0,si) + 'Estado: Llego';
+  } else {
+    newDesc = newDesc + ', Estado: Llego';
+  }
+  var prompt = 'Actualiza la descripcion del evento de Google Calendar con id ' + id + ' a: ' + newDesc + '. Confirma cuando lo hayas actualizado.';
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 300,
+      mcp_servers: [{type:'url',url:'https://calendarmcp.googleapis.com/mcp/v1',name:'google-calendar'}],
+      messages: [{role:'user',content:prompt}]
+    })
+  })
+  .then(function() { setTimeout(loadData, 2000); })
+  .catch(function() { setTimeout(loadData, 2000); });
+}
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('pwdInput').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+document.getElementById('btnSalir').addEventListener('click', doLogout);
+document.getElementById('btnActualizar').addEventListener('click', loadData);
+document.getElementById('btnNueva').addEventListener('click', function() { openModal(null); });
+document.getElementById('btnCancelarModal').addEventListener('click', closeModal);
+document.getElementById('btnGuardar').addEventListener('click', saveReservation);
+document.getElementById('f-sport').addEventListener('change', updateMesaOpts);
+document.getElementById('overlay').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+document.getElementById('panel').addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  var idx = parseInt(btn.getAttribute('data-idx'));
+  var action = btn.getAttribute('data-action');
+  var ev = allEvents[idx];
+  if (!ev) return;
+  if (action === 'edit') openModal(ev.id);
+  else if (action === 'llego') markLlego(ev.id);
+  else if (action === 'del') deleteRes(ev.id);
+});
+</script>
+</body>
+</html>
