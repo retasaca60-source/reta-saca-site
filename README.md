@@ -11,7 +11,10 @@ recepción.
 
 ## Dónde está
 
-- Código: https://github.com/retasaca60-source/reta-saca-site (privado)
+- Código: https://github.com/retasaca60-source/reta-saca-site (público: Netlify
+  gratis solo publica solo desde repositorios privados de UNA persona, y somos
+  dos). Nada secreto va en el código: contraseñas y llaves, en variables de
+  entorno de Netlify.
 - Sitio: https://reta-saca.netlify.app — se publica solo con cada `git push`
   a `main`. Por ahora el proyecto de Netlify es **privado**: solo lo ve quien
   entra con la cuenta del equipo. Se abre al público con "Make public" en
