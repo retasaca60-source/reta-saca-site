@@ -10,6 +10,7 @@ Codex…). Cada una está porque no seguirla ya costó algo.
    código hace algo distinto a lo que dice, el que está mal es el código. Una
    regla que cambia se cambia primero ahí, con fecha y quién lo decidió.
 3. Leer [`src/README.md`](src/README.md): dónde vive cada cosa.
+4. Si tocas datos o pagos: [`CONTRATO-DE-DATOS.md`](CONTRATO-DE-DATOS.md).
 
 ## Lo que no se negocia
 
@@ -25,8 +26,12 @@ Codex…). Cada una está porque no seguirla ya costó algo.
   teléfono del cliente ni la de la computadora de quien programa. Una PC del
   equipo tenía la zona de Ciudad de México con la hora de Sonora puesta a
   mano, y todo lo que calculaba en UTC salía una hora atrás.
-- **Los números del negocio viven en un solo lugar.** Hoy es
-  `src/negocio/catalogo.ts`; cuando exista el panel, será la base de datos. Una
+- **Las pantallas solo hablan con `servicio`** (`src/datos/index.ts`), nunca
+  con Supabase directo. Lo que necesiten se agrega a `src/datos/contrato.ts`
+  y a las dos versiones (simulada y real), y se avisa al compañero.
+- **Los números del negocio viven en un solo lugar.** Es la
+  configuración que Hugo edita en el panel (`src/negocio/configuracion.ts`
+  trae solo los valores de arranque). Una
   pantalla nunca escribe un precio, una hora o un número de mesas.
 - **Lo que se guarda en el aparato del cliente lo escribió otra versión.** Si se
   lee algo de `localStorage` o similar, se valida campo por campo. Un campo
@@ -37,9 +42,7 @@ Codex…). Cada una está porque no seguirla ya costó algo.
 1. `npm test` y `npm run build` limpios.
 2. **Abrir el sitio y hacer una reserva completa.** Que compile no quiere decir
    que funcione.
-3. Si el cambio no debía alterar lo que ve el cliente, comparar con
-   `herramientas/recorrido.js` antes y después (el mismo día).
-4. Al publicar, confirmar que Netlify sirve lo que compilaste: el nombre de
+3. Al publicar, confirmar que Netlify sirve lo que compilaste: el nombre de
    `assets/index-*.js` en el sitio publicado es el mismo que el de tu
    `npm run build`, y `<meta name="compilacion">` trae la hora de este
    despliegue.

@@ -5,65 +5,70 @@ falla, ¿dónde miro?**
 
 ```
 src/
-├── main.tsx                 La entrada. index.html apunta aquí.
+├── main.tsx                   La entrada. index.html apunta aquí.
+├── app/App.tsx                Qué página se abre en cada dirección (/, /r, /c, /panel…).
 │
-├── app/
-│   └── App.tsx              Qué pantalla se ve según el paso.
+├── negocio/                   LAS REGLAS. Sin pantallas, sin React, con pruebas.
+│   ├── configuracion.ts       Lo que Hugo edita: mesas, precios, promo, horario, reglas.
+│   │                          CONFIGURACION_INICIAL = con qué arranca.
+│   ├── reserva.ts             Qué es una reserva, sus partes y pagos; cancelar, liberar.
+│   ├── horario.ts             Qué días y horas se pueden reservar.
+│   ├── precios.ts             Precio por mesa, promo, extensiones.
+│   ├── disponibilidad.ts      Cuántas mesas quedan libres en un tramo.
+│   ├── tiempo.ts              La hora de Sonora, fechas "AAAA-MM-DD", minutos.
+│   ├── formato.ts             Dinero y teléfonos.
+│   └── negocio.test.ts        Las reglas de RESERVAS.md, como pruebas.
 │
-├── negocio/                 Las reglas del negocio. Sin pantallas, sin React.
-│   ├── catalogo.ts          Deportes, mesas, PRECIOS, duraciones, horario, anticipos.
-│   ├── precios.ts           Cuánto se cobra, cuándo hay promo, qué se paga al reservar.
-│   ├── disponibilidad.ts    Cuántas mesas quedan (hoy de ejemplo), mesa y folio.
-│   ├── formato.ts           Cómo se escriben fechas, horas, dinero y teléfonos.
-│   └── precios.test.ts      Las reglas de arriba, escritas como pruebas.
+├── datos/                     EL CONTRATO con los datos (ver CONTRATO-DE-DATOS.md).
+│   ├── contrato.ts            Las operaciones que usan las pantallas. La ley.
+│   ├── simulado.ts            La versión de hoy: navegador + pago de mentira.
+│   ├── simulado.test.ts       Cómo se debe comportar CUALQUIER versión.
+│   └── index.ts               Cuál versión se usa. Las pantallas importan de aquí.
 │
-├── mecanismos/
-│   └── reserva/
-│       ├── estado.ts        En qué va la reserva y cómo cambia con cada toque.
-│       └── estado.test.ts   Los errores que ya se corrigieron, para que no regresen.
+├── mecanismos/                Lo que funciona por debajo de las pantallas.
+│   ├── reserva/estado.ts      Lo que el cliente va eligiendo antes de pagar.
+│   ├── datos/usarDatos.ts     Cargar datos y recargarlos solos cuando cambian.
+│   └── whatsapp/enlaces.ts    Botones que abren WhatsApp con el mensaje escrito.
 │
-├── pantallas/               Lo que se ve. Una carpeta por paso.
-│   ├── deporte/             Paso 1: deporte y jugadores.
-│   ├── horario/             Paso 2: día, duración y hora.
-│   ├── datos/               Paso 3: nombre, WhatsApp y resumen de pago.
-│   └── reserva-lista/       Paso 4: folio y mesa.
+├── pantallas/                 El sitio del cliente (teléfono). Una carpeta por página.
+│   ├── reservar/              "/": deporte y cómo pagan → horario → datos.
+│   ├── pago-simulado/         "/pago/…": ocupa el lugar de Mercado Pago (solo demo).
+│   ├── mi-reserva/            "/r/…": link privado del organizador.
+│   ├── cobro/                 "/c/…": link de cobro para los amigos.
+│   └── privacidad/            "/privacidad": aviso (borrador).
 │
-├── vista/                   Piezas que se ven en todas las pantallas.
-│   ├── Cabecera.tsx         Logo y aviso de demostración.
-│   ├── Progreso.tsx         La barra Deporte · Horario · Datos.
-│   └── Iconos.tsx
+├── panel/                     "/panel": recepción y dueño (laptop).
+│   ├── Panel.tsx              Entrar, barra y navegación.
+│   ├── Hoy.tsx                Mesas ahora, clientes sin reserva, reservas del día.
+│   ├── FilaReserva.tsx        Una reserva y sus acciones (sentar, cobrar, extender…).
+│   ├── Semana.tsx · Caja.tsx · Configuracion.tsx
+│   └── panel.css              TODO el diseño del panel. Se puede rehacer libre.
 │
-└── estilos/                 Lo que comparten todas las pantallas.
-    ├── tokens.css           Los colores (claro y oscuro). Un color nuevo, aquí.
-    ├── base.css
-    └── componentes.css      Tarjetas, chips, campos, resumen y botones.
+├── vista/                     Piezas que usan varias páginas del cliente.
+└── estilos/                   Colores (tokens.css) y piezas compartidas del cliente.
 ```
-
-Cada pantalla trae su propio `.css` al lado; lo que usan varias vive en
-`estilos/componentes.css`.
 
 ## Cómo buscar
 
 | Síntoma | Dónde mirar |
 |---|---|
-| Un precio está mal | `negocio/catalogo.ts` (el número) o `negocio/precios.ts` (la regla) |
-| La promo sale cuando no debe, o no sale | `negocio/precios.ts` → `esHorarioPromo` |
-| El anticipo o "en el lugar" no cuadra | `negocio/precios.ts` → `anticipoPara` |
-| Aparece una hora que termina después del cierre | `negocio/catalogo.ts` → `CIERRE_EN_MINUTOS` |
-| "Lleno" o "Quedan 2" raros | `negocio/disponibilidad.ts` |
-| Deja reservar una hora llena | `negocio/disponibilidad.ts` → `horaDisponible` y `mecanismos/reserva/estado.ts` → `alHorario` |
-| Asigna una mesa que estaba ocupada | `negocio/disponibilidad.ts` → `mesaLibre` |
-| Se borra la hora elegida, o salta de paso | `mecanismos/reserva/estado.ts` → `reducir` |
-| No deja confirmar con los datos bien puestos | `mecanismos/reserva/estado.ts` → `datosCompletos` |
-| Un texto o botón de un paso se ve mal | `pantallas/<paso>/` |
+| Un precio está mal | En el panel → Configuración (es un dato). Si es la regla: `negocio/precios.ts` |
+| La promo sale cuando no debe | `negocio/precios.ts` → `esPromo` |
+| Aparece una hora que no debería (cerrado, pasada, muy lejos) | `negocio/horario.ts` → `iniciosPosibles` |
+| "Lleno" cuando hay mesas, o al revés | `negocio/disponibilidad.ts` → `ocupadasEn` |
+| El cobro dividido no cuadra | `negocio/reserva.ts` → `repartir` |
+| No deja reservar y no se entiende por qué | el mensaje sale de `datos/simulado.ts` → `apartar` |
+| Algo "se borra solo" o salta de paso al reservar | `mecanismos/reserva/estado.ts` → `reducir` |
+| Una página no carga o se queda en "Cargando…" | `mecanismos/datos/usarDatos.ts` y la operación del servicio |
+| El panel se ve mal | `panel/panel.css` |
 | Un color está mal en modo oscuro | `estilos/tokens.css` |
 
 ## Reglas al añadir
 
-- **Un número del negocio no se escribe en una pantalla.** Va en
-  `catalogo.ts`, así hay un solo lugar donde cambiarlo.
-- **Una regla de cobro nueva lleva su prueba** en `precios.test.ts`. `npm test`
-  corre en segundos.
-- **Los datos de una pantalla viven con la pantalla.** Lo que sube a `vista/`
-  o a `estilos/componentes.css` tiene que usarse desde al menos dos pasos.
-- Nombres y comentarios en español; el comentario explica **por qué**, no qué.
+- **Las pantallas solo hablan con `servicio`** (de `datos/index.ts`). Nada de
+  llamar a Supabase directo desde una pantalla: si se necesita algo nuevo, se
+  agrega al contrato y a las dos versiones.
+- **Una regla del negocio no se escribe en una pantalla.** Va en `negocio/`,
+  con su prueba.
+- **Un número del negocio no se escribe en el código**: es configuración.
+- Nombres y comentarios en español; el comentario explica **por qué**.

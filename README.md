@@ -15,7 +15,9 @@ Si eres nuevo en el proyecto, léelo en este orden:
    no coinciden, manda el documento.
 3. **[`src/README.md`](src/README.md)**: el mapa del código. Qué hay en cada
    archivo y dónde buscar cuando algo falla.
-4. **[`CLAUDE.md`](CLAUDE.md)**: las reglas para escribir código aquí (también
+4. **[`CONTRATO-DE-DATOS.md`](CONTRATO-DE-DATOS.md)**: si vas a hacer la base
+   de datos (Supabase) o los pagos (Mercado Pago), esto es lo tuyo.
+5. **[`CLAUDE.md`](CLAUDE.md)**: las reglas para escribir código aquí (también
    las leen Claude y otros asistentes).
 
 ## Qué hay en el repositorio
@@ -23,16 +25,51 @@ Si eres nuevo en el proyecto, léelo en este orden:
 | Carpeta o archivo | Qué es |
 |---|---|
 | `RESERVAS.md` | Las reglas del negocio y las decisiones tomadas. |
-| `src/` | El sitio (Vite + React + TypeScript). Ver `src/README.md`. |
+| `CONTRATO-DE-DATOS.md` | Cómo se conecta la base de datos real sin tocar pantallas. |
+| `src/` | El sitio y el panel (Vite + React + TypeScript). Ver `src/README.md`. |
 | `public/imagenes/` | Logo e íconos; se sirven tal cual. |
-| `herramientas/recorrido.js` | Recorre todo el flujo de reserva y da una "huella" para comparar dos versiones. Ver [Antes de subir un cambio](#antes-de-subir-un-cambio). |
-| `referencia/` | El panel de recepción que se hizo como artefacto de Claude. No se publica; queda como referencia de lo que el panel real debe hacer. |
+| `referencia/` | El panel viejo que se hizo como artefacto de Claude. Solo referencia. |
 | `netlify.toml` | Cómo compila y publica Netlify. |
 
-**Estado hoy:** es una **demostración**. Las reservas no se guardan, no se
-cobra y la disponibilidad es inventada. Además, todavía sigue algunas reglas
-viejas. La lista exacta de lo que falta, y en qué orden, está en
+## En qué estado está
+
+**Todo funciona "como si fuera real", pero con datos simulados:**
+
+- **El sitio del cliente** (`/`): reservar con las reglas de `RESERVAS.md`,
+  pagar entre 1, 2 o 4, pago simulado de Mercado Pago, link privado (`/r/…`)
+  y link de cobro para los amigos (`/c/…`).
+- **El panel** (`/panel`): mesas ahora, clientes sin reserva, sentar, cobrar en
+  el local, extender, cambiar horario, cancelar, liberar, semana, caja del día,
+  y la configuración de Hugo (mesas, precios, promo, horario, días cerrados,
+  usuarios).
+- **Los datos viven en el navegador** (`src/datos/simulado.ts`): el celular del
+  cliente y la laptop de recepción NO ven lo mismo todavía. Eso llega con
+  Supabase.
+
+Lo que falta para abrir de verdad está en
 [`RESERVAS.md` → Qué ya está hecho y qué falta](RESERVAS.md#qué-ya-está-hecho-y-qué-falta).
+
+### Cómo nos repartimos
+
+| Quién | Qué | Dónde |
+|---|---|---|
+| ARAAM | Diseño del panel y del sitio | `src/panel/panel.css`, `src/pantallas/`, `src/estilos/` |
+| Alezzz123 | Base de datos (Supabase) y pagos (Mercado Pago) | `src/datos/real.ts` (nuevo), siguiendo `CONTRATO-DE-DATOS.md` |
+
+Los dos pueden trabajar a la vez sin pisarse: el diseño no toca `src/datos/` y
+la base no toca pantallas. Lo que los une es `src/datos/contrato.ts`: **si
+alguno necesita cambiarlo, se avisa al otro** (un cambio ahí obliga a ajustar
+las dos versiones).
+
+### Probar la demostración
+
+- Sitio: `http://localhost:5190/` (o `reta-saca.netlify.app`).
+- Panel: `http://localhost:5190/panel`. En la demostración hay dos botones para
+  entrar como **Recepción** o como **Hugo (dueño)**; la contraseña no se revisa.
+- Trae reservas de ejemplo (mañana a las 7 PM Cornhole está lleno).
+  **"Restablecer demo"** en el panel borra todo y vuelve a empezar.
+- Abre el sitio y el panel en dos pestañas del mismo navegador: lo que reserves
+  en una aparece en la otra.
 
 ## Dónde está
 
@@ -112,11 +149,8 @@ npm run build
   fallaría en Netlify: mejor verlo antes del `git push`.
 - **Abre el sitio y haz una reserva completa** (deporte → horario → datos →
   confirmación). Que compile no quiere decir que funcione.
-- Si tu cambio **no debería** cambiar nada de lo que ve el cliente (reordenar
-  código, separar archivos), compruébalo con `herramientas/recorrido.js`: se
-  pega en la consola del navegador antes y después del cambio, **el mismo día**,
-  y las dos huellas deben ser iguales. Las instrucciones están al inicio del
-  archivo.
+- Si tocaste el panel, entra como Recepción y como Hugo y prueba lo que
+  cambiaste (sentar, cobrar, configuración).
 - Si cambias una regla del negocio, actualiza **primero** `RESERVAS.md` (con la
   fecha y quién lo decidió) y agrega o ajusta su prueba.
 

@@ -31,8 +31,9 @@ negocio) y las decisiones de **ARAAM**. Al final está el
 13. [Cuentas y servicios](#12-cuentas-y-servicios)
 14. [Qué ya está hecho y qué falta](#qué-ya-está-hecho-y-qué-falta)
 15. [Pendientes de Hugo](#pendientes-de-hugo)
-16. [Para después](#para-después)
-17. [Registro de decisiones](#registro-de-decisiones)
+16. [Pendientes de decidir con Hugo](#pendientes-de-decidir-con-hugo)
+17. [Para después](#para-después)
+18. [Registro de decisiones](#registro-de-decisiones)
 
 ---
 
@@ -390,46 +391,39 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 
 ## Qué ya está hecho y qué falta
 
-### El sitio hoy (commit `27a0630`)
+### Hecho: todo funciona con datos simulados (27/09/2026)
 
-Es una **demostración**: no guarda reservas, no cobra y la disponibilidad es
-inventada. Y todavía sigue reglas **viejas** que hay que cambiar:
+El sitio y el panel siguen **todas** las reglas de este documento, pero con
+datos **simulados**: se guardan en el navegador y el pago es una pantalla de
+mentira que ocupa el lugar de Mercado Pago. Ver `CONTRATO-DE-DATOS.md`.
 
-| Tema | Lo que hace hoy el sitio | Lo que dice este documento |
-|---|---|---|
-| Horario | Todos los días 5–11 PM | L–V 5–10 PM; S y D 9–12 y 5–10 |
-| Horas de inicio | En punto | Cada 30 min |
-| Anticipación | 10 días | 7 días |
-| Reservar para hoy | Deja reservar horas que ya pasaron | Hasta 30 min antes |
-| Hora de referencia | La del teléfono del cliente | La de Sonora, del servidor |
-| Precio | Cambia con 2 o 4 personas | Por mesa, fijo |
-| Popdarts 90 / 120 min | $175 / $230 | $180 / $240 |
-| Popdarts jugadores | Ofrece 2 o 4 | No pregunta |
-| Cornhole | 8 mesas | 6 |
-| Promo | 60 min a las 5 PM entre semana y **todo el domingo** | 60 min empezando 5:00 o 5:30, todos los días, sin "domingo todo el día" |
-| Pago | Muestra anticipo o pago completo, no cobra | Mercado Pago con pago dividido |
-| Mesa | La asigna el sitio | La asigna recepción al llegar |
-| Disponibilidad | Inventada, y no considera que una reserva de 90 min ocupa la media hora siguiente | Real, revisando cada media hora |
-| Texto "torneos de 4 personas" | Aparece | Se quita (torneos, para después) |
+| Tema | Estado |
+|---|---|
+| Horario por bloques, inicios cada 30 min, terminar antes del cierre | Hecho |
+| Ventana de 7 días, corte de 30 min, días cerrados | Hecho (la hora sale del aparato hasta tener servidor) |
+| Precio por mesa, promo 5:00 / 5:30, Popdarts sin dividir | Hecho |
+| Disponibilidad por tramo completo (una reserva de 90 min ocupa la media hora siguiente) | Hecho |
+| Pago dividido: partes en pesos cerrados, apartado de 10 min, firme con el primer pago | Hecho (pago simulado) |
+| Link privado `/r/…` y link de cobro `/c/…` ("mi parte" y "lo que falta") | Hecho |
+| Cancelación con y sin devolución, máximo 2 reservas por WhatsApp | Hecho |
+| Botones de WhatsApp (compartir cobro, enviarme mi link, avisar al negocio) | Hecho ("Avisar al negocio" aparece cuando Hugo ponga el número) |
+| Panel: mesas ahora, sentar, cobrar en el local, extender, cambiar, cancelar, liberar | Hecho |
+| Panel: semana, caja del día | Hecho |
+| Panel del dueño: mesas, fuera de servicio, precios, promo, horario, días cerrados, reglas, usuarios; aviso de conflictos | Hecho |
+| Aviso de privacidad | Borrador en `/privacidad`, faltan los datos del titular |
 
-### Orden de trabajo
+### Falta
 
-Cada paso depende del anterior:
-
-1. **Ajustar el sitio a estas reglas**, sin base de datos todavía: precios por
-   mesa, horario con bloques, inicios cada 30 min, ventana de 7 días, corte de
-   30 min, hora de Sonora, Popdarts sin jugadores, Cornhole con 6, promo nueva,
-   quitar "torneos".
-2. **Supabase:** mesas, horario, precios y reservas guardadas de verdad;
-   disponibilidad real por media hora; el apartado de 10 minutos.
-3. **Panel** de recepción y del dueño.
-4. **Mercado Pago** con pago dividido, links de cobro y devoluciones (cuando
-   Hugo tenga la cuenta).
-5. **Aviso de privacidad y reglas** visibles antes de pagar (cuando Hugo mande
-   sus datos).
-6. Ligar **`retasaca.com`** a nuestro proyecto y abrir el sitio al público.
-
----
+1. **Base de datos real (Supabase)**: que las reservas vivan en el servidor y
+   todos vean lo mismo; que el servidor decida precio, lugar, hora y
+   permisos. Guía completa: `CONTRATO-DE-DATOS.md`.
+2. **Mercado Pago real**: cobros, aviso de pago (webhook) y devoluciones.
+   Espera la cuenta del negocio.
+3. **Usuarios reales del panel** (Supabase Auth). Hoy se entra con botones de
+   demostración.
+4. **Aviso de privacidad completo** (espera los datos del titular).
+5. **Diseño final del panel** (ARAAM).
+6. Ligar **`retasaca.com`** y abrir el sitio al público.
 
 ## Pendientes de Hugo
 
@@ -444,6 +438,17 @@ Cada paso depende del anterior:
       para ligarlo al nuestro.
 
 ---
+
+## Pendientes de decidir con Hugo
+
+Salieron al construir el sistema. Hoy funcionan como dice la columna
+"Propuesta", que se puede cambiar:
+
+| Tema | Propuesta que ya está funcionando |
+|---|---|
+| **Cuánto se cobra al extender** | La diferencia de la tabla: de 60 a 90 min en Ping Pong = $220 − $150 = **$70**. Si pasa de 2 horas, el precio de lo que se agrega por separado. |
+| **Cambiar a un horario más caro o más barato** | Si el nuevo cuesta más (por ejemplo, pierde la promo), la diferencia queda por cobrar en el local. Si cuesta menos, **no se devuelve nada**. |
+| **Promo para clientes sin reserva** | Cuenta la media hora en que llegan: si llegan a las 5:10 PM, entran en la promo de las 5:00. |
 
 ## Para después
 
@@ -491,3 +496,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 26/09/2026 | Un mismo titular en Mercado Pago, aviso y facturas | ARAAM | Si son distintos, no cuadra quién cobró. |
 | 26/09/2026 | `retasaca.com` se queda como está hasta abrir | ARAAM | No afecta nada; se liga a nuestro proyecto cuando toque. |
 | 26/09/2026 | Torneos, para después | ARAAM | Es casi otro producto. |
+| 27/09/2026 | Construir todo con datos simulados y un contrato de datos; la base real se conecta después sin tocar pantallas | ARAAM | Para que diseño (ARAAM) y base de datos (Alezzz123) avancen al mismo tiempo. |

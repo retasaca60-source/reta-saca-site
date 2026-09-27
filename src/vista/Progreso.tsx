@@ -6,8 +6,7 @@ import './progreso.css'
 const TRAMOS = ['Deporte', 'Horario', 'Datos'] as const
 
 export function Progreso({ paso }: { paso: Paso }) {
-  // La reserva lista (paso 4) se sigue mostrando en el tercer tramo.
-  const actual = Math.min(paso, 3)
+  const actual = paso
   return (
     <div className="progress">
       <div className="progress-track">

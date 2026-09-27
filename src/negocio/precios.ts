@@ -1,47 +1,42 @@
-// Cuánto se cobra, cuándo hay promo y cuánto se paga al reservar.
+// Cuánto cuesta una reserva (RESERVAS.md, secciones 3 y 4).
 //
-// Son funciones puras: mismos datos, mismo resultado. Por eso tienen pruebas
-// (precios.test.ts) y por eso no leen la fecha de hoy: reciben si es domingo.
+// El precio es POR MESA: no cambia por cuántos jueguen. Cuántos juegan solo
+// decide en cuántas partes se divide el pago (reserva.ts → repartir).
 
-import {
-  ANTICIPOS,
-  DEPORTES,
-  DURACION_CON_PROMO,
-  HORA_CON_PROMO,
-  type DeporteId,
-  type Duracion,
-  type Personas,
-} from './catalogo'
+import type { Configuracion, DeporteId, Duracion } from './configuracion'
 
-/** ¿El deporte admite promo para esa duración? Decide si se muestra la franja de promo. */
-export function hayPromoParaDuracion(deporte: DeporteId, duracion: Duracion): boolean {
-  return Boolean(DEPORTES[deporte].promo) && duracion === DURACION_CON_PROMO
+/**
+ * Promo: reservas de la duración de la promo (60 min) que empiezan a una de
+ * sus horas (5:00 o 5:30 PM), todos los días, si está activa y el deporte tiene
+ * precio de promo. Se cobra entera a precio de promo, no se prorratea.
+ */
+export function esPromo(config: Configuracion, deporte: DeporteId, inicio: number, duracion: number): boolean {
+  const p = config.promo
+  return p.activa && config.deportes[deporte].precioPromo !== null && duracion === p.duracion && p.inicios.includes(inicio)
 }
 
-/** Domingo, todo el día; entre semana, solo la primera hora. */
-export function esHorarioPromo(deporte: DeporteId, esDomingo: boolean, hora: number, duracion: Duracion): boolean {
-  if (!hayPromoParaDuracion(deporte, duracion)) return false
-  return esDomingo || hora === HORA_CON_PROMO
+export function precioDe(config: Configuracion, deporte: DeporteId, inicio: number, duracion: Duracion) {
+  const d = config.deportes[deporte]
+  const conPromo = esPromo(config, deporte, inicio, duracion)
+  const precio = conPromo ? d.precioPromo! : d.precios[duracion]
+  if (precio === undefined) throw new Error(`${d.nombre} no tiene precio para ${duracion} min`)
+  return { precio, conPromo }
 }
 
-export function precioPara(deporte: DeporteId, personas: Personas, duracion: Duracion, conPromo: boolean): number {
-  const d = DEPORTES[deporte]
-  const tabla = conPromo && d.promo ? d.promo : d.precios
-  return tabla[personas][duracion]
-}
-
-/** El precio por hora que se anuncia en la tarjeta del deporte: sin promo, con las personas recomendadas. */
-export function precioDeLista(deporte: DeporteId): number {
-  const d = DEPORTES[deporte]
-  return d.precios[d.recomendado][60]
-}
-
-/** ¿Se cobra todo al reservar, o solo un anticipo? */
-export function sePagaTodoAlReservar(deporte: DeporteId, duracion: Duracion): boolean {
-  return duracion <= DEPORTES[deporte].pagoCompletoHasta
-}
-
-/** Lo que se paga al reservar. El resto (total − esto) se paga en el lugar. */
-export function anticipoPara(deporte: DeporteId, duracion: Duracion, total: number): number {
-  return sePagaTodoAlReservar(deporte, duracion) ? total : ANTICIPOS[duracion]
+/**
+ * Lo que se cobra al extender una reserva: la diferencia entre la duración
+ * nueva y la anterior según la tabla (60 → 90 en Ping Pong = $220 − $150 =
+ * $70). Si la duración nueva no está en la tabla (más de 2 horas), se cobra el
+ * precio de lo que se agrega por separado.
+ *
+ * PENDIENTE DE CONFIRMAR CON HUGO: la regla de cobro de extensiones no se
+ * decidió; esta es la propuesta (RESERVAS.md → Pendientes).
+ */
+export function precioDeExtension(config: Configuracion, deporte: DeporteId, duracionActual: number, extra: Duracion): number {
+  const tabla = config.deportes[deporte].precios as Record<number, number | undefined>
+  const antes = tabla[duracionActual]
+  const despues = tabla[duracionActual + extra]
+  if (antes !== undefined && despues !== undefined) return despues - antes
+  const suelto = tabla[extra] ?? Math.round(((tabla[60] ?? 0) * extra) / 60)
+  return suelto
 }

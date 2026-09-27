@@ -1,108 +1,92 @@
-// En qué va la reserva: qué eligió el cliente y en qué paso está.
+// En qué va el cliente mientras arma su reserva (antes de pagar).
 //
 // Todo cambio pasa por `reducir`. Si algo "se borra solo" o "salta de paso",
 // aquí está la causa, no en las pantallas: ellas solo piden cambios.
+//
+// Esto es solo lo que el cliente va eligiendo. Lo que vale de verdad (si hay
+// lugar, cuánto cuesta) lo decide el servicio de datos al apartar.
 
-import { DEPORTES, type DeporteId, type Duracion, type Personas } from '../../negocio/catalogo'
-import { horaDisponible } from '../../negocio/disponibilidad'
+import type { Configuracion, DeporteId, Duracion, Partes } from '../../negocio/configuracion'
 
-export type Paso = 1 | 2 | 3 | 4
+export type Paso = 1 | 2 | 3
 
-export interface Reserva {
-  /** 1 deporte · 2 horario · 3 datos · 4 reserva lista */
+export interface Borrador {
+  /** 1 deporte y cómo pagan · 2 horario · 3 datos y pago */
   paso: Paso
   deporte: DeporteId | null
-  personas: Personas | null
-  /** Días a partir de hoy (0 = hoy). */
-  dia: number
+  partes: Partes | null
+  fecha: string
   duracion: Duracion
-  /** Hora de inicio en formato 24 h. */
-  hora: number | null
+  /** Minutos desde medianoche. */
+  inicio: number | null
   nombre: string
   /** Solo dígitos, máximo 10. */
   whatsapp: string
-  folio: string | null
-  mesa: string | null
+  aceptaReglas: boolean
+  /** Por qué se soltó la hora, para decírselo al cliente en el paso 2. */
+  aviso: string | null
 }
 
-export const reservaNueva: Reserva = {
-  paso: 1,
-  deporte: null,
-  personas: null,
-  dia: 0,
-  duracion: 60,
-  hora: null,
-  nombre: '',
-  whatsapp: '',
-  folio: null,
-  mesa: null,
+export function borradorNuevo(hoy: string): Borrador {
+  return { paso: 1, deporte: null, partes: null, fecha: hoy, duracion: 60, inicio: null, nombre: '', whatsapp: '', aceptaReglas: false, aviso: null }
 }
 
 export type Accion =
-  | { tipo: 'elegirDeporte'; deporte: DeporteId }
-  | { tipo: 'elegirPersonas'; personas: Personas }
-  | { tipo: 'irAPaso'; paso: Paso }
-  | { tipo: 'elegirDia'; dia: number }
+  | { tipo: 'elegirDeporte'; deporte: DeporteId; config: Configuracion }
+  | { tipo: 'elegirPartes'; partes: Partes }
+  | { tipo: 'irAPaso'; paso: Paso; config: Configuracion }
+  | { tipo: 'elegirFecha'; fecha: string }
   | { tipo: 'elegirDuracion'; duracion: Duracion }
-  | { tipo: 'elegirHora'; hora: number }
+  | { tipo: 'elegirHora'; inicio: number }
+  /** La disponibilidad ya no incluye la hora elegida (se llenó o pasó el corte). */
+  | { tipo: 'soltarHora'; aviso?: string }
   | { tipo: 'escribirNombre'; nombre: string }
   | { tipo: 'escribirWhatsapp'; whatsapp: string }
-  | { tipo: 'confirmar'; mesa: string; folio: string }
-  | { tipo: 'otraReserva' }
+  | { tipo: 'aceptarReglas'; acepta: boolean }
+  | { tipo: 'empezarDeNuevo'; hoy: string }
 
-export function reducir(r: Reserva, accion: Accion): Reserva {
-  switch (accion.tipo) {
-    case 'elegirDeporte':
-      return { ...r, deporte: accion.deporte, personas: DEPORTES[accion.deporte].personasPorOmision ?? null }
-    case 'elegirPersonas':
-      return r.deporte ? { ...r, personas: accion.personas } : r
+export function reducir(b: Borrador, a: Accion): Borrador {
+  switch (a.tipo) {
+    case 'elegirDeporte': {
+      // Popdarts se paga completo: no hay nada que elegir. Al cambiar de deporte
+      // se suelta la hora: otro deporte tiene otra disponibilidad y otro precio.
+      const seDivide = a.config.deportes[a.deporte].seDivide
+      return { ...b, deporte: a.deporte, partes: seDivide ? null : 1, inicio: b.deporte === a.deporte ? b.inicio : null }
+    }
+    case 'elegirPartes':
+      return b.deporte ? { ...b, partes: a.partes } : b
     case 'irAPaso':
-      if (accion.paso === 2) return alHorario(r)
-      if (accion.paso === 3) return listaParaDatos(r) ? { ...r, paso: 3 } : r
-      return { ...r, paso: accion.paso }
+      if (a.paso === 2) {
+        if (!b.deporte || !b.partes) return b
+        // Cornhole y Popdarts no tienen 30 min: si venía con 30, se cambia a la
+        // primera duración que sí ofrecen.
+        const duraciones = a.config.deportes[b.deporte].duraciones
+        const duracion = duraciones.includes(b.duracion) ? b.duracion : duraciones[0]
+        return { ...b, paso: 2, duracion, inicio: duracion === b.duracion ? b.inicio : null }
+      }
+      if (a.paso === 3) return b.inicio !== null ? { ...b, paso: 3 } : b
+      return { ...b, paso: a.paso }
     // Cambiar el día o la duración cambia qué horarios hay: se suelta la hora.
-    case 'elegirDia':
-      return { ...r, dia: accion.dia, hora: null }
+    case 'elegirFecha':
+      return { ...b, fecha: a.fecha, inicio: null }
     case 'elegirDuracion':
-      return { ...r, duracion: accion.duracion, hora: null }
+      return { ...b, duracion: a.duracion, inicio: null }
     case 'elegirHora':
-      return { ...r, hora: accion.hora }
+      return { ...b, inicio: a.inicio, aviso: null }
+    case 'soltarHora':
+      return { ...b, inicio: null, paso: b.paso === 3 ? 2 : b.paso, aviso: a.aviso ?? b.aviso }
     case 'escribirNombre':
-      return { ...r, nombre: accion.nombre }
+      return { ...b, nombre: a.nombre }
     case 'escribirWhatsapp':
-      return { ...r, whatsapp: accion.whatsapp.replace(/\D/g, '').slice(0, 10) }
-    case 'confirmar':
-      return { ...r, mesa: accion.mesa, folio: accion.folio, paso: 4 }
-    case 'otraReserva':
-      return reservaNueva
+      return { ...b, whatsapp: a.whatsapp.replace(/\D/g, '').slice(0, 10) }
+    case 'aceptarReglas':
+      return { ...b, aceptaReglas: a.acepta }
+    case 'empezarDeNuevo':
+      return borradorNuevo(a.hoy)
   }
 }
 
-/**
- * Al llegar al horario, lo elegido antes tiene que seguir valiendo para el
- * deporte y la duración de AHORA.
- *
- * Antes la hora se quedaba puesta al volver al paso 1 y cambiar de deporte: si
- * a esa hora el nuevo deporte estaba lleno, la pantalla decía "Lleno" pero el
- * botón Continuar seguía activo y se llegaba al cobro. Medido: Ping Pong 7 PM
- * del lunes 28/9, luego Cornhole, que a esa hora está lleno → pasaba a Datos
- * con $300 a cobrar.
- */
-function alHorario(r: Reserva): Reserva {
-  if (!r.deporte || !r.personas) return r
-  // Cornhole y Popdarts no tienen 30 min: si venía de Ping Pong con 30, se
-  // cambia a la primera duración que sí ofrecen.
-  const duracion = DEPORTES[r.deporte].duraciones.includes(r.duracion) ? r.duracion : DEPORTES[r.deporte].duraciones[0]
-  const hora = r.hora !== null && horaDisponible(r.deporte, r.dia, r.hora, duracion) ? r.hora : null
-  return { ...r, paso: 2, duracion, hora }
-}
-
-/** Segunda cerradura, por si una pantalla deja pasar algo que no debe. */
-function listaParaDatos(r: Reserva): boolean {
-  return Boolean(r.deporte && r.personas && r.hora !== null && horaDisponible(r.deporte, r.dia, r.hora, r.duracion))
-}
-
-/** Lo mínimo para poder confirmar: nombre de al menos 2 letras y WhatsApp de 10 dígitos. */
-export function datosCompletos(r: Reserva): boolean {
-  return r.nombre.trim().length > 1 && r.whatsapp.length === 10
+/** Lo mínimo para ir a pagar: nombre de 2 letras, WhatsApp de 10 dígitos y reglas aceptadas. */
+export function datosCompletos(b: Borrador): boolean {
+  return b.nombre.trim().length > 1 && b.whatsapp.length === 10 && b.aceptaReglas
 }

@@ -1,33 +1,65 @@
-// Qué pantalla se ve según el paso de la reserva.
+// Qué página se abre en cada dirección.
+//
+//   /              reservar (sitio del cliente)
+//   /r/<token>     link privado del organizador: su reserva, pagos, cancelar
+//   /c/<token>     link de cobro para los amigos
+//   /pago/<id>     pago SIMULADO (solo mientras no hay Mercado Pago)
+//   /privacidad    aviso de privacidad
+//   /panel/…       panel del negocio (recepción y dueño)
+//
+// Las páginas se cargan por separado (lazy): quien reserva desde el teléfono
+// no descarga el panel.
 
-import { useReducer } from 'react'
-import { reducir, reservaNueva } from '../mecanismos/reserva/estado'
-import { PasoDatos } from '../pantallas/datos/PasoDatos'
-import { PasoDeporte } from '../pantallas/deporte/PasoDeporte'
-import { PasoHorario } from '../pantallas/horario/PasoHorario'
-import { ReservaLista } from '../pantallas/reserva-lista/ReservaLista'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { Cabecera } from '../vista/Cabecera'
-import { Progreso } from '../vista/Progreso'
 
-const PANTALLAS = {
-  1: PasoDeporte,
-  2: PasoHorario,
-  3: PasoDatos,
-  4: ReservaLista,
-} as const
+const Reservar = lazy(() => import('../pantallas/reservar/Reservar'))
+const MiReserva = lazy(() => import('../pantallas/mi-reserva/MiReserva'))
+const Cobro = lazy(() => import('../pantallas/cobro/Cobro'))
+const PagoSimulado = lazy(() => import('../pantallas/pago-simulado/PagoSimulado'))
+const Privacidad = lazy(() => import('../pantallas/privacidad/Privacidad'))
+const Panel = lazy(() => import('../panel/Panel'))
 
 export default function App() {
-  const [reserva, despachar] = useReducer(reducir, reservaNueva)
-  const Pantalla = PANTALLAS[reserva.paso]
-
   return (
-    <>
+    <BrowserRouter>
+      <Suspense fallback={null}>
+        <Routes>
+          <Route element={<SitioCliente />}>
+            <Route index element={<Reservar />} />
+            <Route path="r/:token" element={<MiReserva />} />
+            <Route path="c/:token" element={<Cobro />} />
+            <Route path="pago/:id" element={<PagoSimulado />} />
+            <Route path="privacidad" element={<Privacidad />} />
+            <Route path="*" element={<NoExiste />} />
+          </Route>
+          <Route path="panel/*" element={<Panel />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  )
+}
+
+/** El marco del teléfono: logo, aviso de demostración y la página. */
+function SitioCliente() {
+  return (
+    <div className="app">
       <Cabecera />
-      <Progreso paso={reserva.paso} />
-      {/* key: la animación de entrada corre al cambiar de paso, no con cada toque dentro del mismo paso. */}
-      <div id="screens">
-        <Pantalla key={reserva.paso} reserva={reserva} despachar={despachar} />
-      </div>
-    </>
+      <Suspense fallback={<div className="card cargando">Cargando…</div>}>
+        <Outlet />
+      </Suspense>
+    </div>
+  )
+}
+
+function NoExiste() {
+  return (
+    <div className="card">
+      <h2 className="section-title">Esta página no existe</h2>
+      <a className="btn btn-primary" href="/">
+        Ir a reservar
+      </a>
+    </div>
   )
 }

@@ -7,3 +7,10 @@
 [build.environment]
   # Vite 8 pide Node 20.19 o más nuevo; se fija para que Netlify no use otro.
   NODE_VERSION = "24"
+
+# Es una aplicación de una sola página: /r/<token>, /c/<token> y /panel no son
+# archivos. Sin esto, abrir un link de cobro directo desde WhatsApp da 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

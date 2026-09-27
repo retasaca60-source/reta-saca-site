@@ -16,3 +16,7 @@ body{
 .app{ width:100%; max-width:460px; }
 
 [hidden]{ display:none !important; }
+
+/* React monta todo en #app. Ocupa el ancho para que el sitio (.app, 460 px) se
+   centre y el panel pueda usar la pantalla completa de la laptop. */
+#app{ width:100%; display:flex; justify-content:center; }

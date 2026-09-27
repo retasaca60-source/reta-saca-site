@@ -1,0 +1,151 @@
+/* El panel del negocio, para laptop.
+   ESTE ARCHIVO ES DEL DISEÑO DEL PANEL: se puede rehacer entero sin tocar la
+   lógica. Las pantallas usan estas clases; los colores salen de tokens.css. */
+
+.panel{
+  width:100%; max-width:1240px;
+  font-size:.9rem;
+  margin:-16px 0 0;
+}
+.panel-centro{ display:flex; justify-content:center; align-items:center; min-height:80vh; }
+
+.panel-barra{
+  display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+  padding:14px 0 12px; border-bottom:1px solid var(--line);
+  position:sticky; top:0; background:var(--bg); z-index:2;
+}
+.panel-marca{ font-family:'Unbounded', system-ui, sans-serif; font-weight:700; font-size:1.05rem; }
+.panel-marca span{ color:var(--accent); }
+.panel-marca small{ font-family:'Sora', sans-serif; font-weight:500; font-size:.72rem; color:var(--ink-faint); margin-left:6px; }
+
+.panel-nav{ display:flex; gap:4px; }
+.panel-nav a{
+  padding:8px 14px; border-radius:999px; text-decoration:none;
+  color:var(--ink-soft); font-weight:600;
+}
+.panel-nav a:hover{ background:var(--surface); }
+.panel-nav a.active{ background:var(--ink); color:var(--bg); }
+
+.panel-usuario{ margin-left:auto; display:flex; align-items:center; gap:10px; color:var(--ink-soft); font-size:.82rem; }
+
+.panel-demo{
+  margin:10px 0 0; font-size:.75rem; color:var(--warn);
+  background:var(--warn-soft); padding:8px 12px; border-radius:10px;
+}
+
+.panel-contenido{ padding:18px 0 40px; }
+
+.panel-titulo{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+.panel-titulo h1{ font-family:'Unbounded', system-ui, sans-serif; font-size:1.35rem; margin:0; text-transform:capitalize; }
+.panel-dias{ display:flex; gap:6px; }
+.panel-saludo{ margin-left:auto; color:var(--ink-faint); font-size:.8rem; }
+
+.panel-seccion{ margin-top:26px; }
+.panel-seccion h2{ font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:0 0 10px; }
+.panel-seccion h2 small{ text-transform:none; letter-spacing:0; font-weight:500; }
+.panel-seccion h3{ font-size:.85rem; margin:18px 0 8px; }
+
+.panel-tarjeta{
+  background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:16px; box-shadow:var(--shadow);
+}
+
+.panel-boton{
+  font:inherit; font-size:.8rem; font-weight:600;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  border-radius:9px; padding:7px 12px; cursor:pointer; text-decoration:none;
+  display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+}
+.panel-boton:hover{ border-color:var(--ink-faint); }
+.panel-boton:disabled{ opacity:.5; cursor:not-allowed; }
+.panel-boton.primario{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.panel-boton.peligro{ color:var(--accent); }
+.panel-boton.activo{ border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+.panel-boton.discreto{ border-color:transparent; background:transparent; color:var(--ink-soft); padding:4px 8px; }
+
+.panel input, .panel select{
+  font:inherit; font-size:.85rem; color:var(--ink);
+  background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:7px 9px;
+}
+.panel input.corto{ width:76px; }
+.panel-error{ color:var(--accent); font-size:.8rem; margin:8px 0 0; }
+.nota{ color:var(--ink-faint); font-size:.78rem; }
+.nota.bien{ color:var(--teal); font-weight:600; }
+
+/* Entrar */
+.panel-entrar{ width:340px; display:flex; flex-direction:column; gap:12px; }
+.panel-entrar label{ display:flex; flex-direction:column; gap:5px; font-size:.78rem; color:var(--ink-soft); }
+.panel-demo-entrar{ border-top:1px dashed var(--line); padding-top:12px; display:flex; flex-wrap:wrap; gap:8px; }
+.panel-demo-entrar p{ width:100%; margin:0; font-size:.75rem; color:var(--warn); }
+
+/* Mesas ahora */
+.tablero-mesas{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin-bottom:14px; }
+.mesas-deporte h3{ display:flex; align-items:center; gap:8px; margin:0 0 8px; font-size:.85rem; }
+.mesas-rejilla{ display:grid; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)); gap:6px; }
+.mesa-ahora{ border-radius:10px; padding:8px 9px; border:1px solid var(--line); background:var(--surface); display:flex; flex-direction:column; gap:2px; min-height:52px; }
+.mesa-ahora small{ font-size:.68rem; color:var(--ink-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mesa-ahora.libre{ border-color:color-mix(in srgb, var(--teal) 40%, var(--line)); }
+.mesa-ahora.libre small{ color:var(--teal); }
+.mesa-ahora.ocupada{ background:var(--accent-soft); border-color:transparent; }
+.mesa-ahora.fuera{ background:var(--busy); color:var(--ink-faint); }
+
+.anotar{ margin-top:4px; }
+.anotar h3{ margin:0 0 10px; font-size:.85rem; }
+
+/* Filas de reservas */
+.fila-reserva{
+  background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:12px 14px; margin-bottom:8px;
+}
+.fila-reserva.cancelada{ opacity:.6; }
+.fila-principal{ display:grid; grid-template-columns:92px 1fr auto 120px; gap:14px; align-items:center; }
+.fila-hora, .fila-quien, .fila-dinero{ display:flex; flex-direction:column; gap:2px; }
+.fila-hora strong{ font-family:'IBM Plex Mono', monospace; font-size:.95rem; }
+.fila-hora small, .fila-quien small, .fila-dinero small{ color:var(--ink-soft); font-size:.72rem; }
+.fila-dinero{ text-align:right; }
+.fila-dinero strong{ font-family:'IBM Plex Mono', monospace; }
+.fila-etiquetas{ display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end; }
+.fila-acciones{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+.fila-detalle{
+  display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+  margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); font-size:.82rem;
+}
+.fila-detalle.columna{ flex-direction:column; align-items:flex-start; }
+.fila-detalle.sin-borde{ border-top:none; padding-top:0; }
+.fila-partes{ display:flex; gap:14px; flex-wrap:wrap; }
+.fila-partes label{ display:flex; gap:6px; align-items:center; }
+
+.etiqueta{ font-size:.66rem; font-weight:700; padding:3px 8px; border-radius:999px; white-space:nowrap; }
+.etiqueta.bien{ background:var(--teal-soft); color:var(--teal); }
+.etiqueta.aviso{ background:var(--warn-soft); color:var(--warn); }
+.etiqueta.mal{ background:var(--accent-soft); color:var(--accent); }
+.etiqueta.neutra{ background:var(--surface-2); color:var(--ink-soft); border:1px solid var(--line); }
+.etiqueta.apagada{ background:var(--busy); color:var(--ink-soft); }
+
+.panel-canceladas summary{ cursor:pointer; color:var(--ink-soft); margin:10px 0; }
+
+/* Caja */
+.caja-totales{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:16px; }
+.caja-total{ display:flex; flex-direction:column; gap:4px; }
+.caja-total small{ color:var(--ink-soft); }
+.caja-total strong{ font-family:'IBM Plex Mono', monospace; font-size:1.3rem; }
+.caja-total.destacada{ background:var(--ink); color:var(--bg); border-color:var(--ink); }
+.caja-total.destacada small{ color:inherit; opacity:.7; }
+
+/* Tablas */
+.panel-tabla{ width:100%; border-collapse:collapse; background:var(--surface); border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+.panel-tabla th, .panel-tabla td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:middle; }
+.panel-tabla th{ font-size:.72rem; color:var(--ink-faint); font-weight:600; background:var(--surface-2); }
+.panel-tabla .derecha{ text-align:right; }
+.panel-tabla tr.devuelto td{ color:var(--ink-faint); text-decoration:line-through; }
+.panel-tabla .capital{ text-transform:capitalize; width:120px; }
+.mesas-casillas{ display:flex; gap:8px; flex-wrap:wrap; }
+.mesas-casillas label{ display:flex; gap:3px; align-items:center; font-size:.78rem; }
+.bloque{ display:inline-flex; align-items:center; gap:4px; margin-right:10px; }
+
+/* Configuración */
+.conflictos{ border-color:var(--accent); margin-bottom:14px; }
+.conflictos h3{ margin:0 0 8px; color:var(--accent); }
+.casilla-panel{ display:flex; gap:8px; align-items:center; }
+.reglas-panel{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:10px 18px; }
+.reglas-panel label{ display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:.82rem; }
