@@ -24,6 +24,16 @@ export function precioDe(config: Configuracion, deporte: DeporteId, inicio: numb
 }
 
 /**
+ * Precio para una duración cualquiera en minutos (una reserva extendida puede
+ * durar 150). null si esa duración no está en la tabla del deporte.
+ */
+export function precioSiExiste(config: Configuracion, deporte: DeporteId, inicio: number, minutos: number) {
+  const d = config.deportes[deporte]
+  const duracion = d.duraciones.find((x) => x === minutos)
+  return duracion === undefined ? null : precioDe(config, deporte, inicio, duracion)
+}
+
+/**
  * Lo que se cobra al extender una reserva: la diferencia entre la duración
  * nueva y la anterior según la tabla (60 → 90 en Ping Pong = $220 − $150 =
  * $70). Si la duración nueva no está en la tabla (más de 2 horas), se cobra el

@@ -17,11 +17,16 @@ src/
 │   ├── disponibilidad.ts      Cuántas mesas quedan libres en un tramo.
 │   ├── tiempo.ts              La hora de Sonora, fechas "AAAA-MM-DD", minutos.
 │   ├── formato.ts             Dinero y teléfonos.
+│   ├── identificadores.ts     Folios (RS-4KD9Q), códigos de links e ids.
+│   ├── errores.ts             ErrorDeDatos: el error con mensaje para la persona.
+│   ├── operaciones/           CADA OPERACIÓN (apartar, extender, cambiar horario…)
+│   │                          como función pura. Las usan la versión simulada y la real.
 │   └── negocio.test.ts        Las reglas de RESERVAS.md, como pruebas.
 │
 ├── datos/                     EL CONTRATO con los datos (ver CONTRATO-DE-DATOS.md).
 │   ├── contrato.ts            Las operaciones que usan las pantallas. La ley.
-│   ├── simulado.ts            La versión de hoy: navegador + pago de mentira.
+│   ├── simulado.ts            La versión de hoy: lee y guarda en el navegador, llama a operaciones.
+│   ├── ejemplos.ts            Reservas y usuarios de demostración (solo simulado).
 │   ├── simulado.test.ts       Cómo se debe comportar CUALQUIER versión.
 │   └── index.ts               Cuál versión se usa. Las pantallas importan de aquí.
 │
@@ -57,7 +62,8 @@ src/
 | Aparece una hora que no debería (cerrado, pasada, muy lejos) | `negocio/horario.ts` → `iniciosPosibles` |
 | "Lleno" cuando hay mesas, o al revés | `negocio/disponibilidad.ts` → `ocupadasEn` |
 | El cobro dividido no cuadra | `negocio/reserva.ts` → `repartir` |
-| No deja reservar y no se entiende por qué | el mensaje sale de `datos/simulado.ts` → `apartar` |
+| No deja reservar y no se entiende por qué | `negocio/operaciones/cliente.ts` → `apartar` |
+| Algo del panel (sentar, extender, cambiar) hace lo que no debe | `negocio/operaciones/panel.ts` |
 | Algo "se borra solo" o salta de paso al reservar | `mecanismos/reserva/estado.ts` → `reducir` |
 | Una página no carga o se queda en "Cargando…" | `mecanismos/datos/usarDatos.ts` y la operación del servicio |
 | El panel se ve mal | `panel/panel.css` |
@@ -68,7 +74,8 @@ src/
 - **Las pantallas solo hablan con `servicio`** (de `datos/index.ts`). Nada de
   llamar a Supabase directo desde una pantalla: si se necesita algo nuevo, se
   agrega al contrato y a las dos versiones.
-- **Una regla del negocio no se escribe en una pantalla.** Va en `negocio/`,
-  con su prueba.
+- **Una regla del negocio no se escribe en una pantalla ni en una versión de
+  datos** (`simulado.ts`, `real.ts`). Va en `negocio/` (las de una operación,
+  en `negocio/operaciones/`), con su prueba.
 - **Un número del negocio no se escribe en el código**: es configuración.
 - Nombres y comentarios en español; el comentario explica **por qué**.

@@ -19,7 +19,41 @@ sitio y el panel pasan a usar datos reales.
         ▼
  src/datos/index.ts  ──►  simulado.ts   (hoy: navegador + pago de mentira)
                      └─►  real.ts       (tú: Supabase + Mercado Pago)
+                              │
+        las dos llaman a ▼    ▼
+ src/negocio/operaciones/     LAS REGLAS, escritas una sola vez
 ```
+
+## Las reglas ya están escritas: no las reescribas
+
+Cada operación del contrato (apartar, extender, cambiar horario, asignar mesa,
+revisar conflictos de configuración…) tiene su regla como **función pura** en
+[`src/negocio/operaciones/`](src/negocio/operaciones/index.ts): recibe la
+configuración, las reservas que importan y la hora, y regresa la reserva
+resultante o lanza `ErrorDeDatos`. **No guarda nada.**
+
+Tu versión real hace lo mismo que la simulada: **leer → llamar a la operación
+→ guardar**. Mira cómo lo hace [`simulado.ts`](src/datos/simulado.ts): ya no
+tiene reglas adentro, solo guarda.
+
+Como las reglas deciden cobros, tienen que correr **en el servidor**, no en el
+navegador. La forma propuesta:
+
+1. `real.ts` (en el navegador) llama a **funciones de Netlify**
+   (`netlify/functions/*.mts`, TypeScript en Node).
+2. Cada función de Netlify lee de Supabase con la llave de servicio, llama a
+   la operación de `src/negocio/operaciones` con la hora del servidor, y
+   guarda el resultado.
+3. **La única que necesita algo más es `apartar`:** dos personas pueden
+   apartar la última mesa al mismo tiempo. Leer, revisar y guardar tiene que
+   pasar dentro de una transacción de Postgres que no deje a otra colarse (por
+   ejemplo, una función RPC con `pg_advisory_xact_lock` por deporte y fecha
+   que revisa el cupo y guarda). Lo mismo aplica a extender, cambiar horario y
+   anotar sin reserva, porque también ocupan mesa.
+
+Si una regla está mal, se corrige **una vez** en `src/negocio/operaciones` y
+vale para las dos versiones. Antes vivían dentro de `simulado.ts`: el arreglo
+de "cambiar horario" que hiciste había quedado solo en una de las dos.
 
 ## Cómo empezar
 
@@ -27,10 +61,11 @@ sitio y el panel pasan a usar datos reales.
    hacer cumplir.
 2. Lee [`src/datos/contrato.ts`](src/datos/contrato.ts): cada función, qué
    recibe, qué devuelve y qué errores lanza.
-3. Lee [`src/datos/simulado.ts`](src/datos/simulado.ts): es **el modelo de
-   comportamiento**. Si tu versión se comporta distinto que la simulada en
-   algún caso, una de las dos está mal (revísalo contra `RESERVAS.md`).
-4. Corre las pruebas: `npm test`. [`src/datos/simulado.test.ts`](src/datos/simulado.test.ts)
+3. Lee [`src/negocio/operaciones/`](src/negocio/operaciones/index.ts): las
+   reglas de cada operación, que tu versión va a llamar tal cual.
+4. Lee [`src/datos/simulado.ts`](src/datos/simulado.ts): un adaptador delgado
+   que muestra el patrón leer → operación → guardar.
+5. Corre las pruebas: `npm test`. [`src/datos/simulado.test.ts`](src/datos/simulado.test.ts)
    describe, caso por caso, cómo se debe comportar **cualquier** versión.
 
 ## Lo que el servidor tiene que garantizar (no el navegador)

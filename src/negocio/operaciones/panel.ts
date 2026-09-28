@@ -1,0 +1,208 @@
+// Lo que hace recepción en el panel (RESERVAS.md §7 y §10). Funciones puras:
+// reciben el contexto y regresan la reserva resultante o lanzan ErrorDeDatos.
+// Quién está haciendo la acción (`quien`) lo pone la versión de datos a partir
+// de la sesión, nunca la pantalla.
+
+import type { Duracion } from '../configuracion'
+import { mesasLibres } from '../disponibilidad'
+import { ErrorDeDatos } from '../errores'
+import { cabeEnUnBloque, estaCerrado } from '../horario'
+import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
+import { precioDe, precioDeExtension, precioSiExiste } from '../precios'
+import { fin, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
+import { formatoHora, momentoDe } from '../tiempo'
+import { copia, devolverPagosEnLinea, type Contexto } from './contexto'
+import type { ClienteSinReserva, PagoDelDia } from './tipos'
+
+/** Un grupo que llega sin reserva: empieza AHORA, confirmada, una parte por cobrar en el local. */
+export function anotarSinReserva(ctx: Contexto, c: ClienteSinReserva): Reserva {
+  const { config, reservas, ahora } = ctx
+  const m = momentoDe(ahora)
+  const d = config.deportes[c.deporte]
+  if (!d.duraciones.includes(c.duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
+  if (c.nombre.trim().length < 2) throw new ErrorDeDatos('datos_invalidos', 'Escribe un nombre para identificar al grupo.')
+  if (estaCerrado(config, m.fecha) || !cabeEnUnBloque(config, m.fecha, m.minutos, c.duracion)) {
+    throw new ErrorDeDatos('fuera_de_horario', 'No alcanza a terminar antes del cierre.')
+  }
+  if (mesasLibres(config, reservas, c.deporte, m.fecha, m.minutos, c.duracion, ahora) < 1) {
+    throw new ErrorDeDatos('sin_lugar', `No hay ${d.nombre} libre durante todo ese tiempo.`)
+  }
+  // Para el precio cuenta la media hora en que empiezan: un grupo que llega a
+  // las 5:10 entra en la promo de las 5:00 (pendiente de confirmar con Hugo).
+  const paso = config.reglas.pasoDeInicio
+  const { precio, conPromo } = precioDe(config, c.deporte, Math.floor(m.minutos / paso) * paso, c.duracion)
+  const r: Reserva = {
+    id: nuevoId(),
+    folio: nuevoFolio(),
+    tokenPrivado: nuevoToken(),
+    tokenCobro: nuevoToken(),
+    deporte: c.deporte,
+    fecha: m.fecha,
+    inicio: m.minutos,
+    duracion: c.duracion,
+    precio,
+    conPromo,
+    partesElegidas: 1,
+    partes: [{ id: nuevoId(), monto: precio, delOrganizador: true, concepto: 'reserva', pago: null }],
+    organizador: { nombre: c.nombre.trim(), whatsapp: (c.whatsapp ?? '').replace(/\D/g, '') },
+    origen: 'mostrador',
+    estado: 'confirmada',
+    apartadaHasta: null,
+    mesa: null,
+    llegaronEn: new Date(ahora).toISOString(),
+    cancelacion: null,
+    creadaEn: new Date(ahora).toISOString(),
+  }
+  return c.mesa ? asignarMesa(ctx, r, c.mesa) : r
+}
+
+/**
+ * Sienta al grupo en una mesa concreta ("CH 3"): que exista, funcione y no la
+ * tenga otro grupo a esa hora. Marca que llegaron. `null` quita la mesa.
+ */
+export function asignarMesa(ctx: Contexto, r: Reserva, mesa: string | null): Reserva {
+  const nueva = copia(r)
+  if (mesa === null) {
+    nueva.mesa = null
+    return nueva
+  }
+  const d = ctx.config.deportes[r.deporte]
+  const n = Number(mesa.replace(d.clave, '').trim())
+  if (!Number.isInteger(n) || n < 1 || n > d.mesas) throw new ErrorDeDatos('datos_invalidos', `${mesa} no existe.`)
+  if (d.fueraDeServicio.includes(n)) throw new ErrorDeDatos('no_permitido', `${mesa} está fuera de servicio.`)
+  const etiqueta = `${d.clave} ${n}`
+  const otra = quienTieneLaMesa(ctx, r, etiqueta, r.inicio, fin(r))
+  if (otra) throw new ErrorDeDatos('no_permitido', `${etiqueta} ya la tiene ${otra.organizador.nombre} a esa hora.`)
+  nueva.mesa = etiqueta
+  nueva.llegaronEn ??= new Date(ctx.ahora).toISOString()
+  return nueva
+}
+
+/** El otro grupo sentado en esa mesa entre `desde` y `hasta`, si hay. */
+function quienTieneLaMesa(ctx: Contexto, r: Reserva, mesa: string, desde: number, hasta: number): Reserva | undefined {
+  return ctx.reservas.find(
+    (x) => x.id !== r.id && x.estado === 'confirmada' && x.mesa === mesa && x.fecha === r.fecha && x.inicio < hasta && fin(x) > desde,
+  )
+}
+
+/** Pago en el local (efectivo, tarjeta o transferencia). Queda quién lo marcó. */
+export function marcarPago(
+  ctx: Contexto,
+  r: Reserva,
+  parteIds: string[],
+  medio: Exclude<MedioDePago, 'en_linea'>,
+  nombre: string | undefined,
+  quien: string,
+): Reserva {
+  if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada.')
+  const nueva = copia(r)
+  const partes = nueva.partes.filter((p) => parteIds.includes(p.id) && !p.pago)
+  if (!partes.length) throw new ErrorDeDatos('datos_invalidos', 'Esas partes ya estaban pagadas.')
+  const en = new Date(ctx.ahora).toISOString()
+  for (const p of partes) p.pago = { medio, nombre: nombre?.trim() || r.organizador.nombre, en, marcadoPor: quien }
+  if (nueva.estado === 'apartada') {
+    nueva.estado = 'confirmada'
+    nueva.apartadaHasta = null
+  }
+  return nueva
+}
+
+/**
+ * Tiempo extra: que alcance antes del cierre, que haya mesa libre en el
+ * inventario Y que la mesa donde ya están sentados no la tenga otro grupo en
+ * ese tiempo. Antes solo se revisaba el inventario: con PP 1 asignada a otro
+ * grupo de 8 a 9, un grupo de 7 a 8 en PP 1 se extendía igual y quedaban dos
+ * grupos en la misma mesa. Se cobra en el local.
+ */
+export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva {
+  if (r.estado !== 'confirmada') throw new ErrorDeDatos('no_permitido', 'Solo se extienden reservas confirmadas.')
+  const duracion = r.duracion + minutos
+  if (!cabeEnUnBloque(ctx.config, r.fecha, r.inicio, duracion)) throw new ErrorDeDatos('fuera_de_horario', 'No alcanza antes del cierre.')
+  if (mesasLibres(ctx.config, ctx.reservas, r.deporte, r.fecha, r.inicio, duracion, ctx.ahora, r.id) < 1) {
+    throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre para ese tiempo extra.')
+  }
+  const siguiente = r.mesa ? quienTieneLaMesa(ctx, r, r.mesa, fin(r), r.inicio + duracion) : undefined
+  if (siguiente) {
+    throw new ErrorDeDatos(
+      'no_permitido',
+      `${r.mesa} la tiene ${siguiente.organizador.nombre} desde las ${formatoHora(siguiente.inicio)}. Para extender, primero cámbialos a otra mesa libre.`,
+    )
+  }
+  const nueva = copia(r)
+  nueva.partes.push({ id: nuevoId(), monto: precioDeExtension(ctx.config, r.deporte, r.duracion, minutos), delOrganizador: true, concepto: 'extension', pago: null })
+  nueva.duracion = duracion
+  return nueva
+}
+
+/**
+ * Mueve la reserva, misma duración. Si el horario nuevo cuesta más (se pierde
+ * la promo), la diferencia queda por cobrar; si cuesta menos, se queda como
+ * estaba (pendiente de confirmar con Hugo). Se compara contra lo que YA se
+ * debe (total), no contra el precio original: si no, cada cambio volvía a
+ * cobrar la misma diferencia.
+ */
+export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio: number): Reserva {
+  if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada.')
+  if (estaCerrado(ctx.config, fecha) || !cabeEnUnBloque(ctx.config, fecha, inicio, r.duracion)) {
+    throw new ErrorDeDatos('fuera_de_horario', 'Ese horario está fuera del horario del local.')
+  }
+  if (mesasLibres(ctx.config, ctx.reservas, r.deporte, fecha, inicio, r.duracion, ctx.ahora, r.id) < 1) {
+    throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre en ese horario.')
+  }
+  const nueva = copia(r)
+  const nuevo = precioSiExiste(ctx.config, r.deporte, inicio, r.duracion)
+  if (nuevo) {
+    const diferencia = nuevo.precio - total(r)
+    if (diferencia > 0) nueva.partes.push({ id: nuevoId(), monto: diferencia, delOrganizador: true, concepto: 'cambio', pago: null })
+    // La etiqueta "Promo" sigue al horario nuevo: si se sale de la promo, ya no la lleva.
+    nueva.conPromo = nuevo.conPromo
+  }
+  nueva.fecha = fecha
+  nueva.inicio = inicio
+  nueva.mesa = null
+  nueva.llegaronEn = null
+  return nueva
+}
+
+/** Cancela el negocio: se devuelve TODO lo pagado en línea, sin importar el plazo. */
+export function cancelarComoNegocio(ctx: Contexto, r: Reserva, quien: string): Reserva {
+  if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Ya estaba cancelada.')
+  const nueva = copia(r)
+  devolverPagosEnLinea(nueva)
+  nueva.estado = 'cancelada'
+  nueva.cancelacion = { motivo: 'negocio', en: new Date(ctx.ahora).toISOString(), por: quien }
+  return nueva
+}
+
+/** Pasada la tolerancia sin llegar: se libera la mesa, sin devolución. */
+export function liberarPorRetraso(ctx: Contexto, r: Reserva, quien: string): Reserva {
+  if (!puedeLiberarPorRetraso(r, ctx.config, ctx.ahora)) {
+    throw new ErrorDeDatos('no_permitido', `Todavía no pasan los ${ctx.config.reglas.minutosDeTolerancia} minutos de tolerancia, o ya llegaron.`)
+  }
+  const nueva = copia(r)
+  nueva.estado = 'cancelada'
+  nueva.cancelacion = { motivo: 'no_llego', en: new Date(ctx.ahora).toISOString(), por: quien }
+  return nueva
+}
+
+/** Pagos HECHOS ese día (fecha de Sonora del pago), para el cierre de caja. */
+export function pagosDelDia(reservas: readonly Reserva[], fecha: string): PagoDelDia[] {
+  return reservas
+    .flatMap((r) =>
+      r.partes
+        .filter((p) => p.pago && momentoDe(Date.parse(p.pago.en)).fecha === fecha)
+        .map((p) => ({
+          reservaId: r.id,
+          folio: r.folio,
+          deporte: r.deporte,
+          parteId: p.id,
+          monto: p.monto,
+          medio: p.pago!.medio,
+          nombre: p.pago!.nombre,
+          en: p.pago!.en,
+          marcadoPor: p.pago!.marcadoPor,
+          devuelto: Boolean(p.pago!.devuelto),
+        })),
+    )
+    .sort((a, b) => a.en.localeCompare(b.en))
+}

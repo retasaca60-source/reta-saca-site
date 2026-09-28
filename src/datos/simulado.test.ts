@@ -209,6 +209,30 @@ describe('panel', () => {
     })
   })
 
+  it('cambiar de la promo de las 5 a las 7 cobra la diferencia y quita la etiqueta de promo', async () => {
+    const r = await reservarYPagar({ deporte: 'cornhole', inicio: h(17), partes: 1 })
+    expect(r.conPromo).toBe(true)
+    const movida = await s.cambiarHorario(r.id, VIERNES, h(19))
+    expect(movida.conPromo).toBe(false)
+    expect(movida.partes.at(-1)).toMatchObject({ concepto: 'cambio', monto: 60 })
+  })
+
+  it('extender no deja a dos grupos en la misma mesa: si el siguiente ya está en ella, avisa', async () => {
+    const a = await reservarYPagar({ deporte: 'pingpong', inicio: h(19) })
+    const b = await reservarYPagar({ deporte: 'pingpong', inicio: h(20), organizador: { nombre: 'Beto', whatsapp: '6620000009' } })
+    await s.asignarMesa(a.id, 'PP 1')
+    await s.asignarMesa(b.id, 'PP 1')
+    expect(await codigoDe(s.extender(a.id, 60))).toBe('no_permitido')
+    // Cambiándolos de mesa, ya se puede.
+    await s.asignarMesa(a.id, 'PP 2')
+    expect((await s.extender(a.id, 60)).duracion).toBe(120)
+  })
+  it('extender se bloquea si de 8 a 9 están todas las mesas', async () => {
+    const a = await reservarYPagar({ inicio: h(19) })
+    for (let i = 0; i < 3; i++) await reservarYPagar({ inicio: h(20), organizador: { nombre: 'Grupo' + i, whatsapp: '662000001' + i } })
+    expect(await codigoDe(s.extender(a.id, 60))).toBe('sin_lugar')
+  })
+
   it('liberar por retraso solo pasada la tolerancia', async () => {
     const r = await reservarYPagar({
       inicio: h(19),

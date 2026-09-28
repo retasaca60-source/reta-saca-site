@@ -9,47 +9,23 @@
 // CONTRATO-DE-DATOS.md, incluido qué tiene que garantizar el servidor (y no el
 // navegador).
 
-import type { Configuracion, DeporteId, Duracion, Partes } from '../negocio/configuracion'
+import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
+import type { ClienteSinReserva, Conflicto, HorarioDisponible, PagoDelDia, SolicitudDeReserva, VistaDeCobro } from '../negocio/operaciones/tipos'
 import type { MedioDePago, Reserva } from '../negocio/reserva'
 
-// ─── Lo que ve el cliente ────────────────────────────────────────────────
+// Las formas de datos y el error vienen del negocio; se reexportan para que
+// las pantallas sigan importando todo de aquí.
+export { ErrorDeDatos, type CodigoDeError } from '../negocio/errores'
+export type {
+  ClienteSinReserva,
+  Conflicto,
+  HorarioDisponible,
+  PagoDelDia,
+  SolicitudDeReserva,
+  VistaDeCobro,
+} from '../negocio/operaciones/tipos'
 
-export interface HorarioDisponible {
-  /** Minutos desde medianoche en Sonora. */
-  inicio: number
-  /** Mesas libres en TODO el tramo (0 = lleno). */
-  libres: number
-  precio: number
-  conPromo: boolean
-}
-
-export interface SolicitudDeReserva {
-  deporte: DeporteId
-  fecha: string
-  inicio: number
-  duracion: Duracion
-  partes: Partes
-  organizador: { nombre: string; whatsapp: string }
-}
-
-/**
- * Lo que ve quien abre el link de cobro. NO trae el WhatsApp del organizador
- * ni el link privado: el link de cobro se reenvía por grupos de WhatsApp y lo
- * puede abrir cualquiera.
- */
-export interface VistaDeCobro {
-  folio: string
-  deporte: DeporteId
-  fecha: string
-  inicio: number
-  duracion: number
-  precio: number
-  organizador: string
-  estado: Reserva['estado']
-  partes: { id: string; monto: number; pagada: boolean; nombre: string | null; delOrganizador: boolean }[]
-}
-
-// ─── Lo que usa el panel ─────────────────────────────────────────────────
+// ─── Sesión del panel ────────────────────────────────────────────────────
 
 export type Rol = 'dueno' | 'recepcion'
 
@@ -58,61 +34,6 @@ export interface Usuario {
   nombre: string
   correo: string
   rol: Rol
-}
-
-export interface ClienteSinReserva {
-  deporte: DeporteId
-  duracion: Duracion
-  nombre: string
-  whatsapp?: string
-  /** Mesa donde se sientan, si recepción ya la sabe. */
-  mesa?: string
-}
-
-/** Un pago hecho en un día, para el cierre de caja. */
-export interface PagoDelDia {
-  reservaId: string
-  folio: string
-  deporte: DeporteId
-  parteId: string
-  monto: number
-  medio: MedioDePago
-  nombre: string
-  /** Instante ISO del pago. */
-  en: string
-  marcadoPor?: string
-  devuelto: boolean
-}
-
-/** Un horario donde, con la configuración nueva, habría más reservas que mesas. */
-export interface Conflicto {
-  deporte: DeporteId
-  fecha: string
-  inicio: number
-  reservas: number
-  mesas: number
-}
-
-// ─── Errores ─────────────────────────────────────────────────────────────
-
-export type CodigoDeError =
-  | 'sin_lugar' // ya no hay mesa en ese horario
-  | 'fuera_de_horario' // cerrado, fuera de la ventana de 7 días o pasado el corte
-  | 'limite_whatsapp' // ese WhatsApp ya tiene el máximo de reservas activas
-  | 'datos_invalidos'
-  | 'no_encontrada'
-  | 'no_permitido' // p. ej. cancelar con devolución fuera de plazo, o recepción editando precios
-  | 'apartado_vencido' // se tardó más de 10 min en pagar y la mesa ya no está
-  | 'sin_sesion'
-
-/** Todos los errores esperados del servicio son de este tipo: la pantalla muestra `message`. */
-export class ErrorDeDatos extends Error {
-  readonly codigo: CodigoDeError
-  constructor(codigo: CodigoDeError, mensaje: string) {
-    super(mensaje)
-    this.codigo = codigo
-    this.name = 'ErrorDeDatos'
-  }
 }
 
 // ─── El contrato ─────────────────────────────────────────────────────────

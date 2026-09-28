@@ -287,6 +287,10 @@ primero**, sin vender la misma mesa dos veces:
 
 - Recepción **extiende** la reserva desde el panel **si la mesa sigue libre**, y
   cobra ahí mismo (efectivo, tarjeta o transferencia).
+- "Libre" quiere decir dos cosas: que haya mesa en el inventario para ese
+  tiempo extra **y** que la mesa donde ya están sentados no se la hayan dado
+  a otro grupo. Si el grupo de las 8 ya está en su mesa, el panel avisa quién
+  la tiene y hay que cambiarlos de mesa antes de extender.
 
 ### Cambiar el horario
 
@@ -497,3 +501,5 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 26/09/2026 | `retasaca.com` se queda como está hasta abrir | ARAAM | No afecta nada; se liga a nuestro proyecto cuando toque. |
 | 26/09/2026 | Torneos, para después | ARAAM | Es casi otro producto. |
 | 27/09/2026 | Construir todo con datos simulados y un contrato de datos; la base real se conecta después sin tocar pantallas | ARAAM | Para que diseño (ARAAM) y base de datos (Alezzz123) avancen al mismo tiempo. |
+| 28/09/2026 | Extender también revisa que su propia mesa esté libre en el tiempo extra | Alezzz123 / ARAAM | Se extendía aunque el siguiente grupo ya estuviera en esa mesa: quedaban dos grupos en la misma. |
+| 28/09/2026 | Las reglas de cada operación viven en `src/negocio/operaciones`, escritas una vez | ARAAM | La versión real las llama igual que la simulada; antes habría tenido que reescribirlas. |
