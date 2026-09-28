@@ -17,8 +17,8 @@ Si eres nuevo en el proyecto, léelo en este orden:
    archivo y dónde buscar cuando algo falla.
 4. **[`CONTRATO-DE-DATOS.md`](CONTRATO-DE-DATOS.md)**: si vas a hacer la base
    de datos (Supabase) o los pagos (Mercado Pago), esto es lo tuyo.
-5. **[`CLAUDE.md`](CLAUDE.md)**: las reglas para escribir código aquí (también
-   las leen Claude y otros asistentes).
+5. **[`COMO-TRABAJAMOS.md`](COMO-TRABAJAMOS.md)**: las reglas para escribir
+   código aquí.
 
 ## Qué hay en el repositorio
 
@@ -28,7 +28,7 @@ Si eres nuevo en el proyecto, léelo en este orden:
 | `CONTRATO-DE-DATOS.md` | Cómo se conecta la base de datos real sin tocar pantallas. |
 | `src/` | El sitio y el panel (Vite + React + TypeScript). Ver `src/README.md`. |
 | `public/imagenes/` | Logo e íconos; se sirven tal cual. |
-| `referencia/` | El panel viejo que se hizo como artefacto de Claude. Solo referencia. |
+| `referencia/` | El prototipo anterior del panel. Solo referencia; no se publica. |
 | `netlify.toml` | Cómo compila y publica Netlify. |
 
 ## En qué estado está
@@ -49,23 +49,23 @@ Si eres nuevo en el proyecto, léelo en este orden:
 Lo que falta para abrir de verdad está en
 [`RESERVAS.md` → Qué ya está hecho y qué falta](RESERVAS.md#qué-ya-está-hecho-y-qué-falta).
 
-### Cómo nos repartimos
+### Dos frentes que no se pisan
 
-| Quién | Qué | Dónde |
-|---|---|---|
-| ARAAM | Diseño del panel y del sitio | `src/panel/panel.css`, `src/pantallas/`, `src/estilos/` |
-| Alezzz123 | Base de datos (Supabase) y pagos (Mercado Pago) | `src/datos/real.ts` (nuevo), siguiendo `CONTRATO-DE-DATOS.md` |
+| Frente | Archivos |
+|---|---|
+| Diseño del panel y del sitio | `src/panel/panel.css`, `src/pantallas/`, `src/estilos/` |
+| Base de datos (Supabase) y pagos (Mercado Pago) | `src/datos/real.ts` (nuevo), siguiendo `CONTRATO-DE-DATOS.md` |
 
-Los dos pueden trabajar a la vez sin pisarse: el diseño no toca `src/datos/` y
-la base no toca pantallas. Lo que los une es `src/datos/contrato.ts`: **si
-alguno necesita cambiarlo, se avisa al otro** (un cambio ahí obliga a ajustar
-las dos versiones).
+Se puede trabajar en los dos a la vez: el diseño no toca `src/datos/` y la
+base no toca pantallas. Lo que los une es `src/datos/contrato.ts`: **quien lo
+cambie avisa al equipo**, porque un cambio ahí obliga a ajustar las dos
+versiones.
 
-### Skills para Claude Code
+### Skills del proyecto
 
-El repositorio trae skills en `.claude/skills/` (se reciben con `git pull`;
-`skills-lock.json` dice de dónde salió cada una). Claude Code las usa solo al
-abrir este proyecto:
+El repositorio trae skills para el asistente de código en `.claude/skills/`
+(se reciben con `git pull`; `skills-lock.json` dice de dónde salió cada una).
+Se activan solas al abrir este proyecto:
 
 | Skill | Para qué | Cuándo |
 |---|---|---|
@@ -74,10 +74,8 @@ abrir este proyecto:
 | `supabase` · `supabase-postgres-best-practices` | Auth, RLS, migraciones, índices y trampas de seguridad de Supabase (oficiales). | Toda la parte de la base de datos. |
 | `vercel-react-best-practices` | Patrones de React para que las pantallas no se vuelvan lentas ni enredadas. | Al tocar pantallas. Ojo: trae reglas de Next.js (componentes de servidor) que **no aplican** aquí: esto es Vite, todo corre en el navegador. |
 
-Para Mercado Pago existe el plugin **oficial** `mp-integrate`
-(`mercadopago/mercadopago-claude-marketplace`). Es un plugin de Claude Code, no
-una skill suelta: se instala cuando haya cuenta del negocio, con
-`/plugin marketplace add mercadopago/mercadopago-claude-marketplace`.
+Para Mercado Pago existe el plugin **oficial** de Mercado Pago, `mp-integrate`.
+Es un plugin, no una skill suelta: se instala cuando haya cuenta del negocio.
 
 Antes de agregar otra skill: leer su contenido, preferir fuentes oficiales o
 con más de 1,000 instalaciones, e instalarla con `--copy` (en Windows los
@@ -174,7 +172,7 @@ npm run build
 - Si tocaste el panel, entra como Recepción y como Hugo y prueba lo que
   cambiaste (sentar, cobrar, configuración).
 - Si cambias una regla del negocio, actualiza **primero** `RESERVAS.md` (con la
-  fecha y quién lo decidió) y agrega o ajusta su prueba.
+  fecha y el motivo) y agrega o ajusta su prueba.
 
 Para saber qué versión está publicada: en el sitio, "ver código fuente" y
 buscar `<meta name="compilacion">`, que trae la fecha y hora de compilación.

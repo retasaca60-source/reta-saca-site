@@ -2,10 +2,10 @@
 
 Este documento es **la regla**. Si el código hace algo distinto a lo que dice
 aquí, el que está mal es el código. Si una regla tiene que cambiar, se cambia
-primero aquí (con la fecha y quién lo decidió) y después en el código.
+primero aquí (con la fecha y el motivo) y después en el código.
 
-Se armó el 26/09/2026 con las respuestas de **Hugo Castañeda** (dueño del
-negocio) y las decisiones de **ARAAM**. Al final está el
+Se armó el 26/09/2026 con las respuestas de **Hugo Castañeda**, dueño del
+negocio. Al final está el
 [registro de decisiones](#registro-de-decisiones) con el porqué de cada una.
 
 > **Importante:** el sitio que está publicado HOY todavía **no** sigue todas
@@ -373,7 +373,7 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 - Los datos de tarjeta **nunca** pasan por nuestro sistema: los maneja Mercado
   Pago.
 - Hace falta un **aviso de privacidad** (lo pide la ley en México) y las reglas
-  de la reserva visibles **antes de pagar**. ARAAM redacta el borrador y Hugo lo
+  de la reserva visibles **antes de pagar**. Se redacta un borrador y Hugo lo
   revisa (idealmente con su contador o abogado). **Sin eso no se cobra.**
 - **El repositorio es público**: ninguna llave, contraseña ni dato de clientes
   va en el código. Las llaves (Mercado Pago, Supabase) van en variables de
@@ -385,7 +385,7 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 
 | Qué | Dónde | Notas |
 |---|---|---|
-| Código | GitHub `retasaca60-source/reta-saca-site` | Público (ver por qué en README). Colaboradores: ARAAM y Alezzz123. |
+| Código | GitHub `retasaca60-source/reta-saca-site` | Público (ver por qué en README). |
 | Sitio | Netlify, equipo `retasaca`, proyecto `reta-saca` → `reta-saca.netlify.app` | Se publica solo con cada `git push` a `main`. Está en **privado**: solo lo ve quien entra con la cuenta del equipo. |
 | Dominio | `retasaca.com`, comprado por Hugo en GoDaddy (22/09/2026, vence 22/09/2029) | Hoy apunta a **otro** sitio de Netlify que hizo Hugo (`retasaca.netlify.app`, sin guion) con la demostración vieja. **Se deja así** por ahora; cuando toque, se liga a nuestro proyecto `reta-saca`. |
 | Base de datos | Supabase (cuenta del negocio) | Todavía sin usar. |
@@ -426,7 +426,7 @@ mentira que ocupa el lugar de Mercado Pago. Ver `CONTRATO-DE-DATOS.md`.
 3. **Usuarios reales del panel** (Supabase Auth). Hoy se entra con botones de
    demostración.
 4. **Aviso de privacidad completo** (espera los datos del titular).
-5. **Diseño final del panel** (ARAAM).
+5. **Diseño final del panel.**
 6. Ligar **`retasaca.com`** y abrir el sitio al público.
 
 ## Pendientes de Hugo
@@ -467,39 +467,39 @@ Salieron al construir el sistema. Hoy funcionan como dice la columna
 Cada decisión con su porqué, para no volver a discutirla sin razón. Si una
 cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 
-| Fecha | Decisión | Quién | Por qué |
-|---|---|---|---|
-| 26/09/2026 | Mesas: Ping Pong 6, Cornhole 6 (hasta 8), Popdarts 3 | Hugo | Lo que cabe en el local. Cornhole arranca en 6: vender de más deja a alguien que ya pagó sin tablero. |
-| 26/09/2026 | Horario L–V 5–10 PM; S y D 9–12 y 5–10 | Hugo | Horario del local. |
-| 26/09/2026 | Reservar con hasta 7 días, ventana móvil | Hugo | "Que hoy me deje reservar hasta el viernes de la siguiente semana, y así sucesivamente." |
-| 26/09/2026 | Inicios cada 30 min | ARAAM | Con duraciones de 30 y 90 min, empezar solo en punto deja medias horas muertas en cada mesa. |
-| 26/09/2026 | La reserva termina antes del cierre de su bloque | ARAAM | Si se cierra a las 10, nadie debe tener una mesa pagada hasta las 11. |
-| 26/09/2026 | Para hoy, hasta 30 min antes; hora de Sonora del servidor | ARAAM | El sitio viejo dejaba reservar horas pasadas y dependía del reloj del teléfono. |
-| 26/09/2026 | Precio por mesa, fijo, no por jugadores | Hugo / ARAAM | "No cambiarán los precios por la cantidad de usuarios." |
-| 26/09/2026 | Popdarts $120 / $180 / $240, pago completo, sin preguntar jugadores | Hugo | Precios de Hugo; en Popdarts no se divide. |
-| 26/09/2026 | Promo: 60 min empezando 5:00 o 5:30, todos los días, $120 / $240 | Hugo / ARAAM | "Promo de 5 a 6." Se cobra entera a precio de promo porque se explica en una línea. |
-| 26/09/2026 | Pago dividido tipo Playtomic (todo, entre 2, entre 4) | Hugo | Así lo pidió: uno paga y manda link; lo demás en línea o en el local. |
-| 26/09/2026 | La mesa queda firme con el primer pago | ARAAM | Si hubiera que juntar el total, un grupo perdería la mesa porque un amigo no abrió el link. |
-| 26/09/2026 | Lo que falte lo cubre el organizador | ARAAM | Su nombre y WhatsApp son los únicos datos seguros de la reserva. |
-| 26/09/2026 | Partes en pesos cerrados; el organizador absorbe la diferencia | ARAAM | En efectivo nadie trae 50 centavos. |
-| 26/09/2026 | Mesa apartada 10 min mientras se paga | ARAAM | Sin apartado se vende la misma mesa dos veces. |
-| 26/09/2026 | Mercado Pago, sin OXXO; comisión la absorbe el negocio | ARAAM | Los clientes ya tienen cuenta; OXXO tarda horas; precio redondo vende mejor. |
-| 26/09/2026 | El link de cobro permite "mi parte" y "lo que falta"; pide solo nombre | ARAAM | El organizador puede cerrar la cuenta antes de llegar; no se piden datos de más. |
-| 26/09/2026 | Pago en el local: efectivo, tarjeta o transferencia; recepción elige | ARAAM | Lo que describió Hugo ("entregarlo en físico") y el cierre de caja. |
-| 26/09/2026 | Cancelación con devolución hasta 2 h antes; si cancela el negocio, siempre | ARAAM | 2 h dan margen para revender la mesa. |
-| 26/09/2026 | Tolerancia de 20 min; llegar tarde no recorre la reserva | Hugo | Regla del local. |
-| 26/09/2026 | Solo recepción cambia horarios y extiende tiempo | ARAAM | Con pago dividido, que el cliente cambie solo se complica. |
-| 26/09/2026 | Máximo 2 reservas activas por WhatsApp | ARAAM | Evita que alguien aparte todas las mesas pagando una parte de cada una. |
-| 26/09/2026 | Sin cuentas de cliente; link privado por WhatsApp | ARAAM | Pedir cuenta para rentar una mesa hace que muchos no terminen. |
-| 26/09/2026 | WhatsApp con botones, sin API | ARAAM | Gratis y sin trámite con Meta. |
-| 26/09/2026 | Recepción asigna la mesa al llegar | ARAAM | Acomoda según quién llegó, mesas descompuestas o grupos que quieren estar juntos. |
-| 26/09/2026 | Clientes sin reserva se anotan en el panel | ARAAM | Si no, el sitio vende una mesa ocupada. |
-| 26/09/2026 | Panel en laptop; usuario propio por persona; roles dueño y recepción | ARAAM | El panel viejo tenía una sola contraseña escrita en el código. |
-| 26/09/2026 | Hugo edita mesas, precios, promo, horario y días cerrados | ARAAM | "Todo te lo voy a dejar editable en el panel de admin." |
-| 26/09/2026 | Quitar mesas avisa antes; cada reserva conserva su precio | ARAAM | Nunca se cancela ni se cobra de más a alguien sin que una persona lo decida. |
-| 26/09/2026 | Un mismo titular en Mercado Pago, aviso y facturas | ARAAM | Si son distintos, no cuadra quién cobró. |
-| 26/09/2026 | `retasaca.com` se queda como está hasta abrir | ARAAM | No afecta nada; se liga a nuestro proyecto cuando toque. |
-| 26/09/2026 | Torneos, para después | ARAAM | Es casi otro producto. |
-| 27/09/2026 | Construir todo con datos simulados y un contrato de datos; la base real se conecta después sin tocar pantallas | ARAAM | Para que diseño (ARAAM) y base de datos (Alezzz123) avancen al mismo tiempo. |
-| 28/09/2026 | Extender también revisa que su propia mesa esté libre en el tiempo extra | Alezzz123 / ARAAM | Se extendía aunque el siguiente grupo ya estuviera en esa mesa: quedaban dos grupos en la misma. |
-| 28/09/2026 | Las reglas de cada operación viven en `src/negocio/operaciones`, escritas una vez | ARAAM | La versión real las llama igual que la simulada; antes habría tenido que reescribirlas. |
+| Fecha | Decisión | Por qué |
+|---|---|---|
+| 26/09/2026 | Mesas: Ping Pong 6, Cornhole 6 (hasta 8), Popdarts 3 | Lo que cabe en el local. Cornhole arranca en 6: vender de más deja a alguien que ya pagó sin tablero. |
+| 26/09/2026 | Horario L–V 5–10 PM; S y D 9–12 y 5–10 | Horario del local. |
+| 26/09/2026 | Reservar con hasta 7 días, ventana móvil | "Que hoy me deje reservar hasta el viernes de la siguiente semana, y así sucesivamente." |
+| 26/09/2026 | Inicios cada 30 min | Con duraciones de 30 y 90 min, empezar solo en punto deja medias horas muertas en cada mesa. |
+| 26/09/2026 | La reserva termina antes del cierre de su bloque | Si se cierra a las 10, nadie debe tener una mesa pagada hasta las 11. |
+| 26/09/2026 | Para hoy, hasta 30 min antes; hora de Sonora del servidor | El sitio viejo dejaba reservar horas pasadas y dependía del reloj del teléfono. |
+| 26/09/2026 | Precio por mesa, fijo, no por jugadores | "No cambiarán los precios por la cantidad de usuarios." |
+| 26/09/2026 | Popdarts $120 / $180 / $240, pago completo, sin preguntar jugadores | Precios de Hugo; en Popdarts no se divide. |
+| 26/09/2026 | Promo: 60 min empezando 5:00 o 5:30, todos los días, $120 / $240 | "Promo de 5 a 6." Se cobra entera a precio de promo porque se explica en una línea. |
+| 26/09/2026 | Pago dividido tipo Playtomic (todo, entre 2, entre 4) | Así lo pidió: uno paga y manda link; lo demás en línea o en el local. |
+| 26/09/2026 | La mesa queda firme con el primer pago | Si hubiera que juntar el total, un grupo perdería la mesa porque un amigo no abrió el link. |
+| 26/09/2026 | Lo que falte lo cubre el organizador | Su nombre y WhatsApp son los únicos datos seguros de la reserva. |
+| 26/09/2026 | Partes en pesos cerrados; el organizador absorbe la diferencia | En efectivo nadie trae 50 centavos. |
+| 26/09/2026 | Mesa apartada 10 min mientras se paga | Sin apartado se vende la misma mesa dos veces. |
+| 26/09/2026 | Mercado Pago, sin OXXO; comisión la absorbe el negocio | Los clientes ya tienen cuenta; OXXO tarda horas; precio redondo vende mejor. |
+| 26/09/2026 | El link de cobro permite "mi parte" y "lo que falta"; pide solo nombre | El organizador puede cerrar la cuenta antes de llegar; no se piden datos de más. |
+| 26/09/2026 | Pago en el local: efectivo, tarjeta o transferencia; recepción elige | Lo que describió Hugo ("entregarlo en físico") y el cierre de caja. |
+| 26/09/2026 | Cancelación con devolución hasta 2 h antes; si cancela el negocio, siempre | 2 h dan margen para revender la mesa. |
+| 26/09/2026 | Tolerancia de 20 min; llegar tarde no recorre la reserva | Regla del local. |
+| 26/09/2026 | Solo recepción cambia horarios y extiende tiempo | Con pago dividido, que el cliente cambie solo se complica. |
+| 26/09/2026 | Máximo 2 reservas activas por WhatsApp | Evita que alguien aparte todas las mesas pagando una parte de cada una. |
+| 26/09/2026 | Sin cuentas de cliente; link privado por WhatsApp | Pedir cuenta para rentar una mesa hace que muchos no terminen. |
+| 26/09/2026 | WhatsApp con botones, sin API | Gratis y sin trámite con Meta. |
+| 26/09/2026 | Recepción asigna la mesa al llegar | Acomoda según quién llegó, mesas descompuestas o grupos que quieren estar juntos. |
+| 26/09/2026 | Clientes sin reserva se anotan en el panel | Si no, el sitio vende una mesa ocupada. |
+| 26/09/2026 | Panel en laptop; usuario propio por persona; roles dueño y recepción | El panel viejo tenía una sola contraseña escrita en el código. |
+| 26/09/2026 | Hugo edita mesas, precios, promo, horario y días cerrados | "Todo te lo voy a dejar editable en el panel de admin." |
+| 26/09/2026 | Quitar mesas avisa antes; cada reserva conserva su precio | Nunca se cancela ni se cobra de más a alguien sin que una persona lo decida. |
+| 26/09/2026 | Un mismo titular en Mercado Pago, aviso y facturas | Si son distintos, no cuadra quién cobró. |
+| 26/09/2026 | `retasaca.com` se queda como está hasta abrir | No afecta nada; se liga a nuestro proyecto cuando toque. |
+| 26/09/2026 | Torneos, para después | Es casi otro producto. |
+| 27/09/2026 | Construir todo con datos simulados y un contrato de datos; la base real se conecta después sin tocar pantallas | Para que diseño y base de datos avancen al mismo tiempo. |
+| 28/09/2026 | Extender también revisa que su propia mesa esté libre en el tiempo extra | Se extendía aunque el siguiente grupo ya estuviera en esa mesa: quedaban dos grupos en la misma. |
+| 28/09/2026 | Las reglas de cada operación viven en `src/negocio/operaciones`, escritas una vez | La versión real las llama igual que la simulada; antes habría tenido que reescribirlas. |

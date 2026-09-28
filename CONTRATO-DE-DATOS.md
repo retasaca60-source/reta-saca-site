@@ -113,7 +113,7 @@ el cliente o para recepción, en español.
 
 ### Del panel (con sesión)
 
-| Operación | Quién | Qué hace |
+| Operación | Rol | Qué hace |
 |---|---|---|
 | `sesion()`, `iniciarSesion(correo, contraseña)`, `cerrarSesion()` | todos | Supabase Auth con correo y contraseña. Cada persona su usuario. |
 | `reservasEntre(desde, hasta)` | ambos | Todas las reservas de esas fechas, de cualquier estado, ordenadas por fecha y hora. |
