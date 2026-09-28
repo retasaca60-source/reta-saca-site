@@ -29,6 +29,7 @@ import {
   puedeCancelarConDevolucion,
   puedeLiberarPorRetraso,
   repartir,
+  total,
   type Reserva,
 } from '../negocio/reserva'
 import { instante, momentoDe, sumarDias, type Momento } from '../negocio/tiempo'
@@ -618,9 +619,19 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         const d = e.config.deportes[r.deporte]
         if (d.precios[r.duracion as Duracion] !== undefined) {
           const nuevo = precioDe(e.config, r.deporte, inicio, r.duracion as Duracion).precio
-          if (nuevo > r.precio) {
-            r.partes.push({ id: crypto.randomUUID(), monto: nuevo - r.precio, delOrganizador: true, concepto: 'cambio', pago: null })
-          }
+          // Los ajustes anteriores ya forman parte del total, aunque sigan pendientes
+// de pago. Comparar con el precio original volvería a cobrarlos.
+const diferencia = nuevo - total(r)
+
+if (diferencia > 0) {
+  r.partes.push({
+    id: crypto.randomUUID(),
+    monto: diferencia,
+    delOrganizador: true,
+    concepto: 'cambio',
+    pago: null,
+  })
+}
         }
         r.fecha = fecha
         r.inicio = inicio

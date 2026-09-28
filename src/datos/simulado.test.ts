@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { instante } from '../negocio/tiempo'
 import { ErrorDeDatos, type SolicitudDeReserva } from './contrato'
 import { almacenEnMemoria, crearServicioSimulado, type ServicioSimulado } from './simulado'
+import { total } from '../negocio/reserva'
 
 const h = (x: number, m = 0) => x * 60 + m
 const VIERNES = '2026-09-25'
@@ -126,60 +127,199 @@ describe('panel', () => {
   beforeEach(async () => {
     await s.iniciarSesion('recepcion@demo.retasaca', '')
   })
+
   it('sin sesión no se ven reservas', async () => {
     await s.cerrarSesion()
-    expect(await codigoDe(s.reservasEntre(VIERNES, VIERNES))).toBe('sin_sesion')
+
+    expect(
+      await codigoDe(s.reservasEntre(VIERNES, VIERNES)),
+    ).toBe('sin_sesion')
   })
+
   it('recepción marca un pago en efectivo y queda quién lo marcó', async () => {
-    const r = await reservarYPagar({ deporte: 'cornhole', partes: 2 })
-    const despues = await s.marcarPago(r.id, [r.partes[1].id], 'efectivo', 'Pedro')
-    expect(despues.partes[1].pago).toMatchObject({ medio: 'efectivo', nombre: 'Pedro', marcadoPor: 'Recepción' })
+    const r = await reservarYPagar({
+      deporte: 'cornhole',
+      partes: 2,
+    })
+
+    const despues = await s.marcarPago(
+      r.id,
+      [r.partes[1].id],
+      'efectivo',
+      'Pedro',
+    )
+
+    expect(despues.partes[1].pago).toMatchObject({
+      medio: 'efectivo',
+      nombre: 'Pedro',
+      marcadoPor: 'Recepción',
+    })
   })
+
   it('no asigna una mesa que ya tiene otro grupo a esa hora', async () => {
     const a = await reservarYPagar()
-    const b = await reservarYPagar({ organizador: { nombre: 'Beto', whatsapp: '6620000009' } })
+    const b = await reservarYPagar({
+      organizador: {
+        nombre: 'Beto',
+        whatsapp: '6620000009',
+      },
+    })
+
     await s.asignarMesa(a.id, 'PD 1')
-    expect(await codigoDe(s.asignarMesa(b.id, 'PD 1'))).toBe('no_permitido')
-    expect((await s.asignarMesa(b.id, 'PD 2')).mesa).toBe('PD 2')
+
+    expect(
+      await codigoDe(s.asignarMesa(b.id, 'PD 1')),
+    ).toBe('no_permitido')
+
+    expect(
+      (await s.asignarMesa(b.id, 'PD 2')).mesa,
+    ).toBe('PD 2')
   })
+
   it('extender cobra la diferencia de la tabla y revisa que haya lugar', async () => {
-    const r = await reservarYPagar({ deporte: 'pingpong', inicio: h(19) })
+    const r = await reservarYPagar({
+      deporte: 'pingpong',
+      inicio: h(19),
+    })
+
     const ext = await s.extender(r.id, 30)
+
     expect(ext.duracion).toBe(90)
-    expect(ext.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 70, pago: null })
+    expect(ext.partes.at(-1)).toMatchObject({
+      concepto: 'extension',
+      monto: 70,
+      pago: null,
+    })
   })
+
   it('liberar por retraso solo pasada la tolerancia', async () => {
-    const r = await reservarYPagar({ inicio: h(19) })
+    const r = await reservarYPagar({
+      inicio: h(19),
+    })
+
     reloj = instante(VIERNES, h(19, 10))
-    expect(await codigoDe(s.liberarPorRetraso(r.id))).toBe('no_permitido')
+
+    expect(
+      await codigoDe(s.liberarPorRetraso(r.id)),
+    ).toBe('no_permitido')
+
     reloj = instante(VIERNES, h(19, 20))
-    expect((await s.liberarPorRetraso(r.id)).cancelacion?.motivo).toBe('no_llego')
+
+    expect(
+      (await s.liberarPorRetraso(r.id)).cancelacion?.motivo,
+    ).toBe('no_llego')
   })
+
   it('recepción no puede cambiar la configuración; el dueño sí', async () => {
     const config = await s.configuracion()
-    expect(await codigoDe(s.guardarConfiguracion(config))).toBe('no_permitido')
+
+    expect(
+      await codigoDe(s.guardarConfiguracion(config)),
+    ).toBe('no_permitido')
+
     await s.iniciarSesion('hugo@demo.retasaca', '')
-    expect((await s.guardarConfiguracion(config)).guardada).toBe(true)
+
+    expect(
+      (await s.guardarConfiguracion(config)).guardada,
+    ).toBe(true)
   })
+
   it('quitar mesas con reservas encima avisa y no guarda, salvo que Hugo insista', async () => {
     await s.iniciarSesion('hugo@demo.retasaca', '')
-    for (let i = 0; i < 3; i++) await reservarYPagar({ organizador: { nombre: 'X' + i, whatsapp: '662000000' + i } })
+
+    for (let i = 0; i < 3; i++) {
+      await reservarYPagar({
+        organizador: {
+          nombre: 'X' + i,
+          whatsapp: '662000000' + i,
+        },
+      })
+    }
+
     const config = await s.configuracion()
     config.deportes.popdarts.mesas = 2
+
     const intento = await s.guardarConfiguracion(config)
+
     expect(intento.guardada).toBe(false)
-    expect(intento.conflictos[0]).toMatchObject({ deporte: 'popdarts', inicio: h(19), reservas: 3, mesas: 2 })
-    expect((await s.guardarConfiguracion(config, true)).guardada).toBe(true)
-    // Nunca se cancela nada solo.
-    expect((await s.reservasEntre(VIERNES, VIERNES)).filter((r) => r.estado === 'confirmada')).toHaveLength(3)
+    expect(intento.conflictos[0]).toMatchObject({
+      deporte: 'popdarts',
+      inicio: h(19),
+      reservas: 3,
+      mesas: 2,
+    })
+
+    expect(
+      (await s.guardarConfiguracion(config, true)).guardada,
+    ).toBe(true)
+
+    // Nunca se cancela ninguna reserva automáticamente.
+    const reservas = await s.reservasEntre(VIERNES, VIERNES)
+
+    expect(
+      reservas.filter((r) => r.estado === 'confirmada'),
+    ).toHaveLength(3)
   })
+
   it('una reserva conserva su precio aunque Hugo lo cambie después', async () => {
     const r = await reservarYPagar()
+
     await s.iniciarSesion('hugo@demo.retasaca', '')
+
     const config = await s.configuracion()
     config.deportes.popdarts.precios[60] = 200
+
     await s.guardarConfiguracion(config)
-    expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.precio).toBe(120)
+
+    const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
+
+    expect(despues!.precio).toBe(120)
+  })
+
+  it('no cobra otra vez la diferencia al cambiar entre horarios del mismo precio', async () => {
+    const reserva = await reservarYPagar({
+      deporte: 'pingpong',
+      inicio: h(17),
+      duracion: 60,
+    })
+
+    expect(total(reserva)).toBe(120)
+
+    const primerCambio = await s.cambiarHorario(
+      reserva.id,
+      VIERNES,
+      h(19),
+    )
+
+    expect(total(primerCambio)).toBe(150)
+
+    const segundoCambio = await s.cambiarHorario(
+      reserva.id,
+      VIERNES,
+      h(20),
+    )
+
+    expect(total(segundoCambio)).toBe(150)
+  })
+
+  it('no vuelve a cobrar una extensión al cambiar de horario', async () => {
+    const reserva = await reservarYPagar({
+      deporte: 'pingpong',
+      inicio: h(19),
+      duracion: 60,
+    })
+
+    const extendida = await s.extender(reserva.id, 30)
+
+    expect(total(extendida)).toBe(220)
+
+    const movida = await s.cambiarHorario(
+      reserva.id,
+      VIERNES,
+      h(20),
+    )
+
+    expect(total(movida)).toBe(220)
   })
 })
 
