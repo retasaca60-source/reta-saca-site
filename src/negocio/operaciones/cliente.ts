@@ -99,8 +99,33 @@ export function confirmarPagoEnLinea(ctx: Contexto, r: Reserva, parteIds: string
     }
     nueva.cancelacion = null
   }
+    const partes = nueva.partes.filter((p) => parteIds.includes(p.id))
+
+  if (!partes.length || partes.length !== parteIds.length) {
+    throw new ErrorDeDatos(
+      'datos_invalidos',
+      'Las partes de este intento no son válidas.',
+    )
+  }
+
+  // Otra persona pudo pagar mientras este intento estaba abierto.
+  // Se revisan todas antes de registrar cualquier pago.
+  if (partes.some((p) => p.pago !== null)) {
+    throw new ErrorDeDatos(
+      'datos_invalidos',
+      'Alguna parte de este intento ya fue pagada. Vuelve a la reserva y revisa lo pendiente.',
+    )
+  }
+
   const en = new Date(ctx.ahora).toISOString()
-  for (const p of nueva.partes) if (parteIds.includes(p.id) && !p.pago) p.pago = { medio: 'en_linea', nombre, en }
+
+  for (const p of partes) {
+    p.pago = {
+      medio: 'en_linea',
+      nombre,
+      en,
+    }
+  }
   nueva.estado = 'confirmada'
   nueva.apartadaHasta = null
   return nueva

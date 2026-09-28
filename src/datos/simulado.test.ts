@@ -104,23 +104,151 @@ describe('reservar', () => {
 
 describe('pago dividido', () => {
   it('el link de cobro no enseña el WhatsApp del organizador', async () => {
-    const r = await reservarYPagar({ deporte: 'pingpong', partes: 2 })
+    const r = await reservarYPagar({
+      deporte: 'pingpong',
+      partes: 2,
+    })
+
     const vista = await s.vistaDeCobro(r.tokenCobro)
+
     expect(JSON.stringify(vista)).not.toContain('6621112233')
     expect(vista!.partes.map((p) => p.pagada)).toEqual([true, false])
   })
+
   it('un amigo paga su parte con su nombre, o "lo que falta"', async () => {
-    const r = await reservarYPagar({ deporte: 'pingpong', partes: 4 })
-    const pendientes = r.partes.filter((p) => !p.pago).map((p) => p.id)
-    const { url } = await s.iniciarPago(r.tokenCobro, pendientes, 'Luis')
+    const r = await reservarYPagar({
+      deporte: 'pingpong',
+      partes: 4,
+    })
+
+    const pendientes = r.partes
+      .filter((p) => !p.pago)
+      .map((p) => p.id)
+
+    const { url } = await s.iniciarPago(
+      r.tokenCobro,
+      pendientes,
+      'Luis',
+    )
+
     await s.pagoSimulado.confirmar(url.split('/').pop()!)
+
     const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
+
     expect(despues!.partes.every((p) => p.pago)).toBe(true)
     expect(despues!.partes[1].pago!.nombre).toBe('Luis')
   })
+
   it('no se paga dos veces la misma parte', async () => {
     const r = await reservarYPagar()
-    expect(await codigoDe(s.iniciarPago(r.tokenPrivado, [r.partes[0].id], ''))).toBe('datos_invalidos')
+
+    expect(
+      await codigoDe(
+        s.iniciarPago(r.tokenPrivado, [r.partes[0].id], ''),
+      ),
+    ).toBe('datos_invalidos')
+  })
+
+  it('rechaza un segundo intento sobre una parte que ya fue pagada', async () => {
+    const r = await reservarYPagar({
+      deporte: 'cornhole',
+      partes: 4,
+    })
+
+    const parteId = r.partes[1].id
+
+    const intentoLuis = await s.iniciarPago(
+      r.tokenCobro,
+      [parteId],
+      'Luis',
+    )
+
+    const intentoBeto = await s.iniciarPago(
+      r.tokenCobro,
+      [parteId],
+      'Beto',
+    )
+
+    const idLuis = intentoLuis.url.split('/').pop()!
+    const idBeto = intentoBeto.url.split('/').pop()!
+
+    await s.pagoSimulado.confirmar(idLuis)
+
+    await expect(
+      s.pagoSimulado.confirmar(idBeto),
+    ).rejects.toMatchObject({
+      codigo: 'datos_invalidos',
+    })
+
+    const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
+    expect(despues!.partes[1].pago!.nombre).toBe('Luis')
+
+    const intentoRechazado = await s.pagoSimulado.obtener(idBeto)
+    expect(intentoRechazado!.intento.resultado).toBeNull()
+  })
+
+  it('confirmar dos veces el mismo intento no duplica ni modifica el pago', async () => {
+    const r = await reservarYPagar({
+      deporte: 'cornhole',
+      partes: 4,
+    })
+
+    const intento = await s.iniciarPago(
+      r.tokenCobro,
+      [r.partes[1].id],
+      'Luis',
+    )
+
+    const id = intento.url.split('/').pop()!
+
+    await s.pagoSimulado.confirmar(id)
+    const antes = await s.reservaPorTokenPrivado(r.tokenPrivado)
+
+    await s.pagoSimulado.confirmar(id)
+    const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
+
+    expect(despues).toEqual(antes)
+  })
+
+  it('rechaza todo el intento si una de sus partes ya fue pagada', async () => {
+    const r = await reservarYPagar({
+      deporte: 'cornhole',
+      partes: 4,
+    })
+
+    const pendientes = r.partes
+      .filter((p) => !p.pago)
+      .map((p) => p.id)
+
+    const intentoCompleto = await s.iniciarPago(
+      r.tokenCobro,
+      pendientes,
+      'Beto',
+    )
+
+    const intentoIndividual = await s.iniciarPago(
+      r.tokenCobro,
+      [r.partes[1].id],
+      'Luis',
+    )
+
+    await s.pagoSimulado.confirmar(
+      intentoIndividual.url.split('/').pop()!,
+    )
+
+    await expect(
+      s.pagoSimulado.confirmar(
+        intentoCompleto.url.split('/').pop()!,
+      ),
+    ).rejects.toMatchObject({
+      codigo: 'datos_invalidos',
+    })
+
+    const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
+
+    expect(despues!.partes[1].pago!.nombre).toBe('Luis')
+    expect(despues!.partes[2].pago).toBeNull()
+    expect(despues!.partes[3].pago).toBeNull()
   })
 })
 
