@@ -72,6 +72,23 @@ describe('reservar', () => {
     reloj += 10 * 60_000
     expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Yola', whatsapp: '6629999999' } })))).toBe('sin error')
   })
+  it('volver a tocar "Pagar" no alarga el apartado: a los 10 min se libera aunque lo intente', async () => {
+    const r = await s.apartar(pedido())
+    for (let i = 0; i < 2; i++) {
+      reloj += 4 * 60_000
+      await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
+    }
+    reloj += 3 * 60_000 // 11 min desde que apartó
+    expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.estado).toBe('cancelada')
+    expect(await codigoDe(s.iniciarPago(r.tokenPrivado, [r.partes[0].id], ''))).toBe('no_permitido')
+  })
+  it('un pago que llega ya vencido el apartado se acepta solo si la mesa sigue libre', async () => {
+    const r = await s.apartar(pedido())
+    const { url } = await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
+    reloj += 11 * 60_000
+    await s.pagoSimulado.confirmar(url.split('/').pop()!)
+    expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.estado).toBe('confirmada')
+  })
   it('máximo 2 reservas activas por WhatsApp', async () => {
     await reservarYPagar({ inicio: h(17) })
     await reservarYPagar({ inicio: h(18) })

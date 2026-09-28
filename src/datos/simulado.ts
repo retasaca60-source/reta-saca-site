@@ -402,7 +402,6 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
 
     iniciarPago: (token, parteIds, nombre) =>
       cambiar((e) => {
-        const m = ahora()
         const r = e.reservas.find((x) => x.tokenPrivado === token || x.tokenCobro === token)
         if (!r) throw new ErrorDeDatos('no_encontrada', 'No se encontró la reserva.')
         if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Esta reserva está cancelada.')
@@ -415,8 +414,10 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         const id = crypto.randomUUID()
         const volverA = token === r.tokenPrivado ? `/r/${r.tokenPrivado}` : `/c/${r.tokenCobro}`
         e.intentos.push({ id, reservaId: r.id, parteIds, nombre: quien, monto: partes.reduce((s, p) => s + p.monto, 0), volverA, resultado: null })
-        // Si el apartado se venció mientras tanto pero la mesa sigue libre, se renueva.
-        if (r.estado === 'apartada') r.apartadaHasta = Math.max(r.apartadaHasta ?? 0, m.ms + e.config.reglas.minutosDeApartado * 60_000)
+        // El apartado NO se alarga al volver a intentar el pago: antes, tocar
+        // "Pagar" una y otra vez lo renovaba sin fin (medido: 54 min después
+        // seguía apartada sin un solo pago). Si el pago llega ya vencido,
+        // `confirmar` lo acepta solo si la mesa sigue libre.
         return { url: `/pago/${id}` }
       }),
 
@@ -620,18 +621,11 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         if (d.precios[r.duracion as Duracion] !== undefined) {
           const nuevo = precioDe(e.config, r.deporte, inicio, r.duracion as Duracion).precio
           // Los ajustes anteriores ya forman parte del total, aunque sigan pendientes
-// de pago. Comparar con el precio original volvería a cobrarlos.
-const diferencia = nuevo - total(r)
-
-if (diferencia > 0) {
-  r.partes.push({
-    id: crypto.randomUUID(),
-    monto: diferencia,
-    delOrganizador: true,
-    concepto: 'cambio',
-    pago: null,
-  })
-}
+          // de pago. Comparar con el precio original volvería a cobrarlos.
+          const diferencia = nuevo - total(r)
+          if (diferencia > 0) {
+            r.partes.push({ id: crypto.randomUUID(), monto: diferencia, delOrganizador: true, concepto: 'cambio', pago: null })
+          }
         }
         r.fecha = fecha
         r.inicio = inicio

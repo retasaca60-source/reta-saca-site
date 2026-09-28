@@ -67,10 +67,11 @@ export function reducir(b: Borrador, a: Accion): Borrador {
       if (a.paso === 3) return b.inicio !== null ? { ...b, paso: 3 } : b
       return { ...b, paso: a.paso }
     // Cambiar el día o la duración cambia qué horarios hay: se suelta la hora.
+    // El aviso de "alguien tomó esa mesa" era de la hora anterior: se borra también.
     case 'elegirFecha':
-      return { ...b, fecha: a.fecha, inicio: null }
+      return { ...b, fecha: a.fecha, inicio: null, aviso: null }
     case 'elegirDuracion':
-      return { ...b, duracion: a.duracion, inicio: null }
+      return { ...b, duracion: a.duracion, inicio: null, aviso: null }
     case 'elegirHora':
       return { ...b, inicio: a.inicio, aviso: null }
     case 'soltarHora':
