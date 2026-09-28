@@ -108,7 +108,7 @@ interface Estado {
 
 /**
  * Lo guardado en el navegador lo pudo escribir OTRA versión de la aplicación
- * (lección de CiTerritorio: un campo nuevo que lo viejo no traía tumbó la
+ * (un campo nuevo que la versión anterior no guardaba puede tumbar la
  * pantalla entera). Se revisa campo por campo; si no cuadra, se empieza de cero.
  */
 function esEstadoValido(x: unknown): x is Estado {

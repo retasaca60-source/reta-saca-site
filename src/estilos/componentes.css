@@ -4,8 +4,7 @@
 /* ---------- screen transition ---------- */
 /* Con @starting-style y no con fotogramas: con `animation … both`, si el
    navegador congela la animación (pestaña en segundo plano) la pantalla se
-   queda en blanco. Así, si no corre la transición, se ve el estado final.
-   Lección pagada en CiTerritorio. */
+   queda en blanco. Así, si no corre la transición, se ve el estado final. */
 .screen{ transition:opacity .35s ease, transform .35s ease; }
 @starting-style{ .screen{ opacity:0; transform:translateY(10px); } }
 

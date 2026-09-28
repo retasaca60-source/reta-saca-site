@@ -52,7 +52,7 @@ nunca solo en el código de las pantallas:
 | **Marcar pagos**: queda quién lo marcó (`marcadoPor`), lo pone el servidor con el usuario de la sesión | Lo que da fe no lo escribe el interesado. |
 | **Confirmar un pago en línea**: solo por el aviso (webhook) de Mercado Pago | Si el navegador pudiera decir "ya pagué", cualquiera lo diría. |
 
-Lecciones de CiTerritorio que aplican aquí: "RLS filtra filas, no columnas" (una
+Dos trampas de Supabase que conviene tener presentes: "RLS filtra filas, no columnas" (una
 política que deja editar la fila deja editar TODAS sus columnas: estados y
 firmas se protegen con disparadores o funciones) y "en Supabase, `revoke …
 from public` no le quita la función a `anon`" (escribe `revoke execute … from
