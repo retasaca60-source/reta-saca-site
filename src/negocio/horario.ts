@@ -44,6 +44,12 @@ export function iniciosPosibles(config: Configuracion, fecha: string, duracion: 
   return inicios
 }
 
+/** El bloque abierto en ese minuto, o null si el local está cerrado a esa hora. */
+export function bloqueEn(config: Configuracion, fecha: string, minuto: number) {
+  if (estaCerrado(config, fecha)) return null
+  return (config.horario[diaDeLaSemana(fecha)] ?? []).find((b) => minuto >= b.desde && minuto < b.hasta) ?? null
+}
+
 /** ¿Cabe una reserva de [inicio, inicio+duración) completa en algún bloque de ese día? Para el panel. */
 export function cabeEnUnBloque(config: Configuracion, fecha: string, inicio: number, duracion: number): boolean {
   return (config.horario[diaDeLaSemana(fecha)] ?? []).some((b) => inicio >= b.desde && inicio + duracion <= b.hasta)

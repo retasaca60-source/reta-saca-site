@@ -89,8 +89,22 @@
 .mesa-ahora.ocupada{ background:var(--accent-soft); border-color:transparent; }
 .mesa-ahora.fuera{ background:var(--busy); color:var(--ink-faint); }
 
-.anotar{ margin-top:4px; }
-.anotar h3{ margin:0 0 10px; font-size:.85rem; }
+/* Caja del mostrador */
+.caja-mostrador{ display:flex; flex-direction:column; gap:12px; }
+.caja-mostrador h3{ margin:0; font-size:.85rem; }
+.caja-fila{ display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; }
+.caja-fila label{ display:flex; flex-direction:column; gap:4px; font-size:.75rem; color:var(--ink-soft); }
+.caja-cobro{ align-items:center; border-top:1px dashed var(--line); padding-top:12px; }
+.caja-total-grande{ display:flex; flex-direction:column; min-width:150px; }
+.caja-total-grande small{ color:var(--ink-soft); font-size:.72rem; }
+.caja-total-grande strong{ font-family:'IBM Plex Mono', monospace; font-size:1.8rem; }
+.caja-efectivo{ flex-direction:row !important; align-items:center; gap:8px !important; }
+.caja-efectivo input{ width:100px; }
+.segmentado{ display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:var(--surface); }
+.segmentado button{ font:inherit; font-size:.8rem; font-weight:600; border:none; background:none; color:var(--ink-soft); padding:8px 12px; cursor:pointer; }
+.segmentado button + button{ border-left:1px solid var(--line); }
+.segmentado button.activo{ background:var(--ink); color:var(--bg); }
+.panel-boton.grande{ padding:11px 18px; font-size:.9rem; margin-left:auto; }
 
 /* Filas de reservas */
 .fila-reserva{

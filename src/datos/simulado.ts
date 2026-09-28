@@ -284,8 +284,8 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
 
     anotarSinReserva: (c) =>
       cambiar((e) => {
-        usuarioActual(e)
-        return poner(e, op.anotarSinReserva(contexto(e), c))
+        const quien = usuarioActual(e)
+        return poner(e, op.anotarSinReserva(contexto(e), c, quien.nombre))
       }),
     asignarMesa: (id, mesa) => enPanel(id, (ctx, r) => op.asignarMesa(ctx, r, mesa)),
     marcarPago: (id, parteIds, medio, nombre) => enPanel(id, (ctx, r, quien) => op.marcarPago(ctx, r, parteIds, medio, nombre, quien.nombre)),

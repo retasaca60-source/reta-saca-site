@@ -66,6 +66,7 @@ export interface ServicioDeDatos {
   reservasEntre(desde: string, hasta: string): Promise<Reserva[]>
   /** Pagos HECHOS ese día (en línea y en el local), no los de las reservas de ese día. Para el cierre de caja. */
   pagosDelDia(fecha: string): Promise<PagoDelDia[]>
+  /** Registra Y COBRA en el mostrador a un grupo sin reserva (empieza ahora). */
   anotarSinReserva(cliente: ClienteSinReserva): Promise<Reserva>
   /** Asigna mesa y marca que llegaron. `null` quita la mesa. */
   asignarMesa(reservaId: string, mesa: string | null): Promise<Reserva>

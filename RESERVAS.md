@@ -337,14 +337,23 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 - **Asignar la mesa** cuando llega el grupo (las reservas no traen número de
   mesa: recepción acomoda según quién llegó y qué mesas funcionan).
 - **Marcar pagos del local** (efectivo, tarjeta o transferencia).
-- **Anotar clientes sin reserva** como una reserva que empieza ahora. Así el
-  sitio no vende en línea una mesa que ya está ocupada por alguien que llegó
-  caminando.
+- **Caja del mostrador**: el panel funciona como caja para quien llega sin
+  reserva. En un solo paso se elige deporte, tiempo y mesa, se ve el total, se
+  elige cómo paga (efectivo, tarjeta o transferencia) y queda **cobrado y
+  registrado**. Nadie juega sin haber pagado. Con efectivo, la caja calcula el
+  cambio. El tiempo extra se cobra después, con "Cobrar".
+  - Se registra como una reserva que empieza ahora: así el sitio no vende en
+    línea una mesa que ya está ocupada por alguien que llegó caminando.
+  - Si el local está cerrado, o el tiempo elegido pasa del cierre, la caja lo
+    dice antes de cobrar.
+  - Solo se cobra la renta de mesas; no hay venta de productos.
+  - El comprobante es el **ticket de la terminal** de cobro.
 - **Cambiar** horario, **extender** tiempo, **cancelar** y **liberar** una mesa
   después de los 20 minutos de tolerancia.
 - Reenviar por WhatsApp el link privado al organizador.
 - **Cierre de caja del día**: cuánto se cobró en línea y cuánto en el local, por
-  medio. Lo que se cuadra contra la caja es el efectivo.
+  medio. Lo que se cuadra contra la caja es el efectivo. Es un cierre por día,
+  sin fondo inicial ni arqueo por turno.
 
 ### Hugo (dueño) puede, además
 
@@ -503,3 +512,5 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 27/09/2026 | Construir todo con datos simulados y un contrato de datos; la base real se conecta después sin tocar pantallas | Para que diseño y base de datos avancen al mismo tiempo. |
 | 28/09/2026 | Extender también revisa que su propia mesa esté libre en el tiempo extra | Se extendía aunque el siguiente grupo ya estuviera en esa mesa: quedaban dos grupos en la misma. |
 | 28/09/2026 | Las reglas de cada operación viven en `src/negocio/operaciones`, escritas una vez | La versión real las llama igual que la simulada; antes habría tenido que reescribirlas. |
+| 28/09/2026 | El panel funciona como caja: al cliente sin reserva se le cobra al registrarlo, en un solo paso | Nadie juega sin pagar; registrar y cobrar por separado hacía fácil olvidar el cobro. |
+| 28/09/2026 | La caja solo cobra renta de mesas; cierre por día, sin fondo ni arqueo; comprobante: ticket de la terminal | Así opera el local. |

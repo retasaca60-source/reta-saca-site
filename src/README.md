@@ -44,7 +44,8 @@ src/
 │
 ├── panel/                     "/panel": recepción y dueño (laptop).
 │   ├── Panel.tsx              Entrar, barra y navegación.
-│   ├── Hoy.tsx                Mesas ahora, clientes sin reserva, reservas del día.
+│   ├── Hoy.tsx                Mesas ahora, la caja del mostrador y las reservas del día.
+│   ├── RegistrarEnMostrador.tsx  La caja: registrar y cobrar a quien llega sin reserva.
 │   ├── FilaReserva.tsx        Una reserva y sus acciones (sentar, cobrar, extender…).
 │   ├── Semana.tsx · Caja.tsx · Configuracion.tsx
 │   └── panel.css              TODO el diseño del panel. Se puede rehacer libre.

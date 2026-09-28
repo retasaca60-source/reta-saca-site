@@ -233,6 +233,29 @@ describe('panel', () => {
     expect(await codigoDe(s.extender(a.id, 60))).toBe('sin_lugar')
   })
 
+  it('caja: el cliente sin reserva se cobra al registrarlo, queda quién cobró y sale en el cierre del día', async () => {
+    reloj = instante(VIERNES, h(19, 5))
+    const r = await s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Mostrador', mesa: 'PP 3', medio: 'tarjeta' })
+    expect(r).toMatchObject({ origen: 'mostrador', estado: 'confirmada', mesa: 'PP 3', inicio: h(19, 5), precio: 150 })
+    expect(r.partes).toHaveLength(1)
+    expect(r.partes[0].pago).toMatchObject({ medio: 'tarjeta', nombre: 'Mostrador', marcadoPor: 'Recepción' })
+    const caja = await s.pagosDelDia(VIERNES)
+    expect(caja.find((p) => p.reservaId === r.id)).toMatchObject({ monto: 150, medio: 'tarjeta' })
+  })
+  it('caja: con el local cerrado lo dice; si no alcanza el tiempo, dice a qué hora se cierra', async () => {
+    reloj = instante(VIERNES, h(15))
+    expect(await codigoDe(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Temprano', medio: 'efectivo' }))).toBe('fuera_de_horario')
+    reloj = instante(VIERNES, h(21, 30))
+    await s.anotarSinReserva({ deporte: 'pingpong', duracion: 30, nombre: 'Media hora', medio: 'efectivo' })
+    await expect(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Tarde', medio: 'efectivo' })).rejects.toThrow('10:00 PM')
+  })
+  it('caja: no registra si no hay mesa libre todo el tiempo, y no cobra nada', async () => {
+    reloj = instante(VIERNES, h(19))
+    for (let i = 0; i < 3; i++) await s.anotarSinReserva({ deporte: 'popdarts', duracion: 60, nombre: 'Grupo' + i, medio: 'efectivo' })
+    expect(await codigoDe(s.anotarSinReserva({ deporte: 'popdarts', duracion: 60, nombre: 'Otro', medio: 'efectivo' }))).toBe('sin_lugar')
+    expect((await s.pagosDelDia(VIERNES)).length).toBe(3)
+  })
+
   it('liberar por retraso solo pasada la tolerancia', async () => {
     const r = await reservarYPagar({
       inicio: h(19),

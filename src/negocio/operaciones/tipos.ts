@@ -40,6 +40,7 @@ export interface VistaDeCobro {
   partes: { id: string; monto: number; pagada: boolean; nombre: string | null; delOrganizador: boolean }[]
 }
 
+/** Un grupo que llega al mostrador sin reserva. Se cobra AL REGISTRARLO. */
 export interface ClienteSinReserva {
   deporte: DeporteId
   duracion: Duracion
@@ -47,6 +48,8 @@ export interface ClienteSinReserva {
   whatsapp?: string
   /** Mesa donde se sientan, si recepción ya la sabe. */
   mesa?: string
+  /** Cómo pagó en el mostrador. El comprobante es el ticket de la terminal. */
+  medio: Exclude<MedioDePago, 'en_linea'>
 }
 
 /** Un pago hecho en un día, para el cierre de caja. */

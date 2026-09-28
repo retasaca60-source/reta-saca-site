@@ -118,7 +118,7 @@ el cliente o para recepción, en español.
 | `sesion()`, `iniciarSesion(correo, contraseña)`, `cerrarSesion()` | todos | Supabase Auth con correo y contraseña. Cada persona su usuario. |
 | `reservasEntre(desde, hasta)` | ambos | Todas las reservas de esas fechas, de cualquier estado, ordenadas por fecha y hora. |
 | `pagosDelDia(fecha)` | ambos | Pagos **hechos** ese día (en línea y en el local), para el cierre de caja. |
-| `anotarSinReserva(cliente)` | ambos | Reserva que empieza **ahora**, confirmada, una sola parte por cobrar. Revisa lugar y cierre. |
+| `anotarSinReserva(cliente)` | ambos | La caja del mostrador: registra **y cobra** (efectivo, tarjeta o transferencia, en `cliente.medio`) a un grupo que empieza **ahora**. Revisa horario, lugar y mesa. Guarda quién cobró. |
 | `asignarMesa(id, mesa \| null)` | ambos | Mesa concreta ("CH 3"): que exista, funcione y no la tenga otro grupo a esa hora. Marca que llegaron. |
 | `marcarPago(id, parteIds, medio, nombre?)` | ambos | Efectivo, tarjeta o transferencia. Guarda quién lo marcó. |
 | `extender(id, minutos)` | ambos | Revisa cierre y lugar; agrega una parte "extension" por cobrar. |
