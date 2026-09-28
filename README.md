@@ -61,6 +61,28 @@ la base no toca pantallas. Lo que los une es `src/datos/contrato.ts`: **si
 alguno necesita cambiarlo, se avisa al otro** (un cambio ahí obliga a ajustar
 las dos versiones).
 
+### Skills para Claude Code
+
+El repositorio trae skills en `.claude/skills/` (se reciben con `git pull`;
+`skills-lock.json` dice de dónde salió cada una). Claude Code las usa solo al
+abrir este proyecto:
+
+| Skill | Para qué | Cuándo |
+|---|---|---|
+| `codebase-design` | Diseñar módulos "profundos": mucha lógica detrás de una interfaz chica, con uniones limpias. Es la idea del contrato de datos. | Al crear o reorganizar una parte del código. |
+| `thermo-nuclear-code-quality-review` | Revisión muy estricta contra código espagueti: nada de `if` sueltos, archivos de más de 1,000 líneas, capas que solo pasan datos. | **Antes de subir un cambio grande.** Se llama a mano: `/thermo-nuclear-code-quality-review`. |
+| `supabase` · `supabase-postgres-best-practices` | Auth, RLS, migraciones, índices y trampas de seguridad de Supabase (oficiales). | Toda la parte de la base de datos. |
+| `vercel-react-best-practices` | Patrones de React para que las pantallas no se vuelvan lentas ni enredadas. | Al tocar pantallas. Ojo: trae reglas de Next.js (componentes de servidor) que **no aplican** aquí: esto es Vite, todo corre en el navegador. |
+
+Para Mercado Pago existe el plugin **oficial** `mp-integrate`
+(`mercadopago/mercadopago-claude-marketplace`). Es un plugin de Claude Code, no
+una skill suelta: se instala cuando haya cuenta del negocio, con
+`/plugin marketplace add mercadopago/mercadopago-claude-marketplace`.
+
+Antes de agregar otra skill: leer su contenido, preferir fuentes oficiales o
+con más de 1,000 instalaciones, e instalarla con `--copy` (en Windows los
+enlaces simbólicos de `.claude/skills` no se siguen).
+
 ### Probar la demostración
 
 - Sitio: `http://localhost:5190/` (o `reta-saca.netlify.app`).

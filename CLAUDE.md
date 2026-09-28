@@ -40,6 +40,8 @@ Codex…). Cada una está porque no seguirla ya costó algo.
 ## Antes de subir
 
 1. `npm test` y `npm run build` limpios.
+   En cambios grandes, además, `/thermo-nuclear-code-quality-review` (skill
+   del proyecto): el código espagueti se corrige antes de subir, no después.
 2. **Abrir el sitio y hacer una reserva completa.** Que compile no quiere decir
    que funcione.
 3. Al publicar, confirmar que Netlify sirve lo que compilaste: el nombre de
