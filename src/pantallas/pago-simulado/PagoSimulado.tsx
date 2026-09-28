@@ -17,9 +17,9 @@ export default function PagoSimulado() {
   const { datos, cargando } = usarDatos(async () => (servicioSimulado ? servicioSimulado.pagoSimulado.obtener(id) : null), [id])
 
   const demo = servicioSimulado
-  if (!demo) return <div className="card">Esta página solo existe en la demostración.</div>
-  if (cargando && !datos) return <div className="card cargando">Cargando…</div>
-  if (!datos) return <div className="card">Ese pago no existe.</div>
+  if (!demo) return <p className="nota">Esta página solo existe en la demostración.</p>
+  if (cargando && !datos) return <p className="cargando">Cargando…</p>
+  if (!datos) return <p className="nota">Ese pago no existe.</p>
 
   const { intento, reserva } = datos
   const pagar = async (aprobar: boolean) => {
@@ -35,43 +35,38 @@ export default function PagoSimulado() {
   }
 
   return (
-    <div className="screen">
-      <div className="card pago-simulado">
-        <div className="pago-simulado-marca">Mercado Pago · SIMULADO</div>
-        <p className="section-hint">Esta pantalla ocupa el lugar de Mercado Pago mientras no hay cuenta del negocio. No se cobra nada.</p>
-        <div className="summary-row">
-          <span className="label">Concepto</span>
-          <span className="value">Reta Saca · {reserva.folio}</span>
-        </div>
-        <div className="summary-row">
-          <span className="label">Reserva</span>
-          <span className="value">
-            {etiquetaFecha(reserva.fecha)} · {formatoHora(reserva.inicio)}
+    <>
+      <h1 className="titulo-grande" style={{ marginTop: 20 }}>
+        Pagar
+      </h1>
+      <p className="aviso aviso-alerta">Esta pantalla ocupa el lugar de Mercado Pago mientras no hay cuenta del negocio. No se cobra nada.</p>
+      <div className="grupo" style={{ marginTop: 16 }}>
+        <div className="fila-pago">
+          <span className="fila-pago-texto">
+            <strong>Reta Saca · {reserva.folio}</strong>
+            <span>
+              {etiquetaFecha(reserva.fecha)} · {formatoHora(reserva.inicio)} · paga {intento.nombre}
+            </span>
           </span>
+          <span className="numeros">{formatoDinero(intento.monto)}</span>
         </div>
-        <div className="summary-row">
-          <span className="label">Paga</span>
-          <span className="value">{intento.nombre}</span>
-        </div>
-        <div className="summary-total">
-          <span className="label">Total</span>
-          <span className="value">{formatoDinero(intento.monto)}</span>
-        </div>
-        {intento.resultado && <p className="section-hint">Este pago ya se {intento.resultado === 'pagado' ? 'hizo' : 'canceló'}.</p>}
-        {error && (
-          <p className="error-text" role="alert">
-            {error}
-          </p>
-        )}
       </div>
-      <div className="nav-row">
-        <button type="button" className="btn btn-ghost" disabled={enviando || Boolean(intento.resultado)} onClick={() => pagar(false)}>
-          Cancelar
+      {intento.resultado && <p className="nota">Este pago ya se {intento.resultado === 'pagado' ? 'hizo' : 'canceló'}.</p>}
+      {error && (
+        <p className="aviso aviso-error" role="alert">
+          {error}
+        </p>
+      )}
+      <div className="acciones">
+        <button type="button" className="boton boton-texto" disabled={enviando || Boolean(intento.resultado)} onClick={() => pagar(false)}>
+          Cancelar el pago
         </button>
-        <button type="button" className="btn btn-primary" disabled={enviando || Boolean(intento.resultado)} onClick={() => pagar(true)}>
+      </div>
+      <div className="barra-accion">
+        <button type="button" className="boton boton-principal" disabled={enviando || Boolean(intento.resultado)} onClick={() => pagar(true)}>
           {enviando ? 'Pagando…' : `Pagar ${formatoDinero(intento.monto)}`}
         </button>
       </div>
-    </div>
+    </>
   )
 }

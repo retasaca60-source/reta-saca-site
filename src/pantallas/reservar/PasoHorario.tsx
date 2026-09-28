@@ -1,4 +1,4 @@
-// Paso 2: día, duración y hora de inicio, con la disponibilidad del servicio.
+// Paso 2: día, cuánto tiempo y a qué hora, con la disponibilidad del servicio.
 
 import { useEffect, type Dispatch } from 'react'
 import { servicio } from '../../datos'
@@ -8,8 +8,8 @@ import type { Configuracion } from '../../negocio/configuracion'
 import { avisoPocosLugares } from '../../negocio/disponibilidad'
 import { formatoDinero } from '../../negocio/formato'
 import { diasReservables } from '../../negocio/horario'
-import { ahoraEnSonora, DIAS_CORTOS, diaDeLaSemana, formatoHora, horaDe24 } from '../../negocio/tiempo'
-import './horario.css'
+import { ahoraEnSonora, DIAS_CORTOS, diaDeLaSemana, formatoDuracion, formatoHora, horaDe24, sumarDias } from '../../negocio/tiempo'
+import { IconoAtras } from '../../vista/Iconos'
 
 interface Props {
   borrador: Borrador
@@ -18,16 +18,16 @@ interface Props {
 }
 
 export function PasoHorario({ borrador, despachar, config }: Props) {
-  const { fecha, duracion, inicio, partes } = borrador
-  // Este paso solo se abre con deporte y forma de pago elegidos (PasoDeporte no deja seguir sin ellos).
+  const { fecha, duracion, inicio } = borrador
+  // Este paso solo se abre con deporte y forma de pago elegidos.
   const deporte = borrador.deporte!
   const d = config.deportes[deporte]
-  const dias = diasReservables(config, ahoraEnSonora())
+  const ahora = ahoraEnSonora()
+  const dias = diasReservables(config, ahora)
   const { datos: horarios, cargando, error } = usarDatos(() => servicio.disponibilidad(deporte, fecha, duracion), [deporte, fecha, duracion])
 
   // Si la hora elegida ya no está libre (se llenó, o pasó el corte mientras
-  // decidía), se suelta: así no se puede seguir con una hora que la pantalla
-  // dice llena. Ese error ya pasó una vez (RESERVAS.md → registro).
+  // decidía), se suelta: así no se sigue con una hora que la pantalla dice llena.
   useEffect(() => {
     if (inicio === null || !horarios) return
     if (!horarios.some((x) => x.inicio === inicio && x.libres > 0)) despachar({ tipo: 'soltarHora' })
@@ -36,99 +36,85 @@ export function PasoHorario({ borrador, despachar, config }: Props) {
   const hayPromo = horarios?.some((x) => x.conPromo)
 
   return (
-    <div className="screen">
-      <div className="card">
-        <h2 className="section-title">Fecha y duración</h2>
-        <p className="section-hint">
-          {d.nombre} · {partes === 1 ? 'pago completo' : `pago entre ${partes}`}
-        </p>
+    <>
+      <button type="button" className="volver" onClick={() => despachar({ tipo: 'irAPaso', paso: 1, config })}>
+        <IconoAtras /> Deporte
+      </button>
+      <div className="fila-titulo">
+        <h1 className="titulo-grande">¿Cuándo?</h1>
+      </div>
 
-        <div className="field-label">Fecha</div>
-        <div className="date-scroll">
-          {dias.map((dia) => {
-            const [, , num] = dia.fecha.split('-').map(Number)
-            const dow = diaDeLaSemana(dia.fecha)
+      <div className="dias" role="group" aria-label="Día">
+        {dias.map((dia) => {
+          const [, , num] = dia.fecha.split('-').map(Number)
+          const nombre = dia.fecha === ahora.fecha ? 'Hoy' : dia.fecha === sumarDias(ahora.fecha, 1) ? 'Mañana' : DIAS_CORTOS[diaDeLaSemana(dia.fecha)]
+          return (
+            <button
+              key={dia.fecha}
+              type="button"
+              className="dia"
+              aria-pressed={fecha === dia.fecha}
+              disabled={dia.cerrado}
+              onClick={() => despachar({ tipo: 'elegirFecha', fecha: dia.fecha })}
+            >
+              <span className="dia-nombre">{nombre}</span>
+              <span className="dia-numero numeros">{num}</span>
+              {dia.cerrado && <span className="dia-cerrado">Cerrado</span>}
+            </button>
+          )
+        })}
+      </div>
+
+      <h2 className="titulo-seccion">¿Cuánto tiempo?</h2>
+      <div className="segmentado" role="group" aria-label="Cuánto tiempo">
+        {d.duraciones.map((m) => (
+          <button key={m} type="button" aria-pressed={duracion === m} onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}>
+            {formatoDuracion(m)}
+          </button>
+        ))}
+      </div>
+
+      <h2 className="titulo-seccion">¿A qué hora?</h2>
+      {borrador.aviso && (
+        <p className="aviso aviso-alerta" role="alert">
+          {borrador.aviso}
+        </p>
+      )}
+      {hayPromo && <p className="nota promo">Promo: 1 hora empezando a las 5:00 o 5:30 PM.</p>}
+      {error && <p className="aviso aviso-error">{error}</p>}
+      {!horarios && cargando && <p className="cargando">Buscando horarios…</p>}
+      {horarios && horarios.length === 0 && (
+        <p className="nota">No hay horarios este día para {formatoDuracion(duracion)}. Prueba otro día o menos tiempo.</p>
+      )}
+      {horarios && horarios.length > 0 && (
+        <div className="horas" aria-busy={cargando}>
+          {horarios.map((x) => {
+            const lleno = x.libres < 1
+            const aviso = lleno ? null : avisoPocosLugares(config, deporte, x.libres)
             return (
               <button
-                key={dia.fecha}
+                key={x.inicio}
                 type="button"
-                className={'date-chip' + (fecha === dia.fecha ? ' selected' : '')}
-                aria-pressed={fecha === dia.fecha}
-                disabled={dia.cerrado}
-                title={dia.cerrado ? 'Cerrado' : undefined}
-                onClick={() => despachar({ tipo: 'elegirFecha', fecha: dia.fecha })}
+                className={'hora' + (x.conPromo && !lleno ? ' con-promo' : '')}
+                disabled={lleno}
+                aria-pressed={inicio === x.inicio && !lleno}
+                data-hora={horaDe24(x.inicio)}
+                onClick={() => despachar({ tipo: 'elegirHora', inicio: x.inicio })}
               >
-                <div className="dow">{DIAS_CORTOS[dow]}</div>
-                <div className="num">{num}</div>
-                {dia.cerrado && <div className="dow">Cerrado</div>}
+                <span className="hora-valor numeros">{formatoHora(x.inicio)}</span>
+                <span className="hora-precio numeros">{lleno ? 'Lleno' : formatoDinero(x.precio)}</span>
+                {aviso && <span className="hora-aviso">{aviso}</span>}
               </button>
             )
           })}
         </div>
+      )}
 
-        <div className="field-label">Duración</div>
-        <div className="chip-row">
-          {d.duraciones.map((m) => (
-            <button
-              key={m}
-              type="button"
-              className={'chip' + (duracion === m ? ' selected' : '')}
-              aria-pressed={duracion === m}
-              onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}
-            >
-              {m} min
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="card">
-        <h2 className="section-title">Horario disponible</h2>
-        {borrador.aviso && (
-          <p className="aviso-alerta" role="alert">
-            {borrador.aviso}
-          </p>
-        )}
-        {hayPromo && <div className="promo-strip">Promo: 60 min empezando 5:00 o 5:30 PM</div>}
-        {error && <p className="error-text">{error}</p>}
-        {!horarios && cargando && <p className="section-hint">Buscando horarios…</p>}
-        {horarios && horarios.length === 0 && (
-          <p className="section-hint">No hay horarios para este día con {duracion} min. Prueba otro día o una duración más corta.</p>
-        )}
-        {horarios && horarios.length > 0 && (
-          <div className="slot-grid" aria-busy={cargando}>
-            {horarios.map((x) => {
-              const lleno = x.libres < 1
-              const aviso = lleno ? null : avisoPocosLugares(config, deporte, x.libres)
-              const elegido = inicio === x.inicio && !lleno
-              return (
-                <button
-                  key={x.inicio}
-                  type="button"
-                  className={'slot' + (lleno ? ' full' : '') + (x.conPromo && !lleno ? ' promo' : '') + (elegido ? ' selected' : '')}
-                  disabled={lleno}
-                  aria-pressed={elegido}
-                  data-hora={horaDe24(x.inicio)}
-                  onClick={() => despachar({ tipo: 'elegirHora', inicio: x.inicio })}
-                >
-                  <div className="t">{formatoHora(x.inicio)}</div>
-                  <div className="p">{lleno ? 'Lleno' : formatoDinero(x.precio)}</div>
-                  {aviso && <div className="low">{aviso}</div>}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      <div className="nav-row">
-        <button type="button" className="btn btn-ghost" onClick={() => despachar({ tipo: 'irAPaso', paso: 1, config })}>
-          Atrás
-        </button>
-        <button type="button" className="btn btn-primary" disabled={inicio === null} onClick={() => despachar({ tipo: 'irAPaso', paso: 3, config })}>
+      <div className="barra-accion">
+        <button type="button" className="boton boton-principal" disabled={inicio === null} onClick={() => despachar({ tipo: 'irAPaso', paso: 3, config })}>
           Continuar
         </button>
       </div>
-    </div>
+    </>
   )
 }

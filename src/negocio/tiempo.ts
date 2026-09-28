@@ -61,6 +61,14 @@ export function etiquetaFecha(fecha: string): string {
   return DIAS_CORTOS[diaDeLaSemana(fecha)] + ' ' + d + '/' + m
 }
 
+/** "Hoy", "Mañana" o "Mié 30/9", contado desde hoy en Sonora. */
+export function nombreDelDia(fecha: string): string {
+  const hoy = ahoraEnSonora().fecha
+  if (fecha === hoy) return 'Hoy'
+  if (fecha === sumarDias(hoy, 1)) return 'Mañana'
+  return etiquetaFecha(fecha)
+}
+
 /** "sábado 26 de sep" */
 export function fechaLarga(fecha: string): string {
   const [, m, d] = fecha.split('-').map(Number)

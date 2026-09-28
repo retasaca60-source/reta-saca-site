@@ -1,29 +1,23 @@
-// El logo arriba y el aviso de que es una demostración.
+// La barra de arriba del sitio: logo y nombre, y el aviso de demostración
+// mientras los datos sean simulados.
 
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { servicio } from '../datos'
-import './cabecera.css'
 
 export function Cabecera() {
+  // En "/" el pase ya lleva la marca arriba; en las demás páginas la barra sirve para volver al inicio.
+  const enReservar = useLocation().pathname === '/'
   return (
     <>
-      <div className="masthead">
+      <div className="barra-app" hidden={enReservar}>
         <Link to="/" aria-label="Reta Saca, inicio">
-          <img className="logo" src="/imagenes/logo.png" alt="Reta Saca" />
+          <img src="/imagenes/logo.png" alt="" />
+          <strong>Reta Saca</strong>
         </Link>
-        <div className="tagline">
-          PING PONG<span className="dot">&bull;</span>CORNHOLE<span className="dot">&bull;</span>POPDARTS
-        </div>
       </div>
-
       {/* Desaparece solo cuando los datos son los reales (datos/index.ts). */}
       {servicio.modo === 'simulado' && (
-      <div className="demo-banner">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-        </svg>
-        <span>Modo demostración: las reservas se guardan solo en este navegador y el pago es simulado. No se cobra nada.</span>
-      </div>
+        <p className="aviso-demo">Modo demostración: las reservas se guardan solo en este navegador y el pago es simulado. No se cobra nada.</p>
       )}
     </>
   )

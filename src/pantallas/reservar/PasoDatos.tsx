@@ -1,5 +1,5 @@
-// Paso 3: nombre, WhatsApp, reglas y resumen. "Ir a pagar" aparta la mesa
-// (10 min) y manda a pagar la parte del organizador.
+// Paso 3: a nombre de quién, las reglas, y pagar. "Pagar" aparta la mesa
+// (10 min) y manda a pagar la parte del organizador. El resumen es el pase.
 
 import { useState, type Dispatch } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -10,8 +10,7 @@ import type { Configuracion, Duracion } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
 import { precioDe } from '../../negocio/precios'
 import { repartir } from '../../negocio/reserva'
-import { etiquetaFecha, formatoDuracion, formatoHora } from '../../negocio/tiempo'
-import { Fila } from '../../vista/Fila'
+import { IconoAtras } from '../../vista/Iconos'
 
 interface Props {
   borrador: Borrador
@@ -29,14 +28,13 @@ export function PasoDatos({ borrador, despachar, config }: Props) {
   const partes = borrador.partes!
   const inicio = borrador.inicio!
 
-  // El precio que se muestra es orientativo: el que vale lo calcula el servicio al apartar.
-  const { precio, conPromo } = precioDe(config, deporte, inicio, duracion as Duracion)
+  const { precio } = precioDe(config, deporte, inicio, duracion as Duracion)
   const montos = repartir(precio, partes)
   const listo = datosCompletos(borrador)
-  const errorWhatsapp = whatsapp.length && whatsapp.length !== 10 ? 'Debe tener 10 dígitos.' : ''
+  const errorWhatsapp = whatsapp.length && whatsapp.length !== 10 ? 'Tienen que ser 10 dígitos.' : ''
   const r = config.reglas
 
-  const irAPagar = async () => {
+  const pagar = async () => {
     if (!listo || enviando) return
     setEnviando(true)
     setError(null)
@@ -57,80 +55,54 @@ export function PasoDatos({ borrador, despachar, config }: Props) {
   }
 
   return (
-    <div className="screen">
-      <div className="card">
-        <h2 className="section-title">Tus datos</h2>
-        <p className="section-hint">Para confirmar tu reserva y mandarte tu link.</p>
-
-        <label className="field-label" htmlFor="ff-name">
-          Nombre
-        </label>
-        <input
-          type="text"
-          id="ff-name"
-          placeholder="Tu nombre"
-          autoComplete="name"
-          value={nombre}
-          onChange={(e) => despachar({ tipo: 'escribirNombre', nombre: e.target.value })}
-        />
-
-        <label className="field-label" htmlFor="ff-wa">
-          WhatsApp (10 dígitos)
-        </label>
-        <input
-          type="tel"
-          id="ff-wa"
-          placeholder="6621234567"
-          maxLength={10}
-          autoComplete="tel-national"
-          inputMode="numeric"
-          value={whatsapp}
-          aria-invalid={Boolean(errorWhatsapp)}
-          aria-describedby="ff-wa-error"
-          onChange={(e) => despachar({ tipo: 'escribirWhatsapp', whatsapp: e.target.value })}
-        />
-        <div className="error-text" id="ff-wa-error">
-          {errorWhatsapp}
-        </div>
+    <>
+      <button type="button" className="volver" onClick={() => despachar({ tipo: 'irAPaso', paso: 2, config })}>
+        <IconoAtras /> Horario
+      </button>
+      <div className="fila-titulo">
+        <h1 className="titulo-grande">¿A nombre de quién?</h1>
       </div>
 
-      <div className="card">
-        <h2 className="section-title">Resumen</h2>
-        <Fila etiqueta="Deporte" valor={config.deportes[deporte].nombre} />
-        <Fila etiqueta="Fecha" valor={etiquetaFecha(fecha)} />
-        <Fila etiqueta="Horario" valor={`${formatoHora(inicio)} · ${formatoDuracion(duracion)}`} />
-        {conPromo && <Fila etiqueta="Promo aplicada" valor="Sí" color="var(--teal)" />}
-        <div className="summary-total">
-          <span className="label">Total por la mesa</span>
-          <span className="value">{formatoDinero(precio)}</span>
+      <div className="grupo" style={{ marginTop: 14 }}>
+        <div className="campo-form">
+          <label htmlFor="ff-name">Nombre</label>
+          <input
+            type="text"
+            id="ff-name"
+            placeholder="Tu nombre"
+            autoComplete="name"
+            value={nombre}
+            onChange={(e) => despachar({ tipo: 'escribirNombre', nombre: e.target.value })}
+          />
         </div>
-
-        <div className="split-note">
-          <div className="split-box now">
-            <div className="k">Pagas ahora</div>
-            <div className="v">{formatoDinero(montos[0])}</div>
-          </div>
-          {partes > 1 && (
-            <div className="split-box">
-              <div className="k">Tus {partes - 1} amigos</div>
-              <div className="v">{formatoDinero(montos[1])} c/u</div>
-            </div>
-          )}
+        <div className="campo-form">
+          <label htmlFor="ff-wa">WhatsApp</label>
+          <input
+            type="tel"
+            id="ff-wa"
+            placeholder="10 dígitos"
+            maxLength={10}
+            autoComplete="tel-national"
+            inputMode="numeric"
+            value={whatsapp}
+            aria-invalid={Boolean(errorWhatsapp)}
+            aria-describedby="ff-wa-error"
+            onChange={(e) => despachar({ tipo: 'escribirWhatsapp', whatsapp: e.target.value })}
+          />
         </div>
-        {partes > 1 && (
-          <p className="section-hint" style={{ marginTop: 12, marginBottom: 0 }}>
-            Al pagar te damos un link para mandarles. Pueden pagar ahí o en el local. Lo que no se pague lo cubres tú.
-          </p>
-        )}
       </div>
+      <p className="error-campo" id="ff-wa-error">
+        {errorWhatsapp}
+      </p>
+      <p className="nota-chica">Aquí te mandamos el link de tu reserva.</p>
 
-      <div className="card">
-        <h2 className="section-title">Antes de pagar</h2>
+      <h2 className="titulo-seccion">Antes de pagar</h2>
+      <div className="grupo">
         <ul className="reglas">
           <li>Tu mesa queda apartada {r.minutosDeApartado} minutos mientras pagas.</li>
-          <li>Cancelas con devolución completa hasta {r.horasParaCancelar} horas antes. Después, no hay devolución.</li>
-          <li>Tolerancia de {r.minutosDeTolerancia} minutos: si no llegas, la mesa se puede liberar. Llegar tarde no recorre tu horario.</li>
-          {partes > 1 && <li>Lo que tus amigos no paguen lo cubres tú en el local.</li>}
+          <li>Si cancelas hasta {r.horasParaCancelar} horas antes, te devolvemos todo. Después ya no hay devolución.</li>
+          <li>Hay {r.minutosDeTolerancia} minutos de tolerancia; llegar tarde no recorre tu horario.</li>
+          {partes > 1 && <li>Lo que tus amigos no paguen, lo cubres tú en el local.</li>}
         </ul>
         <label className="casilla">
           <input type="checkbox" checked={aceptaReglas} onChange={(e) => despachar({ tipo: 'aceptarReglas', acepta: e.target.checked })} />
@@ -141,19 +113,16 @@ export function PasoDatos({ borrador, despachar, config }: Props) {
       </div>
 
       {error && (
-        <p className="error-text" role="alert">
+        <p className="aviso aviso-error" role="alert">
           {error}
         </p>
       )}
 
-      <div className="nav-row">
-        <button type="button" className="btn btn-ghost" onClick={() => despachar({ tipo: 'irAPaso', paso: 2, config })}>
-          Atrás
-        </button>
-        <button type="button" className="btn btn-primary" disabled={!listo || enviando} onClick={irAPagar}>
-          {enviando ? 'Apartando tu mesa…' : `Ir a pagar ${formatoDinero(montos[0])}`}
+      <div className="barra-accion">
+        <button type="button" className="boton boton-principal" disabled={!listo || enviando} onClick={pagar}>
+          {enviando ? 'Apartando tu mesa…' : `Pagar ${formatoDinero(montos[0])}`}
         </button>
       </div>
-    </div>
+    </>
   )
 }

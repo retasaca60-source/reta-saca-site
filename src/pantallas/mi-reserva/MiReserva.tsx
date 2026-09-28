@@ -1,4 +1,4 @@
-// El link privado del organizador (/r/<token>): ver su reserva, quién ha
+// El link privado del organizador (/r/<token>): su pase completo, quién ha
 // pagado, compartir el cobro y cancelar. Es también la confirmación al pagar.
 // Sin cuenta: quien tiene este link manda sobre la reserva (RESERVAS.md §6).
 
@@ -8,10 +8,9 @@ import { servicio } from '../../datos'
 import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../../mecanismos/whatsapp/enlaces'
 import { formatoDinero } from '../../negocio/formato'
-import { pagado, pendiente, puedeCancelarConDevolucion, type Reserva } from '../../negocio/reserva'
-import { fechaLarga, formatoDuracion, formatoHora, instante } from '../../negocio/tiempo'
-import { Fila } from '../../vista/Fila'
-import { IconoPalomita } from '../../vista/Iconos'
+import { pagado, pendiente, puedeCancelarConDevolucion, total, type Reserva } from '../../negocio/reserva'
+import { fechaLarga, formatoDuracion, formatoHora, instante, nombreDelDia } from '../../negocio/tiempo'
+import { Pase } from '../../vista/Pase'
 import './mi-reserva.css'
 
 export default function MiReserva() {
@@ -19,26 +18,27 @@ export default function MiReserva() {
   const navegar = useNavigate()
   const [busqueda] = useSearchParams()
   const pago = busqueda.get('pago')
-  const { datos, cargando, error } = usarDatos(
-    () => Promise.all([servicio.reservaPorTokenPrivado(token), servicio.configuracion()]),
-    [token],
-  )
+  const { datos, cargando, error } = usarDatos(() => Promise.all([servicio.reservaPorTokenPrivado(token), servicio.configuracion()]), [token])
   const [accion, setAccion] = useState<string | null>(null)
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
   const [confirmandoCancelar, setConfirmandoCancelar] = useState(false)
 
-  if (error) return <div className="card">{error}</div>
-  if (!datos && cargando) return <div className="card cargando">Cargando tu reserva…</div>
+  if (error) return <p className="aviso aviso-error">{error}</p>
+  if (!datos && cargando) return <p className="cargando">Cargando tu reserva…</p>
   const [r, config] = datos ?? [null, null]
   if (!r || !config) {
     return (
-      <div className="card">
-        <h2 className="section-title">No encontramos esa reserva</h2>
-        <p className="section-hint">Revisa que el link esté completo. Si lo perdiste, recepción te lo puede reenviar.</p>
-        <Link className="btn btn-primary" to="/">
-          Hacer una reserva
-        </Link>
-      </div>
+      <>
+        <h1 className="titulo-grande" style={{ marginTop: 24 }}>
+          No encontramos esa reserva
+        </h1>
+        <p className="nota">Revisa que el link esté completo. Si lo perdiste, en recepción te lo reenvían.</p>
+        <div className="acciones">
+          <Link className="boton boton-principal" to="/">
+            Hacer una reserva
+          </Link>
+        </div>
+      </>
     )
   }
 
@@ -51,6 +51,7 @@ export default function MiReserva() {
   const cuando = `${fechaLarga(r.fecha)} a las ${formatoHora(r.inicio)}`
   const yaEmpezo = instante(r.fecha, r.inicio) <= ahora
   const conDevolucion = puedeCancelarConDevolucion(r, config, ahora)
+  const recienPagada = pago === 'aprobado' && r.estado === 'confirmada'
 
   const ejecutar = async (nombre: string, f: () => Promise<unknown>) => {
     setAccion(nombre)
@@ -74,84 +75,69 @@ export default function MiReserva() {
   const cancelar = () => ejecutar('cancelar', () => servicio.cancelarComoCliente(r.tokenPrivado).then(() => setConfirmandoCancelar(false)))
 
   return (
-    <div className="screen">
-      {pago === 'aprobado' && r.estado === 'confirmada' && (
-        <div className="card success-wrap">
-          <div className="success-icon">
-            <IconoPalomita tamano={28} grosor={2.4} />
-          </div>
-          <div className="success-title">¡Reserva lista!</div>
-          <p className="section-hint">Guarda este link: aquí ves quién ha pagado, compartes el cobro y puedes cancelar.</p>
-        </div>
-      )}
+    <>
+      <h1 className="titulo-grande" style={{ marginTop: 20 }}>
+        {recienPagada ? '¡Listo! Ya tienen mesa' : 'Tu reserva'}
+      </h1>
+      {recienPagada && <p className="nota">Guarda este link: aquí ves quién ya pagó, compartes el cobro y puedes cancelar.</p>}
       {pago === 'cancelado' && r.estado === 'apartada' && (
-        <p className="aviso-alerta" role="alert">
+        <p className="aviso aviso-alerta" role="alert">
           No se hizo el pago. Tu mesa sigue apartada unos minutos: puedes intentarlo otra vez.
         </p>
       )}
 
-      <div className="card">
-        <div className="encabezado-reserva">
-          <h2 className="section-title">
-            {d.nombre} · {formatoHora(r.inicio)}
-          </h2>
-          <EstadoReserva r={r} />
-        </div>
-        <p className="section-hint">{cuando}</p>
-        <div className="code-box">{r.folio}</div>
-        <Fila etiqueta="Duración" valor={formatoDuracion(r.duracion)} />
-        <Fila etiqueta="A nombre de" valor={r.organizador.nombre} />
-        {r.conPromo && <Fila etiqueta="Promo aplicada" valor="Sí" color="var(--teal)" />}
-        <div className="summary-total">
-          <span className="label">Total por la mesa</span>
-          <span className="value">{formatoDinero(r.partes.reduce((s, p) => s + p.monto, 0))}</span>
-        </div>
+      <div style={{ marginTop: 18 }}>
+        <Pase
+          datos={{
+            deporte: d.nombre,
+            hora: formatoHora(r.inicio),
+            dia: nombreDelDia(r.fecha),
+            duracion: formatoDuracion(r.duracion),
+            titular: r.organizador.nombre,
+            total: total(r),
+            folio: r.folio,
+            estado: textoDeEstado(r),
+            apagado: r.estado === 'cancelada',
+          }}
+        />
       </div>
 
-      <div className="card">
-        <h2 className="section-title">Pagos</h2>
-        <ListaDePartes r={r} />
-        <p className="section-hint" style={{ marginTop: 12, marginBottom: 0 }}>
-          Pagado {formatoDinero(pagado(r))}
-          {falta > 0 && r.estado !== 'cancelada' && <> · faltan {formatoDinero(falta)}: se pagan con el link o en el local; si no, los cubres tú.</>}
-        </p>
-      </div>
+      <h2 className="titulo-seccion">Pagos</h2>
+      <ListaDePagos r={r} />
+      <p className="nota numeros">
+        Pagado {formatoDinero(pagado(r))}
+        {falta > 0 && r.estado !== 'cancelada' && ` · faltan ${formatoDinero(falta)}. Se pagan con el link o en el local; si no, los cubres tú.`}
+      </p>
 
       {errorAccion && (
-        <p className="error-text" role="alert">
+        <p className="aviso aviso-error" role="alert">
           {errorAccion}
         </p>
-      )}
-
-      {r.estado === 'apartada' && miParte && !miParte.pago && (
-        <button type="button" className="btn btn-primary" disabled={accion !== null} onClick={pagarMiParte}>
-          Pagar mi parte ({formatoDinero(miParte.monto)})
-        </button>
       )}
 
       {r.estado === 'confirmada' && (
         <div className="acciones">
           {r.partesElegidas > 1 && falta > 0 && (
             <a
-              className="btn btn-primary"
-              href={enlaceWhatsApp(`Ya aparté la mesa de ${d.nombre} para el ${cuando} (Reta Saca). Aquí pagas tu parte: ${linkCobro}`)}
+              className="boton boton-principal"
+              href={enlaceWhatsApp(`Ya aparté la mesa de ${d.nombre} para el ${cuando} en Reta Saca. Aquí pagas tu parte: ${linkCobro}`)}
               target="_blank"
               rel="noreferrer"
             >
-              Mandar link de cobro a mis amigos
+              Mandar el cobro a mis amigos
             </a>
           )}
           <a
-            className="btn btn-ghost"
+            className="boton boton-secundario"
             href={enlaceWhatsApp(`Mi reserva en Reta Saca (${r.folio}), ${cuando}: ${linkPrivado}`, r.organizador.whatsapp)}
             target="_blank"
             rel="noreferrer"
           >
-            Enviarme este link por WhatsApp
+            Guardar mi link en WhatsApp
           </a>
           {config.whatsappNegocio && (
             <a
-              className="btn btn-ghost"
+              className="boton boton-secundario"
               href={enlaceWhatsApp(`Hola, reservé ${d.nombre} para el ${cuando}. Folio ${r.folio}, a nombre de ${r.organizador.nombre}.`, config.whatsappNegocio)}
               target="_blank"
               rel="noreferrer"
@@ -163,27 +149,27 @@ export default function MiReserva() {
       )}
 
       {r.estado !== 'cancelada' && !yaEmpezo && (
-        <div className="card zona-cancelar">
+        <div className="zona-cancelar">
           {!confirmandoCancelar ? (
-            <button type="button" className="btn btn-ghost" onClick={() => setConfirmandoCancelar(true)}>
+            <button type="button" className="boton boton-texto" onClick={() => setConfirmandoCancelar(true)}>
               Cancelar reserva
             </button>
           ) : (
-            <>
-              <p className="section-hint">
+            <div className="grupo confirmar-cancelar">
+              <p>
                 {conDevolucion
-                  ? `Se devuelve todo lo pagado en línea a cada persona que pagó.`
-                  : `Faltan menos de ${config.reglas.horasParaCancelar} horas: si cancelas NO hay devolución. La mesa se libera para alguien más.`}
+                  ? 'Te devolvemos todo lo pagado en línea, a cada quien.'
+                  : `Faltan menos de ${config.reglas.horasParaCancelar} horas: si cancelas, NO hay devolución. La mesa se libera para alguien más.`}
               </p>
-              <div className="nav-row" style={{ marginTop: 0 }}>
-                <button type="button" className="btn btn-ghost" onClick={() => setConfirmandoCancelar(false)}>
-                  No, mantener
+              <div className="confirmar-botones">
+                <button type="button" className="boton boton-secundario" onClick={() => setConfirmandoCancelar(false)}>
+                  Mejor no
                 </button>
-                <button type="button" className="btn btn-primary" disabled={accion !== null} onClick={cancelar}>
+                <button type="button" className="boton boton-principal" disabled={accion !== null} onClick={cancelar}>
                   {conDevolucion ? 'Sí, cancelar' : 'Cancelar sin devolución'}
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       )}
@@ -191,38 +177,49 @@ export default function MiReserva() {
       <Link className="enlace-discreto" to="/">
         Hacer otra reserva
       </Link>
-    </div>
+
+      {r.estado === 'apartada' && miParte && !miParte.pago && (
+        <div className="barra-accion">
+          <button type="button" className="boton boton-principal" disabled={accion !== null} onClick={pagarMiParte}>
+            Pagar mi parte ({formatoDinero(miParte.monto)})
+          </button>
+        </div>
+      )}
+    </>
   )
 }
 
-export function EstadoReserva({ r }: { r: Reserva }) {
+function textoDeEstado(r: Reserva): string {
   if (r.estado === 'apartada') {
-    return <span className="estado estado-apartada">Apartada hasta {r.apartadaHasta ? new Date(r.apartadaHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Hermosillo' }) : ''}</span>
+    const hasta = r.apartadaHasta ? new Date(r.apartadaHasta).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Hermosillo' }) : ''
+    return `Apartada hasta ${hasta}`
   }
   if (r.estado === 'cancelada') {
-    const motivo = { cliente: 'Cancelada', negocio: 'Cancelada por el negocio', no_llego: 'Liberada (no llegaron)', apartado_vencido: 'No se pagó a tiempo' }
-    return <span className="estado estado-cancelada">{r.cancelacion ? motivo[r.cancelacion.motivo] : 'Cancelada'}</span>
+    const motivo = { cliente: 'Cancelada', negocio: 'Cancelada por el local', no_llego: 'Liberada', apartado_vencido: 'No se pagó a tiempo' }
+    return r.cancelacion ? motivo[r.cancelacion.motivo] : 'Cancelada'
   }
-  return <span className="estado estado-confirmada">Confirmada</span>
+  return 'Confirmada'
 }
 
-export function ListaDePartes({ r }: { r: Pick<Reserva, 'partes' | 'organizador'> }) {
-  let amigo = 0
+function ListaDePagos({ r }: { r: Reserva }) {
+  let amigo = 1
   return (
-    <div>
+    <ul className="grupo">
       {r.partes.map((p) => {
         const quien =
-          p.concepto === 'extension' ? 'Tiempo extra' : p.concepto === 'cambio' ? 'Diferencia por cambio' : p.delOrganizador ? `${r.organizador.nombre} (organiza)` : `Parte ${++amigo + 1}`
+          p.concepto === 'extension' ? 'Tiempo extra' : p.concepto === 'cambio' ? 'Diferencia por cambio' : p.delOrganizador ? `${r.organizador.nombre} (tú)` : `Amigo ${amigo++}`
         const estado = !p.pago ? 'Pendiente' : p.pago.devuelto ? 'Devuelto' : `Pagó ${p.pago.nombre}`
+        const pagada = Boolean(p.pago && !p.pago.devuelto)
         return (
-          <div key={p.id} className={'summary-row parte' + (p.pago && !p.pago.devuelto ? ' pagada' : '')}>
-            <span className="label">{quien}</span>
-            <span className="value">
-              {formatoDinero(p.monto)} · {estado}
+          <li key={p.id} className="fila-pago">
+            <span className="fila-pago-texto">
+              <strong>{quien}</strong>
+              <span className={pagada ? 'pagada' : ''}>{estado}</span>
             </span>
-          </div>
+            <span className="numeros">{formatoDinero(p.monto)}</span>
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }

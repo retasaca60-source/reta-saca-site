@@ -1,0 +1,91 @@
+/* El pase: rojo de la marca, campos de Wallet (etiqueta chica, valor grande),
+   perforación con muescas y una sombra larga, la única del sitio. */
+
+.pase {
+  position: relative;
+  margin-top: 8px;
+  padding: 16px 18px 18px;
+  border-radius: 22px;
+  background: var(--rojo);
+  color: #fff;
+  box-shadow: var(--sombra-pase);
+  font-variant-numeric: tabular-nums;
+  transition: filter 0.4s var(--curva), opacity 0.4s var(--curva);
+}
+.pase.apagado { filter: grayscale(1); opacity: 0.7; }
+
+.pase-cabeza { display: flex; align-items: center; gap: 10px; }
+.pase-cabeza img { width: 30px; height: 30px; border-radius: 50%; background: #fff; }
+.pase-marca { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+.pase-estado {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  /* Oscurecer y no aclarar: el texto blanco sobre un rojo más claro bajaba de 4.5:1. */
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pase-principal,
+.pase-secundario,
+.pase-pie { display: flex; gap: 12px; }
+.pase-principal { margin-top: 22px; }
+.pase-secundario { margin-top: 16px; }
+.pase-pie { margin-top: 2px; }
+
+.pase-campo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pase-campo.derecha { text-align: right; align-items: flex-end; }
+.pase-etiqueta {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  /* Con menos de 0.9 de opacidad no pasa 4.5:1 sobre el rojo a 12 px. */
+  color: rgba(255, 255, 255, 0.92);
+}
+.pase-valor {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.pase-principal .pase-valor { font-size: 30px; font-weight: 800; letter-spacing: -0.035em; }
+.pase-campo.fuerte .pase-valor { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
+.pase-valor.vacio { color: rgba(255, 255, 255, 0.55); }
+
+/* El movimiento del sitio: cada dato entra al pase como si se imprimiera. Con
+   @starting-style y no con fotogramas: si el navegador no corre la
+   transición, el valor ya está visible. En reposo el filtro es `none` (un
+   blur(0) dejaría una capa de apilado sin razón). */
+.pase-valor {
+  transition: opacity 0.45s var(--curva), filter 0.45s var(--curva), transform 0.45s var(--curva);
+  filter: none;
+}
+@starting-style {
+  .pase-valor { opacity: 0; filter: blur(6px); transform: translateY(4px); }
+}
+
+/* La perforación: línea punteada con una muesca a cada lado, del color del fondo. */
+.pase-corte {
+  position: relative;
+  height: 1px;
+  margin: 18px -18px 16px;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.45) 55%, transparent 0);
+  background-size: 10px 1px;
+}
+.pase-corte::before,
+.pase-corte::after {
+  content: '';
+  position: absolute;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--fondo);
+}
+.pase-corte::before { left: -11px; }
+.pase-corte::after { right: -11px; }

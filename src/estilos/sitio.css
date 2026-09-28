@@ -1,0 +1,325 @@
+/* El mundo visual del sitio del cliente: un pase de Wallet dentro de una app
+   tipo iOS. Todo vive bajo .sitio para no tocar el panel, que tiene el suyo.
+   Los colores se declaran aquí como variables; ningún otro archivo del sitio
+   escribe colores sueltos. */
+
+.sitio {
+  --fondo: #f2f2f7;
+  --superficie: #ffffff;
+  --superficie-2: #e9e9ee;
+  --tinta: #1d1d1f;
+  --tinta-2: #5f5f64;
+  --tinta-3: #6e6e73;
+  --linea: rgba(60, 60, 67, 0.16);
+  /* Rojo de la marca, oscurecido lo justo para que el texto blanco encima pase 4.5:1. */
+  --rojo: #cc1f2b;
+  --rojo-hundido: #ad1823;
+  /* Rojo para TEXTO (enlaces, volver, marcas): en oscuro se aclara para pasar 4.5:1. */
+  --rojo-texto: #cc1f2b;
+  --rojo-suave: rgba(204, 31, 43, 0.1);
+  --verde: #1f7a36;
+  --verde-suave: rgba(31, 122, 54, 0.12);
+  --ambar: #9a4a00;
+  --ambar-suave: rgba(214, 120, 0, 0.14);
+  --vidrio: rgba(246, 246, 249, 0.74);
+  --sombra-pase: 0 1px 2px rgba(80, 8, 12, 0.18), 0 18px 40px -18px rgba(120, 10, 18, 0.55);
+  --sombra-suave: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px -16px rgba(0, 0, 0, 0.18);
+  --curva: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sitio {
+    --fondo: #000000;
+    --superficie: #1c1c1e;
+    --superficie-2: #2c2c2e;
+    --tinta: #f5f5f7;
+    --tinta-2: #a8a8ad;
+    --tinta-3: #8e8e93;
+    --linea: rgba(84, 84, 88, 0.55);
+    --rojo-texto: #ff6b70;
+    --verde: #34c759;
+    --verde-suave: rgba(52, 199, 89, 0.16);
+    --ambar: #ffb340;
+    --ambar-suave: rgba(255, 159, 10, 0.16);
+    --vidrio: rgba(22, 22, 24, 0.72);
+    --sombra-suave: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 26px -16px rgba(0, 0, 0, 0.8);
+    color-scheme: dark;
+  }
+}
+
+/* El fondo de toda la página es el del sitio mientras se está en él. Va con
+   el color escrito: las variables viven en .sitio y el body está afuera. */
+body:has(.sitio) {
+  background: #f2f2f7;
+  padding: 0;
+}
+@media (prefers-color-scheme: dark) {
+  body:has(.sitio) { background: #000; }
+}
+
+.sitio {
+  width: 100%;
+  max-width: 460px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 0 16px 120px;
+  background: var(--fondo);
+  color: var(--tinta);
+  /* San Francisco en los aparatos de Apple; en Android y Windows, Inter, la cara
+     libre más cercana a sus proporciones. */
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sitio ::selection { background: var(--rojo-suave); color: var(--tinta); }
+.sitio :focus-visible { outline: 3px solid color-mix(in srgb, var(--rojo) 55%, transparent); outline-offset: 2px; }
+.sitio a { color: var(--rojo-texto); text-underline-offset: 3px; }
+.sitio [hidden] { display: none !important; }
+.sitio .numeros { font-variant-numeric: tabular-nums; }
+
+/* ── Encabezado de la app ─────────────────────────────────────────────── */
+
+.barra-app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 0 6px;
+}
+.barra-app a { display: flex; align-items: center; gap: 10px; color: var(--tinta); text-decoration: none; min-height: 44px; }
+.barra-app img { width: 34px; height: 34px; border-radius: 50%; }
+.barra-app strong { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+
+.aviso-demo {
+  margin: 4px 0 18px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--ambar-suave);
+  color: var(--ambar);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* ── Títulos ──────────────────────────────────────────────────────────── */
+
+.titulo-grande {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+.titulo-seccion {
+  margin: 28px 0 10px;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.nota { margin: 8px 2px 0; color: var(--tinta-2); font-size: 15px; line-height: 1.4; }
+.nota-chica { margin: 6px 2px 0; color: var(--tinta-2); font-size: 13px; }
+
+.fila-titulo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 26px; }
+.fila-titulo .paso-de { color: var(--tinta-3); font-size: 13px; font-weight: 600; white-space: nowrap; }
+
+.volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  margin: 18px 0 -8px -6px;
+  padding: 0 8px 0 2px;
+  border: 0;
+  background: none;
+  color: var(--rojo-texto);
+  font: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+/* ── Listas agrupadas de iOS ──────────────────────────────────────────── */
+
+.grupo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 14px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-suave);
+  overflow: hidden;
+}
+.grupo > * + * { border-top: 0.5px solid var(--linea); }
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 16px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s var(--curva);
+}
+.opcion:active { background: var(--superficie-2); }
+.opcion-icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--superficie-2);
+  color: var(--rojo-texto);
+}
+.opcion-icono img { width: 72%; height: 72%; object-fit: contain; }
+.opcion-texto { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.opcion-texto strong { font-size: 17px; font-weight: 600; }
+.opcion-texto span { color: var(--tinta-2); font-size: 14px; }
+.opcion-marca { flex: none; width: 24px; height: 24px; color: var(--rojo-texto); opacity: 0; transition: opacity 0.2s var(--curva); }
+.opcion[aria-pressed='true'] .opcion-marca { opacity: 1; }
+
+/* ── Control segmentado ───────────────────────────────────────────────── */
+
+.segmentado {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--superficie-2);
+}
+.segmentado button {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--tinta);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.25s var(--curva), box-shadow 0.25s var(--curva);
+}
+.segmentado button[aria-pressed='true'] { background: var(--superficie); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.05); }
+
+/* ── Campos de formulario agrupados ───────────────────────────────────── */
+
+.campo-form { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; }
+.campo-form label { flex: none; width: 92px; font-size: 17px; }
+.campo-form input {
+  caret-color: var(--rojo);
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  font-size: 17px;
+  outline: none;
+}
+.campo-form input::placeholder { color: var(--tinta-3); }
+.error-campo { margin: 8px 16px 0; color: var(--rojo-texto); font-size: 13px; min-height: 1em; }
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 8px 16px;
+  font-size: 15px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.casilla a { display: inline-block; padding-block: 12px; margin-block: -12px; white-space: nowrap; }
+.casilla input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--rojo); }
+
+.reglas { margin: 0; padding: 14px 16px 14px 34px; color: var(--tinta-2); font-size: 15px; line-height: 1.45; }
+.reglas li + li { margin-top: 6px; }
+
+/* ── Botones ──────────────────────────────────────────────────────────── */
+
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s var(--curva), background-color 0.2s var(--curva), opacity 0.2s;
+}
+.boton:active { transform: scale(0.98); }
+.boton-principal { background: var(--rojo); color: #fff; }
+.boton-principal:hover { background: var(--rojo-hundido); }
+.boton-principal:disabled { background: var(--superficie-2); color: var(--tinta-3); cursor: not-allowed; transform: none; }
+.boton-secundario { background: var(--superficie); color: var(--rojo-texto); box-shadow: var(--sombra-suave); }
+.boton-texto { background: none; color: var(--rojo-texto); min-height: 44px; }
+.sitio a.boton-principal { color: #fff; }
+
+.acciones { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+
+/* La barra de acción fija abajo, en vidrio: el único vidrio del sitio, porque
+   es donde el contenido pasa por debajo mientras se desplaza. */
+.barra-accion {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--vidrio);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+  border-top: 0.5px solid var(--linea);
+}
+.barra-accion > * { width: 100%; max-width: 428px; }
+
+/* ── Filas de pagos (mi reserva y cobro) ──────────────────────────────── */
+
+.fila-pago { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 16px; }
+.fila-pago-texto { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.fila-pago-texto strong { font-size: 17px; font-weight: 600; }
+.fila-pago-texto span { font-size: 14px; color: var(--tinta-2); }
+.fila-pago-texto span.pagada { color: var(--verde); font-weight: 600; }
+.fila-pago > .numeros { font-size: 17px; font-weight: 600; }
+
+
+/* ── Texto legal ──────────────────────────────────────────────────────── */
+
+.texto-legal > * + * { border-top: 0; }
+.texto-legal { margin-top: 16px; padding: 4px 18px 16px; font-size: 15px; line-height: 1.55; }
+.texto-legal h3 { margin: 18px 0 6px; font-size: 17px; letter-spacing: -0.015em; }
+.texto-legal ul { padding-left: 18px; margin: 6px 0; }
+
+/* ── Avisos y estados ─────────────────────────────────────────────────── */
+
+.aviso { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; font-size: 15px; line-height: 1.4; }
+.aviso-alerta { background: var(--ambar-suave); color: var(--ambar); }
+.aviso-error { background: var(--rojo-suave); color: var(--rojo-texto); }
+.cargando { padding: 40px 0; color: var(--tinta-2); text-align: center; font-size: 15px; }
+
+.enlace-discreto { display: block; margin-top: 22px; text-align: center; color: var(--tinta-2) !important; font-size: 15px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sitio *, .sitio *::before, .sitio *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

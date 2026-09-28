@@ -13,6 +13,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
 import { Cabecera } from '../vista/Cabecera'
+import '../estilos/sitio.css'
 
 const Reservar = lazy(() => import('../pantallas/reservar/Reservar'))
 const MiReserva = lazy(() => import('../pantallas/mi-reserva/MiReserva'))
@@ -41,12 +42,12 @@ export default function App() {
   )
 }
 
-/** El marco del teléfono: logo, aviso de demostración y la página. */
+/** El marco del sitio del cliente: barra con el logo, aviso de demostración y la página. */
 function SitioCliente() {
   return (
-    <div className="app">
+    <div className="sitio">
       <Cabecera />
-      <Suspense fallback={<div className="card cargando">Cargando…</div>}>
+      <Suspense fallback={<p className="cargando">Cargando…</p>}>
         <Outlet />
       </Suspense>
     </div>
@@ -55,11 +56,15 @@ function SitioCliente() {
 
 function NoExiste() {
   return (
-    <div className="card">
-      <h2 className="section-title">Esta página no existe</h2>
-      <a className="btn btn-primary" href="/">
-        Ir a reservar
-      </a>
-    </div>
+    <>
+      <h1 className="titulo-grande" style={{ marginTop: 24 }}>
+        Esta página no existe
+      </h1>
+      <div className="acciones">
+        <a className="boton boton-principal" href="/">
+          Ir a reservar
+        </a>
+      </div>
+    </>
   )
 }

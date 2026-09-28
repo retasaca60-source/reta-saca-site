@@ -5,10 +5,12 @@ import { Link } from 'react-router-dom'
 
 export default function Privacidad() {
   return (
-    <div className="screen">
-      <div className="card texto-legal">
-        <p className="aviso-alerta">Borrador: falta el nombre legal, domicilio y contacto del responsable. Pendiente de Hugo.</p>
-        <h2 className="section-title">Aviso de privacidad</h2>
+    <>
+      <h1 className="titulo-grande" style={{ marginTop: 20 }}>
+        Aviso de privacidad
+      </h1>
+      <p className="aviso aviso-alerta">Borrador: falta el nombre legal, domicilio y contacto del responsable. Pendiente de Hugo.</p>
+      <div className="grupo texto-legal">
         <p>
           <strong>[NOMBRE LEGAL DEL TITULAR]</strong>, con domicilio en <strong>[DOMICILIO DEL LOCAL]</strong>, es responsable del uso
           de los datos personales que nos das al reservar en Reta Saca.
@@ -35,11 +37,11 @@ export default function Privacidad() {
         </p>
         <h3>Cambios</h3>
         <p>Si este aviso cambia, lo publicaremos en esta misma página con la fecha de actualización.</p>
-        <p className="section-hint">Última actualización: [FECHA].</p>
+        <p className="nota-chica">Última actualización: [FECHA].</p>
       </div>
       <Link className="enlace-discreto" to="/">
         Volver
       </Link>
-    </div>
+    </>
   )
 }
