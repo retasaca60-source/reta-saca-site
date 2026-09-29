@@ -43,16 +43,29 @@
   display: block;
   font-size: calc(var(--ancho) * 0.0925);
   letter-spacing: -0.005em;
-  color: var(--tinta);
+  /* Degradado de blanco a durazno: la línea se calienta hacia "LA RETA?". */
+  background: linear-gradient(100deg, #ffffff 0%, #ffe9dc 45%, #ffb48c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .inicio-titulo-2 {
   display: block;
-  margin-top: 0.04em;
-  font-size: calc(var(--ancho) * 0.176);
-  letter-spacing: 0.035em;
+  width: 94%;
+  height: auto;
+  margin-top: 0.3em;
+  overflow: visible;
+}
+.inicio-titulo-2 text {
   font-family: 'Montserrat Contorno', 'Montserrat', sans-serif;
-  color: transparent;
-  -webkit-text-stroke: 2px #ff6a3d;
+  font-weight: 800;
+  font-size: 160px;
+  fill: none;
+  stroke: url(#degradado-reta);
+  stroke-width: 2px;
+  /* El trazo se queda en 2 px de pantalla aunque el SVG se escale. */
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
 }
 
 /* El parche de malla: tela tejida con las orillas deshilachadas, detrás de

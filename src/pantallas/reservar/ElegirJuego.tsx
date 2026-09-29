@@ -34,9 +34,24 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
         <strong>Reta Saca</strong>
       </header>
 
-      <h1 className="inicio-titulo">
+      <h1 className="inicio-titulo" aria-label="¿Estás listo para la reta?">
         <span className="inicio-titulo-1">¿Estás listo para</span>{' '}
-        <span className="inicio-titulo-2">la reta?</span>
+        {/* "LA RETA?" es un SVG: el contorno con degradado no se puede hacer con
+            -webkit-text-stroke, que solo acepta un color. `textLength` lo ajusta
+            al ancho exacto de la columna. El nombre completo del título para
+            lectores de pantalla va en el aria-label del h1. */}
+        <svg className="inicio-titulo-2" viewBox="0 0 860 132" aria-hidden="true">
+          <defs>
+            <linearGradient id="degradado-reta" x1="0" y1="0" x2="1" y2="0.35">
+              <stop offset="0" stopColor="#ffc15e" />
+              <stop offset="0.5" stopColor="#ff6a3d" />
+              <stop offset="1" stopColor="#e2262a" />
+            </linearGradient>
+          </defs>
+          <text x="2" y="122" textLength="852">
+            LA RETA?
+          </text>
+        </svg>
         {/* Adorno: el parche de malla detrás de "reta?" y los trazos de chispa. */}
         <span className="inicio-malla" aria-hidden="true" />
         <svg className="inicio-chispas" viewBox="0 0 358 150" aria-hidden="true">
