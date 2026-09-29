@@ -55,14 +55,19 @@
   height: auto;
   margin-top: 0.3em;
   overflow: visible;
+  /* Una sombra oscura y suave despega el contorno de la malla y del fondo. */
+  filter: drop-shadow(0 2px 6px rgba(10, 4, 3, 0.7));
 }
 .inicio-titulo-2 text {
   font-family: 'Montserrat Contorno', 'Montserrat', sans-serif;
   font-weight: 800;
   font-size: 160px;
-  fill: none;
+  /* Relleno oscuro semitransparente: sobre la malla, los hilos no cruzan la
+     letra y "TA?" se lee; fuera de la malla casi no se nota. Hueca del todo,
+     la A y el ? se perdían entre los hilos. */
+  fill: rgba(22, 9, 6, 0.62);
   stroke: url(#degradado-reta);
-  stroke-width: 2px;
+  stroke-width: 2.5px;
   /* El trazo se queda en 2 px de pantalla aunque el SVG se escale. */
   vector-effect: non-scaling-stroke;
   stroke-linejoin: round;

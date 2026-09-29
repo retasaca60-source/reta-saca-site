@@ -44,8 +44,8 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
           <defs>
             <linearGradient id="degradado-reta" x1="0" y1="0" x2="1" y2="0.35">
               <stop offset="0" stopColor="#ffc15e" />
-              <stop offset="0.5" stopColor="#ff6a3d" />
-              <stop offset="1" stopColor="#e2262a" />
+              <stop offset="0.55" stopColor="#ff7a45" />
+              <stop offset="1" stopColor="#ff4b3a" />
             </linearGradient>
           </defs>
           <text x="2" y="122" textLength="852">
