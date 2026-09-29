@@ -116,18 +116,31 @@
 .ficha-volver { position: absolute; z-index: 1; top: calc(16px + env(safe-area-inset-top)); left: 16px; }
 .ficha-mesas { position: absolute; z-index: 1; top: calc(22px + env(safe-area-inset-top)); right: 16px; }
 
-/* La hoja sube sobre la foto: es el único vidrio que tiene algo detrás. */
+/* La hoja sube sobre la foto: arriba deja ver la foto a través del vidrio y
+   se cierra a opaco donde empiezan los controles. */
 .ficha-hoja {
   position: relative;
+  isolation: isolate;
   margin: -64px -16px 0;
   padding: 24px 16px 8px;
   border-radius: 30px 30px 0 0;
-  /* Arriba deja ver la foto a través del vidrio; se cierra a opaco donde
-     empiezan los controles, para que se lean sobre fondo parejo. */
   background: linear-gradient(to bottom, rgba(58, 20, 10, 0.5) 0%, rgba(24, 11, 8, 0.86) 90px, #0f0908 200px);
+  box-shadow: inset 0 1px 0 rgba(255, 238, 228, 0.16);
+}
+/* El desenfoque va SOLO en la franja que tapa la foto, no en toda la hoja.
+   Con backdrop-filter en la hoja entera (más de 1,100 px de alto) el iPhone
+   dejaba de pintarla: la ficha se veía en blanco y se trababa al llegar al
+   pago. */
+.ficha-hoja::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto 0;
+  height: 96px;
+  border-radius: inherit;
   -webkit-backdrop-filter: blur(24px) saturate(150%);
   backdrop-filter: blur(24px) saturate(150%);
-  box-shadow: inset 0 1px 0 rgba(255, 238, 228, 0.16);
+  pointer-events: none;
 }
 .ficha-titulo { margin: 0; font-size: 34px; line-height: 1.05; font-weight: 600; letter-spacing: -0.035em; }
 

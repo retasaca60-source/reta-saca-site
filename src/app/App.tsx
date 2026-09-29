@@ -10,8 +10,8 @@
 // Las páginas se cargan por separado (lazy): quien reserva desde el teléfono
 // no descarga el panel.
 
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { Cabecera } from '../vista/Cabecera'
 import '../estilos/sitio.css'
 
@@ -44,6 +44,14 @@ export default function App() {
 
 /** El marco del sitio del cliente: barra con el logo, aviso de demostración y la página. */
 function SitioCliente() {
+  // Cada página abre arriba. Sin esto, al deslizar para pagar desde el fondo de
+  // la ficha, la página de pago abría con el desplazamiento de la ficha y en el
+  // iPhone se veía en blanco, solo con el botón.
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
   return (
     <div className="sitio">
       <Cabecera />
