@@ -1,0 +1,11 @@
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# Lo genera npm run servidor:empaquetar a partir de supabase/fuentes y src/.
+functions/api/index.js

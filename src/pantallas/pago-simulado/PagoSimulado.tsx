@@ -1,10 +1,11 @@
 // La pantalla de pago de MENTIRA que ocupa el lugar de Mercado Pago mientras
-// no hay cuenta del negocio. Con la versión real, el cliente va a Mercado Pago
-// y esta página no existe (ver CONTRATO-DE-DATOS.md → Pagos).
+// no hay cuenta del negocio. La usan las dos versiones: la simulada siempre, y
+// la real solo si el servidor tiene PAGOS_SIMULADOS=si. Cuando entre Mercado
+// Pago, el cliente irá allá y esta página se quita (CONTRATO-DE-DATOS.md → Pagos).
 
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { servicioSimulado } from '../../datos'
+import { pagoSimulado } from '../../datos'
 import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { formatoDinero } from '../../negocio/formato'
 import { etiquetaFecha, formatoHora } from '../../negocio/tiempo'
@@ -14,10 +15,8 @@ export default function PagoSimulado() {
   const navegar = useNavigate()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { datos, cargando } = usarDatos(async () => (servicioSimulado ? servicioSimulado.pagoSimulado.obtener(id) : null), [id])
+  const { datos, cargando } = usarDatos(() => pagoSimulado.obtener(id), [id])
 
-  const demo = servicioSimulado
-  if (!demo) return <p className="nota">Esta página solo existe en la demostración.</p>
   if (cargando && !datos) return <p className="cargando">Cargando…</p>
   if (!datos) return <p className="nota">Ese pago no existe.</p>
 
@@ -26,7 +25,7 @@ export default function PagoSimulado() {
     setEnviando(true)
     setError(null)
     try {
-      const volver = aprobar ? await demo.pagoSimulado.confirmar(id) : await demo.pagoSimulado.rechazar(id)
+      const volver = aprobar ? await pagoSimulado.confirmar(id) : await pagoSimulado.rechazar(id)
       navegar(volver)
     } catch (e) {
       setError(mensajeDeError(e))

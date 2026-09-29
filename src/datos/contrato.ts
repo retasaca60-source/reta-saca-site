@@ -36,6 +36,32 @@ export interface Usuario {
   rol: Rol
 }
 
+// ─── Pago simulado (mientras no hay Mercado Pago) ────────────────────────
+
+/** Un pago en línea empezado: qué partes, a nombre de quién y a dónde regresar. */
+export interface IntentoDePago {
+  id: string
+  reservaId: string
+  parteIds: string[]
+  nombre: string
+  monto: number
+  /** A dónde regresa al pagar o cancelar: "/r/<token>" o "/c/<token>". */
+  volverA: string
+  resultado: 'pagado' | 'cancelado' | null
+}
+
+/**
+ * La pantalla /pago/<id> que ocupa el lugar de Mercado Pago. La tienen la
+ * versión simulada y la real mientras los pagos en línea sean de prueba.
+ */
+export interface PagoSimulado {
+  obtener(id: string): Promise<{ intento: IntentoDePago; reserva: Reserva } | null>
+  /** Paga y devuelve a dónde regresar. */
+  confirmar(id: string): Promise<string>
+  /** Cancela y devuelve a dónde regresar. */
+  rechazar(id: string): Promise<string>
+}
+
 // ─── El contrato ─────────────────────────────────────────────────────────
 
 export interface ServicioDeDatos {

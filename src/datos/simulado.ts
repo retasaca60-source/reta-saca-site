@@ -17,7 +17,7 @@ import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
 import type { Reserva } from '../negocio/reserva'
 import { momentoDe } from '../negocio/tiempo'
-import { ErrorDeDatos, type ServicioDeDatos, type Usuario } from './contrato'
+import { ErrorDeDatos, type IntentoDePago, type PagoSimulado, type ServicioDeDatos, type Usuario } from './contrato'
 import { sembrar, USUARIOS_DEMO } from './ejemplos'
 
 // ─── Almacén ─────────────────────────────────────────────────────────────
@@ -62,17 +62,6 @@ export function almacenEnMemoria(): Almacen {
 }
 
 // ─── Estado guardado ─────────────────────────────────────────────────────
-
-export interface IntentoDePago {
-  id: string
-  reservaId: string
-  parteIds: string[]
-  nombre: string
-  monto: number
-  /** A dónde regresa al pagar o cancelar. */
-  volverA: string
-  resultado: 'pagado' | 'cancelado' | null
-}
 
 interface Estado {
   version: 1
@@ -125,11 +114,7 @@ export interface OpcionesSimulado {
 }
 
 export type ServicioSimulado = ServicioDeDatos & {
-  pagoSimulado: {
-    obtener(id: string): Promise<{ intento: IntentoDePago; reserva: Reserva } | null>
-    confirmar(id: string): Promise<string>
-    rechazar(id: string): Promise<string>
-  }
+  pagoSimulado: PagoSimulado
   /** Borra todo y vuelve a los datos de ejemplo. */
   restablecer(): Promise<void>
 }
