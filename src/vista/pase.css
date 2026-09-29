@@ -1,14 +1,15 @@
-/* El pase: rojo de la marca, campos de Wallet (etiqueta chica, valor grande),
-   perforación con muescas y una sombra larga, la única del sitio. */
+/* El pase de la reserva ya pagada: el degradado de la casa, campos de boleto
+   (etiqueta chica, valor grande), perforación con muescas y el resplandor
+   naranja debajo. Sale en mi reserva y en el link de cobro. */
 
 .pase {
   position: relative;
   margin-top: 8px;
   padding: 16px 18px 18px;
   border-radius: 22px;
-  background: var(--rojo);
+  background: var(--acento);
   color: #fff;
-  box-shadow: var(--sombra-pase);
+  box-shadow: inset 0 1px 0 rgba(255, 210, 190, 0.28), 0 26px 44px -26px var(--resplandor);
   font-variant-numeric: tabular-nums;
   transition: filter 0.4s var(--curva), opacity 0.4s var(--curva);
 }
@@ -41,8 +42,8 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  /* Con menos de 0.9 de opacidad no pasa 4.5:1 sobre el rojo a 12 px. */
-  color: rgba(255, 255, 255, 0.92);
+  /* Blanco lleno: sobre el arranque del degradado apenas pasa 4.5:1 a 12 px. */
+  color: #fff;
 }
 .pase-valor {
   font-size: 17px;

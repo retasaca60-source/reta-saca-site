@@ -1,0 +1,89 @@
+/* El deslizador de pagar. Pista en píldora de 64 px con la perilla negra de
+   56 px adentro (4 px de margen): Deslizar.tsx resta esos 64 px para saber el
+   recorrido. Mientras no se puede pagar la pista es vidrio y dice qué falta;
+   lista, toma el degradado de la casa. */
+
+.deslizar {
+  position: relative;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--vidrio);
+  box-shadow: inset 0 0 0 1px var(--filo);
+  overflow: hidden;
+  isolation: isolate;
+  transition: background-color 0.3s var(--curva), box-shadow 0.3s var(--curva);
+}
+.deslizar.listo {
+  background: var(--acento);
+  box-shadow: inset 0 0 0 1px rgba(255, 190, 160, 0.22), 0 16px 30px -16px var(--resplandor);
+}
+
+/* Lo recorrido se oscurece detrás de la perilla: se ve cuánto falta. */
+.deslizar-relleno {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--x) + 64px);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.2);
+  opacity: min(1, calc(var(--avance) * 4));
+}
+
+.deslizar-etiqueta {
+  position: absolute;
+  inset: 0 44px 0 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tinta-2);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: calc(1 - var(--avance) * 1.4);
+}
+.deslizar.listo .deslizar-etiqueta { color: #fff; }
+
+.deslizar-flechas {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  margin-top: -8px;
+  display: flex;
+  color: rgba(255, 255, 255, 0.95);
+  opacity: 0;
+  transition: opacity 0.3s var(--curva);
+}
+.deslizar.listo .deslizar-flechas { opacity: calc(1 - var(--avance) * 1.6); }
+
+.deslizar-perilla {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #0f0908;
+  color: #fff;
+  box-shadow: 0 6px 14px -4px rgba(0, 0, 0, 0.55);
+  /* `translate` y no `transform`: no hay que componer con nada más. */
+  translate: var(--x) 0;
+  transition: translate 0.45s var(--curva), background-color 0.3s var(--curva);
+  /* El arrastre horizontal es de la perilla; el desplazamiento vertical sigue siendo de la página. */
+  touch-action: pan-y;
+  cursor: grab;
+}
+.deslizar.arrastrando .deslizar-perilla { transition: none; cursor: grabbing; }
+.deslizar-perilla:disabled { background: rgba(255, 240, 232, 0.1); color: var(--tinta-3); box-shadow: none; cursor: not-allowed; }
+.deslizar-perilla:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* Un toque sin arrastrar: la perilla se asoma y regresa. */
+.deslizar.empujon .deslizar-perilla { animation: asomarse 0.6s var(--curva); }
+@keyframes asomarse {
+  40% { translate: 22px 0; }
+}

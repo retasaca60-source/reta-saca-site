@@ -1,24 +1,23 @@
-// La barra de arriba del sitio: logo y nombre, y el aviso de demostración
-// mientras los datos sean simulados.
+// La barra de arriba de las páginas secundarias (mi reserva, cobro, pago,
+// privacidad): logo para volver al inicio y el aviso de demostración. En "/" no
+// se pinta: la lista de juegos lleva su propia marca y la ficha abre con la
+// foto hasta arriba.
 
 import { Link, useLocation } from 'react-router-dom'
-import { servicio } from '../datos'
+import { AvisoDemo } from './AvisoDemo'
 
 export function Cabecera() {
-  // En "/" el pase ya lleva la marca arriba; en las demás páginas la barra sirve para volver al inicio.
   const enReservar = useLocation().pathname === '/'
+  if (enReservar) return null
   return (
     <>
-      <div className="barra-app" hidden={enReservar}>
+      <div className="barra-app">
         <Link to="/" aria-label="Reta Saca, inicio">
           <img src="/imagenes/logo.png" alt="" />
           <strong>Reta Saca</strong>
         </Link>
       </div>
-      {/* Desaparece solo cuando los datos son los reales (datos/index.ts). */}
-      {servicio.modo === 'simulado' && (
-        <p className="aviso-demo">Modo demostración: las reservas se guardan solo en este navegador y el pago es simulado. No se cobra nada.</p>
-      )}
+      <AvisoDemo />
     </>
   )
 }

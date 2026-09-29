@@ -1,17 +1,152 @@
-/* Piezas propias de la reserva: la tira de días y la rejilla de horas. */
+/* Las dos pantallas de reservar: la lista de juegos (tarjetas-foto) y la
+   ficha (foto de portada con la hoja de vidrio encima). */
 
+/* ── Lista de juegos ──────────────────────────────────────────────────── */
+
+.inicio-marca { display: flex; align-items: center; gap: 10px; min-height: 44px; padding-top: 18px; }
+.inicio-marca img { width: 36px; height: 36px; border-radius: 50%; }
+.inicio-marca strong { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+
+.inicio-titulo {
+  margin: 26px 0 0;
+  font-size: 40px;
+  line-height: 1.04;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+
+.juegos { display: grid; gap: 16px; margin: 22px 0 0; padding: 0; list-style: none; }
+
+.juego {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 300px;
+  padding: 0;
+  border: 0;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #1d110d;
+  color: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  container-type: inline-size;
+  box-shadow: inset 0 0 0 1px rgba(255, 238, 228, 0.1), 0 26px 40px -28px rgba(0, 0, 0, 0.9);
+  transition: scale 0.2s var(--curva);
+}
+.juego:active { scale: 0.985; }
+.juego-foto { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Oscurece arriba para la palabra y abajo para el nombre y el precio. */
+.juego::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(12, 6, 4, 0.62) 0%, rgba(12, 6, 4, 0) 42%),
+    linear-gradient(to top, rgba(12, 6, 4, 0.94) 0%, rgba(12, 6, 4, 0.5) 30%, rgba(12, 6, 4, 0) 55%);
+}
+
+/* El nombre del juego, gigante: es EL nombre de la tarjeta (no se repite
+   abajo) y la jerarquía la lleva solo el tamaño. Relleno sólido en el naranja
+   de la casa, desvaneciéndose hacia abajo. Va en la franja de arriba, donde
+   las fotos son mesa lisa, y no DETRÁS del objeto como en la referencia: eso
+   pide recortes con transparencia de cada foto, y una máscara geométrica
+   imitándolos se ve peor que no hacerlo. */
+.juego-palabra {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  left: 16px;
+  right: 16px;
+  font-family: 'Anton', 'Hanken Grotesk', sans-serif;
+  font-size: min(22cqi, 90px);
+  line-height: 0.9;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #ff6a3d;
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, 0.35) 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, 0.35) 100%);
+  pointer-events: none;
+}
+
+.juego-pie {
+  position: absolute;
+  z-index: 2;
+  left: 20px;
+  right: 16px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.juego-precio { color: rgba(255, 255, 255, 0.78); font-size: 14px; }
+.juego-precio b { color: #fff; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+
+.inicio-nota { margin: 16px 4px 0; color: var(--tinta-2); font-size: 14px; }
+/* La lista no tiene barra fija abajo: no hace falta reservarle espacio. */
+.sitio:has(.juegos) { padding-bottom: 40px; }
+
+/* La foto de la tarjeta y la de la portada son la misma: el navegador la hace
+   crecer de una a otra al abrir la ficha (vista/transicion.ts). */
+.foto-pingpong { view-transition-name: foto-pingpong; }
+.foto-cornhole { view-transition-name: foto-cornhole; }
+.foto-popdarts { view-transition-name: foto-popdarts; }
+::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* ── Ficha ────────────────────────────────────────────────────────────── */
+
+.ficha-portada {
+  position: relative;
+  height: 340px;
+  margin: 0 -16px;
+  overflow: hidden;
+}
+.ficha-foto { width: 100%; height: 100%; object-fit: cover; }
+.ficha-portada::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(12, 6, 4, 0.55) 0%, rgba(12, 6, 4, 0) 30%);
+  pointer-events: none;
+}
+.ficha-volver { position: absolute; z-index: 1; top: calc(16px + env(safe-area-inset-top)); left: 16px; }
+.ficha-mesas { position: absolute; z-index: 1; top: calc(22px + env(safe-area-inset-top)); right: 16px; }
+
+/* La hoja sube sobre la foto: es el único vidrio que tiene algo detrás. */
+.ficha-hoja {
+  position: relative;
+  margin: -64px -16px 0;
+  padding: 24px 16px 8px;
+  border-radius: 30px 30px 0 0;
+  /* Arriba deja ver la foto a través del vidrio; se cierra a opaco donde
+     empiezan los controles, para que se lean sobre fondo parejo. */
+  background: linear-gradient(to bottom, rgba(58, 20, 10, 0.5) 0%, rgba(24, 11, 8, 0.86) 90px, #0f0908 200px);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+  box-shadow: inset 0 1px 0 rgba(255, 238, 228, 0.16);
+}
+.ficha-titulo { margin: 0; font-size: 34px; line-height: 1.05; font-weight: 600; letter-spacing: -0.035em; }
+
+/* Días: número grande y el día abajo. */
 .dias {
   display: flex;
-  gap: 8px;
-  margin: 14px -16px 0;
+  gap: 10px;
+  margin: 0 -16px;
   padding: 2px 16px 6px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
+  /* Sin esto el primer día se pegaba a la orilla y no a la columna. */
+  scroll-padding-inline: 16px;
   scrollbar-width: none;
 }
 .dias::-webkit-scrollbar { display: none; }
+/* Con ratón hace falta ver que la fila se desplaza. La barra ocupa todo el
+   ancho del contenedor, así que ahí la fila se queda dentro de la columna en
+   vez de salirse a la orilla como en el teléfono. */
 @media (pointer: fine) {
-  .dias { scrollbar-width: thin; }
+  .dias { margin: 0; padding-inline: 0; scroll-padding-inline: 0; scrollbar-width: thin; scrollbar-color: rgba(255, 190, 160, 0.28) transparent; }
   .dias::-webkit-scrollbar { display: block; height: 6px; }
 }
 .dia {
@@ -21,53 +156,58 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: 66px;
-  min-height: 72px;
+  width: 64px;
+  min-height: 76px;
   border: 0;
-  border-radius: 16px;
-  background: var(--superficie);
-  box-shadow: var(--sombra-suave);
+  border-radius: 20px;
+  background: var(--vidrio);
+  box-shadow: inset 0 0 0 1px var(--filo);
   color: var(--tinta);
   font: inherit;
   scroll-snap-align: start;
   cursor: pointer;
-  transition: background-color 0.25s var(--curva), color 0.25s var(--curva);
+  transition: box-shadow 0.25s var(--curva);
 }
-.dia-nombre { font-size: 13px; font-weight: 600; color: var(--tinta-2); }
-.dia-numero { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; }
-.dia-cerrado { font-size: 12px; color: var(--tinta-2); }
-.dia[aria-pressed='true'] { background: var(--tinta); color: var(--fondo); }
-.dia[aria-pressed='true'] .dia-nombre { color: inherit; opacity: 0.8; }
-.dia:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+.dia-numero { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.dia-nombre { font-size: 13px; color: var(--tinta-2); }
+.dia[aria-pressed='true'] { background: var(--acento); box-shadow: 0 12px 22px -12px var(--resplandor); color: #fff; }
+.dia[aria-pressed='true'] .dia-nombre { color: #fff; }
+.dia:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.promo { color: var(--verde); font-weight: 600; margin-bottom: 10px; }
-
-.horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+/* Horas: pastillas en tres columnas. */
+.horas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .hora {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 1px;
-  min-height: 64px;
-  padding: 10px 12px;
+  min-height: 62px;
+  padding: 10px 14px;
   border: 0;
-  border-radius: 14px;
-  background: var(--superficie);
-  box-shadow: var(--sombra-suave);
+  border-radius: 20px;
+  background: var(--vidrio);
+  box-shadow: inset 0 0 0 1px var(--filo);
   color: var(--tinta);
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.25s var(--curva), color 0.25s var(--curva), transform 0.15s var(--curva);
+  transition: box-shadow 0.25s var(--curva), scale 0.15s var(--curva);
 }
-.hora:active { transform: scale(0.97); }
-.hora-valor { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
-.hora-precio { font-size: 14px; color: var(--tinta-2); }
-.hora.con-promo .hora-precio { color: var(--verde); font-weight: 600; }
+.hora:active { scale: 0.97; }
+.hora-valor { font-size: 16px; font-weight: 600; letter-spacing: -0.015em; }
+.hora-precio { font-size: 13px; color: var(--tinta-2); }
+.hora.con-promo .hora-precio { color: var(--ambar); font-weight: 600; }
 .hora-aviso { font-size: 12px; font-weight: 600; color: var(--ambar); }
-.hora[aria-pressed='true'] { background: var(--rojo); color: #fff; box-shadow: none; }
+.hora[aria-pressed='true'] { background: var(--acento); box-shadow: 0 12px 22px -12px var(--resplandor); color: #fff; }
 .hora[aria-pressed='true'] .hora-precio,
-.hora[aria-pressed='true'] .hora-aviso { color: rgba(255, 255, 255, 0.9); }
-.hora:disabled { background: transparent; box-shadow: inset 0 0 0 1px var(--linea); color: var(--tinta-3); cursor: not-allowed; }
+.hora[aria-pressed='true'] .hora-aviso { color: #fff; }
+.hora:disabled { background: transparent; color: var(--tinta-3); cursor: not-allowed; }
 .hora:disabled .hora-valor { text-decoration: line-through; text-decoration-thickness: 1px; }
 .hora:disabled .hora-precio { color: var(--tinta-3); }
+
+/* Barra de la ficha: cuánto pagas a la izquierda, el deslizador a la derecha. */
+.barra-reserva { align-items: center; }
+.barra-precio { flex: none; display: flex; flex-direction: column; min-width: 64px; }
+.barra-precio b { font-size: 22px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; }
+.barra-precio span { color: var(--tinta-2); font-size: 13px; }
+.barra-reserva .deslizar { flex: 1; min-width: 0; }

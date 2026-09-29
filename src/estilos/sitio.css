@@ -1,253 +1,227 @@
-/* El mundo visual del sitio del cliente: un pase de Wallet dentro de una app
-   tipo iOS. Todo vive bajo .sitio para no tocar el panel, que tiene el suyo.
-   Los colores se declaran aquí como variables; ningún otro archivo del sitio
-   escribe colores sueltos. */
+/* El mundo visual del sitio del cliente: de noche, fondo casi negro cálido con
+   un resplandor rojo arriba, vidrio cálido y el degradado de la casa para lo
+   elegido y lo accionable. Todo vive bajo .sitio para no tocar el panel, que
+   tiene el suyo. Los colores se declaran aquí; ningún otro archivo del sitio
+   escribe colores sueltos, salvo el blanco sobre el degradado.
+
+   Solo oscuro, a propósito: es la dirección que fijó el negocio y el sitio se
+   usa por la tarde-noche, armando el plan con el chat abierto. */
 
 .sitio {
-  --fondo: #f2f2f7;
-  --superficie: #ffffff;
-  --superficie-2: #e9e9ee;
-  --tinta: #1d1d1f;
-  --tinta-2: #5f5f64;
-  --tinta-3: #6e6e73;
-  --linea: rgba(60, 60, 67, 0.16);
-  /* Rojo de la marca, oscurecido lo justo para que el texto blanco encima pase 4.5:1. */
-  --rojo: #cc1f2b;
-  --rojo-hundido: #ad1823;
-  /* Rojo para TEXTO (enlaces, volver, marcas): en oscuro se aclara para pasar 4.5:1. */
-  --rojo-texto: #cc1f2b;
-  --rojo-suave: rgba(204, 31, 43, 0.1);
-  --verde: #1f7a36;
-  --verde-suave: rgba(31, 122, 54, 0.12);
-  --ambar: #9a4a00;
-  --ambar-suave: rgba(214, 120, 0, 0.14);
-  --vidrio: rgba(246, 246, 249, 0.74);
-  --sombra-pase: 0 1px 2px rgba(80, 8, 12, 0.18), 0 18px 40px -18px rgba(120, 10, 18, 0.55);
-  --sombra-suave: 0 1px 2px rgba(0, 0, 0, 0.05), 0 8px 24px -16px rgba(0, 0, 0, 0.18);
+  --fondo: #0f0908;
+  --tinta: #fbf6f3;
+  /* Secundarios tintados de la tinta, no grises: sobre este fondo dan 11:1 y 7:1. */
+  --tinta-2: rgba(251, 246, 243, 0.72);
+  --tinta-3: rgba(251, 246, 243, 0.56);
+  /* Vidrio tintado del óxido de la casa, no blanco neutro. */
+  --vidrio: rgba(255, 150, 110, 0.08);
+  --vidrio-2: rgba(255, 150, 110, 0.14);
+  --filo: rgba(255, 190, 160, 0.14);
+  /* El degradado de la casa. Arranca en #cc3d1d y no en un naranja más vivo
+     porque el texto blanco encima tiene que pasar 4.5:1 (da 4.9:1). El naranja
+     encendido vive solo en el resplandor, donde no hay texto. */
+  --acento: linear-gradient(135deg, #cc3d1d 0%, #a8161a 100%);
+  --acento-solido: #b8281b;
+  --resplandor: rgba(255, 96, 48, 0.62);
+  --acento-texto: #ff8f66;
+  --verde: #6fdc8c;
+  --ambar: #ffbd73;
+  --ambar-suave: rgba(255, 170, 80, 0.12);
+  --rojo-suave: rgba(255, 90, 60, 0.14);
   --curva: cubic-bezier(0.16, 1, 0.3, 1);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  .sitio {
-    --fondo: #000000;
-    --superficie: #1c1c1e;
-    --superficie-2: #2c2c2e;
-    --tinta: #f5f5f7;
-    --tinta-2: #a8a8ad;
-    --tinta-3: #8e8e93;
-    --linea: rgba(84, 84, 88, 0.55);
-    --rojo-texto: #ff6b70;
-    --verde: #34c759;
-    --verde-suave: rgba(52, 199, 89, 0.16);
-    --ambar: #ffb340;
-    --ambar-suave: rgba(255, 159, 10, 0.16);
-    --vidrio: rgba(22, 22, 24, 0.72);
-    --sombra-suave: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 26px -16px rgba(0, 0, 0, 0.8);
-    color-scheme: dark;
-  }
-}
-
-/* El fondo de toda la página es el del sitio mientras se está en él. Va con
-   el color escrito: las variables viven en .sitio y el body está afuera. */
+/* El fondo de toda la página, con el resplandor arriba. Con los colores
+   escritos: las variables viven en .sitio y el body está afuera. */
 body:has(.sitio) {
-  background: #f2f2f7;
+  /* Sin el margen de 8 px del navegador: la portada de la ficha va de orilla a orilla. */
+  margin: 0;
   padding: 0;
+  background:
+    radial-gradient(130% 42% at 50% -6%, rgba(150, 44, 18, 0.7) 0%, rgba(150, 44, 18, 0) 70%),
+    radial-gradient(120% 60% at 50% 70%, rgba(90, 26, 12, 0.35) 0%, rgba(90, 26, 12, 0) 70%),
+    #0f0908;
+  background-repeat: no-repeat;
+  background-color: #0f0908;
 }
-@media (prefers-color-scheme: dark) {
-  body:has(.sitio) { background: #000; }
-}
+/* La barra de desplazamiento de la página también es de la casa. */
+html:has(.sitio) { scrollbar-color: rgba(255, 190, 160, 0.28) #0f0908; }
 
 .sitio {
   width: 100%;
   max-width: 460px;
   min-height: 100dvh;
   margin: 0 auto;
-  padding: 0 16px 120px;
-  background: var(--fondo);
+  padding: 0 16px 128px;
   color: var(--tinta);
-  /* San Francisco en los aparatos de Apple; en Android y Windows, Inter, la cara
-     libre más cercana a sus proporciones. */
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
-  font-size: 17px;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
 
-.sitio ::selection { background: var(--rojo-suave); color: var(--tinta); }
-.sitio :focus-visible { outline: 3px solid color-mix(in srgb, var(--rojo) 55%, transparent); outline-offset: 2px; }
-.sitio a { color: var(--rojo-texto); text-underline-offset: 3px; }
+.sitio ::selection { background: rgba(204, 61, 29, 0.55); color: #fff; }
+.sitio :focus-visible { outline: 2px solid var(--acento-texto); outline-offset: 3px; }
+.sitio a { color: var(--acento-texto); text-underline-offset: 3px; }
 .sitio [hidden] { display: none !important; }
 .sitio .numeros { font-variant-numeric: tabular-nums; }
 
-/* ── Encabezado de la app ─────────────────────────────────────────────── */
+/* ── Encabezado de las páginas secundarias ────────────────────────────── */
 
-.barra-app {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 0 6px;
-}
-.barra-app a { display: flex; align-items: center; gap: 10px; color: var(--tinta); text-decoration: none; min-height: 44px; }
+.barra-app { display: flex; align-items: center; padding: 16px 0 4px; }
+.barra-app a { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--tinta); text-decoration: none; }
 .barra-app img { width: 34px; height: 34px; border-radius: 50%; }
-.barra-app strong { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+.barra-app strong { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
 
 .aviso-demo {
-  margin: 4px 0 18px;
-  padding: 10px 14px;
+  margin: 14px 0 0;
+  padding: 8px 14px;
   border-radius: 14px;
   background: var(--ambar-suave);
   color: var(--ambar);
   font-size: 13px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
-/* ── Títulos ──────────────────────────────────────────────────────────── */
+/* ── Títulos y texto ──────────────────────────────────────────────────── */
 
 .titulo-grande {
-  margin: 0;
+  margin: 20px 0 0;
   font-size: 32px;
   line-height: 1.08;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: -0.035em;
   text-wrap: balance;
 }
 .titulo-seccion {
-  margin: 28px 0 10px;
-  font-size: 20px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-}
-.nota { margin: 8px 2px 0; color: var(--tinta-2); font-size: 15px; line-height: 1.4; }
-.nota-chica { margin: 6px 2px 0; color: var(--tinta-2); font-size: 13px; }
-
-.fila-titulo { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 26px; }
-.fila-titulo .paso-de { color: var(--tinta-3); font-size: 13px; font-weight: 600; white-space: nowrap; }
-
-.volver {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  min-height: 44px;
-  margin: 18px 0 -8px -6px;
-  padding: 0 8px 0 2px;
-  border: 0;
-  background: none;
-  color: var(--rojo-texto);
-  font: inherit;
+  margin: 28px 0 12px;
   font-size: 17px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+.nota { margin: 10px 2px 0; color: var(--tinta-2); font-size: 14px; line-height: 1.45; }
+.nota-chica { margin: 6px 4px 0; color: var(--tinta-2); font-size: 13px; }
+.promo { color: var(--ambar); font-weight: 600; margin: 0 2px 12px; }
+
+/* Botón redondo de vidrio (volver sobre la foto). */
+.boton-redondo {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(20, 10, 8, 0.45);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  box-shadow: inset 0 0 0 1px rgba(255, 238, 228, 0.18);
+  color: #fff;
   cursor: pointer;
 }
 
-/* ── Listas agrupadas de iOS ──────────────────────────────────────────── */
+/* Pastilla de vidrio para un dato corto sobre una foto. */
+.pastilla {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(20, 10, 8, 0.5);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 0 0 1px rgba(255, 238, 228, 0.16);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ── Grupos (listas y formularios) ────────────────────────────────────── */
 
 .grupo {
   margin: 0;
   padding: 0;
   list-style: none;
-  border-radius: 14px;
-  background: var(--superficie);
-  box-shadow: var(--sombra-suave);
+  border-radius: 22px;
+  background: var(--vidrio);
+  box-shadow: inset 0 0 0 1px var(--filo);
   overflow: hidden;
 }
-.grupo > * + * { border-top: 0.5px solid var(--linea); }
+.grupo > * + * { border-top: 1px solid var(--filo); }
 
-.opcion {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 64px;
-  padding: 10px 16px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color 0.2s var(--curva);
-}
-.opcion:active { background: var(--superficie-2); }
-.opcion-icono {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 40px;
-  height: 40px;
-  border-radius: 11px;
-  background: var(--superficie-2);
-  color: var(--rojo-texto);
-}
-.opcion-icono img { width: 72%; height: 72%; object-fit: contain; }
-.opcion-texto { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.opcion-texto strong { font-size: 17px; font-weight: 600; }
-.opcion-texto span { color: var(--tinta-2); font-size: 14px; }
-.opcion-marca { flex: none; width: 24px; height: 24px; color: var(--rojo-texto); opacity: 0; transition: opacity 0.2s var(--curva); }
-.opcion[aria-pressed='true'] .opcion-marca { opacity: 1; }
-
-/* ── Control segmentado ───────────────────────────────────────────────── */
+/* ── Control segmentado: píldora de vidrio, lo elegido en degradado ───── */
 
 .segmentado {
   display: grid;
-  grid-auto-columns: 1fr;
+  /* Columnas a la medida de su texto y el sobrante repartido: "Uno paga todo"
+     no cabía en un tercio a 390 px y se partía en dos renglones. */
+  grid-auto-columns: auto;
   grid-auto-flow: column;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 12px;
-  background: var(--superficie-2);
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--vidrio);
+  box-shadow: inset 0 0 0 1px var(--filo);
 }
 .segmentado button {
   min-height: 44px;
-  padding: 0 8px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 999px;
   background: transparent;
-  color: var(--tinta);
+  color: var(--tinta-2);
+  white-space: nowrap;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.25s var(--curva), box-shadow 0.25s var(--curva);
+  transition: background-color 0.25s var(--curva), color 0.25s var(--curva), box-shadow 0.25s var(--curva);
 }
-.segmentado button[aria-pressed='true'] { background: var(--superficie); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.14), 0 0 0 0.5px rgba(0, 0, 0, 0.05); }
+.segmentado button[aria-pressed='true'] {
+  background: var(--acento);
+  color: #fff;
+  box-shadow: 0 8px 18px -10px var(--resplandor);
+}
 
-/* ── Campos de formulario agrupados ───────────────────────────────────── */
+/* ── Campos de formulario ─────────────────────────────────────────────── */
 
-.campo-form { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 16px; }
-.campo-form label { flex: none; width: 92px; font-size: 17px; }
+.campo-form { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 18px; }
+.campo-form label { flex: none; width: 88px; color: var(--tinta-2); font-size: 15px; }
 .campo-form input {
-  caret-color: var(--rojo);
   flex: 1;
   min-width: 0;
   min-height: 44px;
   border: 0;
   background: none;
   color: var(--tinta);
+  caret-color: var(--acento-texto);
   font: inherit;
-  font-size: 17px;
+  font-size: 16px;
   outline: none;
 }
 .campo-form input::placeholder { color: var(--tinta-3); }
-.error-campo { margin: 8px 16px 0; color: var(--rojo-texto); font-size: 13px; min-height: 1em; }
+.campo-form:focus-within { background: var(--vidrio); }
+.error-campo { margin: 8px 18px 0; color: var(--acento-texto); font-size: 13px; min-height: 1em; }
 
 .casilla {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  padding: 8px 16px;
+  min-height: 56px;
+  padding: 8px 18px;
   font-size: 15px;
-  line-height: 1.35;
+  line-height: 1.4;
   cursor: pointer;
 }
 .casilla a { display: inline-block; padding-block: 12px; margin-block: -12px; white-space: nowrap; }
-.casilla input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--rojo); }
+.casilla input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--acento-solido); }
 
-.reglas { margin: 0; padding: 14px 16px 14px 34px; color: var(--tinta-2); font-size: 15px; line-height: 1.45; }
+.reglas { margin: 0; padding: 16px 18px 16px 36px; color: var(--tinta-2); font-size: 14px; line-height: 1.5; }
 .reglas li + li { margin-top: 6px; }
+.reglas li::marker { color: var(--acento-texto); }
 
 /* ── Botones ──────────────────────────────────────────────────────────── */
 
@@ -257,68 +231,71 @@ body:has(.sitio) {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 52px;
-  padding: 0 20px;
+  min-height: 56px;
+  padding: 0 22px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 999px;
   font: inherit;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  transition: transform 0.15s var(--curva), background-color 0.2s var(--curva), opacity 0.2s;
+  transition: transform 0.15s var(--curva), box-shadow 0.25s var(--curva), opacity 0.2s;
 }
 .boton:active { transform: scale(0.98); }
-.boton-principal { background: var(--rojo); color: #fff; }
-.boton-principal:hover { background: var(--rojo-hundido); }
-.boton-principal:disabled { background: var(--superficie-2); color: var(--tinta-3); cursor: not-allowed; transform: none; }
-.boton-secundario { background: var(--superficie); color: var(--rojo-texto); box-shadow: var(--sombra-suave); }
-.boton-texto { background: none; color: var(--rojo-texto); min-height: 44px; }
+.boton-principal { background: var(--acento); color: #fff; box-shadow: 0 14px 28px -16px var(--resplandor); }
+.boton-principal:disabled { background: var(--vidrio); color: var(--tinta-3); box-shadow: inset 0 0 0 1px var(--filo); cursor: not-allowed; transform: none; }
+.boton-secundario { background: var(--vidrio-2); color: var(--tinta); box-shadow: inset 0 0 0 1px var(--filo); }
+.boton-secundario:disabled { color: var(--tinta-3); cursor: not-allowed; }
+.boton-texto { background: none; color: var(--acento-texto); min-height: 44px; }
 .sitio a.boton-principal { color: #fff; }
+.sitio a.boton-secundario { color: var(--tinta); }
 
 .acciones { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
 
-/* La barra de acción fija abajo, en vidrio: el único vidrio del sitio, porque
-   es donde el contenido pasa por debajo mientras se desplaza. */
+/* La barra fija de abajo, en vidrio: es donde el contenido pasa por debajo
+   mientras se desplaza, y el vidrio deja ver que hay más. */
 .barra-accion {
   position: fixed;
   inset: auto 0 0 0;
   z-index: 10;
   display: flex;
   justify-content: center;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-  background: var(--vidrio);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-top: 0.5px solid var(--linea);
+  gap: 14px;
+  padding: 12px max(16px, calc(50% - 214px)) calc(12px + env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  background: rgba(20, 11, 9, 0.8);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+  box-shadow: inset 0 1px 0 var(--filo), 0 -18px 40px -24px rgba(0, 0, 0, 0.9);
 }
-.barra-accion > * { width: 100%; max-width: 428px; }
+.barra-accion > .boton { width: 100%; }
 
 /* ── Filas de pagos (mi reserva y cobro) ──────────────────────────────── */
 
-.fila-pago { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 8px 16px; }
-.fila-pago-texto { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.fila-pago-texto strong { font-size: 17px; font-weight: 600; }
+.fila-pago { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 18px; }
+.fila-pago-texto { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fila-pago-texto strong { font-size: 16px; font-weight: 600; }
 .fila-pago-texto span { font-size: 14px; color: var(--tinta-2); }
 .fila-pago-texto span.pagada { color: var(--verde); font-weight: 600; }
 .fila-pago > .numeros { font-size: 17px; font-weight: 600; }
 
-
 /* ── Texto legal ──────────────────────────────────────────────────────── */
 
 .texto-legal > * + * { border-top: 0; }
-.texto-legal { margin-top: 16px; padding: 4px 18px 16px; font-size: 15px; line-height: 1.55; }
-.texto-legal h3 { margin: 18px 0 6px; font-size: 17px; letter-spacing: -0.015em; }
+.texto-legal { margin-top: 16px; padding: 6px 20px 18px; color: var(--tinta-2); font-size: 15px; line-height: 1.6; }
+.texto-legal strong, .texto-legal h3 { color: var(--tinta); }
+.texto-legal h3 { margin: 20px 0 6px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
 .texto-legal ul { padding-left: 18px; margin: 6px 0; }
 
 /* ── Avisos y estados ─────────────────────────────────────────────────── */
 
-.aviso { margin: 14px 0 0; padding: 12px 14px; border-radius: 14px; font-size: 15px; line-height: 1.4; }
+.aviso { margin: 14px 0 0; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.45; }
 .aviso-alerta { background: var(--ambar-suave); color: var(--ambar); }
-.aviso-error { background: var(--rojo-suave); color: var(--rojo-texto); }
+.aviso-error { background: var(--rojo-suave); color: var(--acento-texto); }
 .cargando { padding: 40px 0; color: var(--tinta-2); text-align: center; font-size: 15px; }
 
-.enlace-discreto { display: block; margin-top: 22px; text-align: center; color: var(--tinta-2) !important; font-size: 15px; }
+.enlace-discreto { display: block; margin-top: 24px; padding: 12px 0; text-align: center; color: var(--tinta-2) !important; font-size: 15px; }
 
 @media (prefers-reduced-motion: reduce) {
   .sitio *, .sitio *::before, .sitio *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }

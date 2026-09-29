@@ -1,26 +1,25 @@
-// Paso 2: día, cuánto tiempo y a qué hora, con la disponibilidad del servicio.
+// Dentro de la ficha: día, cuánto tiempo y a qué hora, con la disponibilidad
+// del servicio.
 
 import { useEffect, type Dispatch } from 'react'
 import { servicio } from '../../datos'
 import { usarDatos } from '../../mecanismos/datos/usarDatos'
 import type { Accion, Borrador } from '../../mecanismos/reserva/estado'
-import type { Configuracion } from '../../negocio/configuracion'
+import type { Configuracion, DeporteId } from '../../negocio/configuracion'
 import { avisoPocosLugares } from '../../negocio/disponibilidad'
 import { formatoDinero } from '../../negocio/formato'
 import { diasReservables } from '../../negocio/horario'
 import { ahoraEnSonora, DIAS_CORTOS, diaDeLaSemana, formatoDuracion, formatoHora, horaDe24, sumarDias } from '../../negocio/tiempo'
-import { IconoAtras } from '../../vista/Iconos'
 
 interface Props {
   borrador: Borrador
   despachar: Dispatch<Accion>
   config: Configuracion
+  deporte: DeporteId
 }
 
-export function PasoHorario({ borrador, despachar, config }: Props) {
+export function SeccionHorario({ borrador, despachar, config, deporte }: Props) {
   const { fecha, duracion, inicio } = borrador
-  // Este paso solo se abre con deporte y forma de pago elegidos.
-  const deporte = borrador.deporte!
   const d = config.deportes[deporte]
   const ahora = ahoraEnSonora()
   const dias = diasReservables(config, ahora)
@@ -37,13 +36,7 @@ export function PasoHorario({ borrador, despachar, config }: Props) {
 
   return (
     <>
-      <button type="button" className="volver" onClick={() => despachar({ tipo: 'irAPaso', paso: 1, config })}>
-        <IconoAtras /> Deporte
-      </button>
-      <div className="fila-titulo">
-        <h1 className="titulo-grande">¿Cuándo?</h1>
-      </div>
-
+      <h2 className="titulo-seccion">Día</h2>
       <div className="dias" role="group" aria-label="Día">
         {dias.map((dia) => {
           const [, , num] = dia.fecha.split('-').map(Number)
@@ -57,15 +50,14 @@ export function PasoHorario({ borrador, despachar, config }: Props) {
               disabled={dia.cerrado}
               onClick={() => despachar({ tipo: 'elegirFecha', fecha: dia.fecha })}
             >
-              <span className="dia-nombre">{nombre}</span>
               <span className="dia-numero numeros">{num}</span>
-              {dia.cerrado && <span className="dia-cerrado">Cerrado</span>}
+              <span className="dia-nombre">{dia.cerrado ? 'Cerrado' : nombre}</span>
             </button>
           )
         })}
       </div>
 
-      <h2 className="titulo-seccion">¿Cuánto tiempo?</h2>
+      <h2 className="titulo-seccion">Tiempo</h2>
       <div className="segmentado" role="group" aria-label="Cuánto tiempo">
         {d.duraciones.map((m) => (
           <button key={m} type="button" aria-pressed={duracion === m} onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}>
@@ -74,7 +66,7 @@ export function PasoHorario({ borrador, despachar, config }: Props) {
         ))}
       </div>
 
-      <h2 className="titulo-seccion">¿A qué hora?</h2>
+      <h2 className="titulo-seccion">Hora</h2>
       {borrador.aviso && (
         <p className="aviso aviso-alerta" role="alert">
           {borrador.aviso}
@@ -109,12 +101,6 @@ export function PasoHorario({ borrador, despachar, config }: Props) {
           })}
         </div>
       )}
-
-      <div className="barra-accion">
-        <button type="button" className="boton boton-principal" disabled={inicio === null} onClick={() => despachar({ tipo: 'irAPaso', paso: 3, config })}>
-          Continuar
-        </button>
-      </div>
     </>
   )
 }
