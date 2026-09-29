@@ -1,26 +1,29 @@
-# Contrato de datos: cómo conectar la base de datos real
+# Contrato de datos: la versión real
 
-Para quien hace la parte de **Supabase y Mercado Pago**. Aquí está todo lo que
-necesitas para hacer la versión real sin tocar ninguna pantalla.
+Para quien trabaja en **Supabase y Mercado Pago**. La versión real ya existe y
+corre en Supabase; cómo quedaron las tablas, los permisos y cómo se sube un
+cambio está en [`BASE-DE-DATOS.md`](BASE-DE-DATOS.md). Aquí está el contrato
+que cualquier versión tiene que cumplir y lo que falta (Mercado Pago).
 
 ## La idea en una línea
 
 Las pantallas **solo** hablan con un objeto `servicio` que cumple la interfaz
-`ServicioDeDatos` de [`src/datos/contrato.ts`](src/datos/contrato.ts). Hoy la
-cumple [`src/datos/simulado.ts`](src/datos/simulado.ts), que guarda en el
-navegador. Tu trabajo es escribir **otra** implementación de esa misma
-interfaz, `src/datos/real.ts`, que use Supabase y Mercado Pago. Cuando esté,
-se cambia una línea en [`src/datos/index.ts`](src/datos/index.ts) y todo el
-sitio y el panel pasan a usar datos reales.
+`ServicioDeDatos` de [`src/datos/contrato.ts`](src/datos/contrato.ts). Lo
+cumplen dos versiones y [`src/datos/index.ts`](src/datos/index.ts) elige cuál
+con la variable `VITE_DATOS`:
 
 ```
  pantallas (src/pantallas, src/panel)
         │  solo llaman a servicio.algo()
         ▼
- src/datos/index.ts  ──►  simulado.ts   (hoy: navegador + pago de mentira)
-                     └─►  real.ts       (tú: Supabase + Mercado Pago)
-                              │
-        las dos llaman a ▼    ▼
+ src/datos/index.ts ─► simulado.ts  (demostración: el navegador + pago de mentira)
+                    └► real.ts      (VITE_DATOS=real: manda cada acción al servidor)
+                                        │
+                                        ▼
+                         Edge Function `api` en Supabase
+                         (src/servidor/api.ts + supabase/fuentes/)
+                                        │
+            las dos llaman a ▼          ▼
  src/negocio/operaciones/     LAS REGLAS, escritas una sola vez
 ```
 
@@ -36,20 +39,20 @@ Tu versión real hace lo mismo que la simulada: **leer → llamar a la operació
 → guardar**. Mira cómo lo hace [`simulado.ts`](src/datos/simulado.ts): ya no
 tiene reglas adentro, solo guarda.
 
-Como las reglas deciden cobros, tienen que correr **en el servidor**, no en el
-navegador. La forma propuesta:
+Como las reglas deciden cobros, corren **en el servidor**, no en el navegador:
 
-1. `real.ts` (en el navegador) llama a **funciones de Netlify**
-   (`netlify/functions/*.mts`, TypeScript en Node).
-2. Cada función de Netlify lee de Supabase con la llave de servicio, llama a
-   la operación de `src/negocio/operaciones` con la hora del servidor, y
-   guarda el resultado.
-3. **La única que necesita algo más es `apartar`:** dos personas pueden
-   apartar la última mesa al mismo tiempo. Leer, revisar y guardar tiene que
-   pasar dentro de una transacción de Postgres que no deje a otra colarse (por
-   ejemplo, una función RPC con `pg_advisory_xact_lock` por deporte y fecha
-   que revisa el cupo y guarda). Lo mismo aplica a extender, cambiar horario y
-   anotar sin reserva, porque también ocupan mesa.
+1. `real.ts` (en el navegador) manda `{ accion, datos }` a la **Edge Function
+   `api` de Supabase**. No decide nada: ni precios, ni lugares, ni la hora.
+2. La función ([`src/servidor/api.ts`](src/servidor/api.ts)) revisa quién
+   pide qué, lee de Postgres, llama a la operación de `src/negocio/operaciones`
+   con la hora del servidor y guarda.
+3. Todo lo que ocupa mesa (apartar, anotar sin reserva, extender, cambiar
+   horario…) pasa en **una transacción con candado**
+   (`pg_advisory_xact_lock`): dos personas no pueden apartar la última mesa.
+
+Se eligió Supabase y no funciones de Netlify porque Netlify cobra créditos por
+cada publicación y por las funciones, y en el plan gratis se acabaron; Supabase
+da las Edge Functions gratis de sobra para el tamaño del local.
 
 Si una regla está mal, se corrige **una vez** en `src/negocio/operaciones` y
 vale para las dos versiones. Antes vivían dentro de `simulado.ts`: el arreglo
@@ -72,7 +75,7 @@ de "cambiar horario" que hiciste había quedado solo en una de las dos.
 
 El repositorio y el sitio son públicos: cualquiera puede llamar a Supabase con
 lo que quiera desde su navegador. Por eso estas reglas se cumplen **en la
-base** (funciones de Postgres / RPC, políticas RLS o funciones de Netlify),
+base** (la Edge Function `api`, políticas RLS o disparadores),
 nunca solo en el código de las pantallas:
 
 | Regla | Por qué en el servidor |
@@ -115,7 +118,7 @@ el cliente o para recepción, en español.
 
 | Operación | Rol | Qué hace |
 |---|---|---|
-| `sesion()`, `iniciarSesion(correo, contraseña)`, `cerrarSesion()` | todos | Supabase Auth con correo y contraseña. Cada persona su usuario. |
+| `sesion()`, `iniciarSesion(usuario, contraseña)`, `cerrarSesion()` | todos | Usuario y contraseña (Supabase Auth por dentro, ver `BASE-DE-DATOS.md`). Cada persona su usuario. |
 | `reservasEntre(desde, hasta)` | ambos | Todas las reservas de esas fechas, de cualquier estado, ordenadas por fecha y hora. |
 | `pagosDelDia(fecha)` | ambos | Pagos **hechos** ese día (en línea y en el local), para el cierre de caja. |
 | `anotarSinReserva(cliente)` | ambos | La caja del mostrador: registra **y cobra** (efectivo, tarjeta o transferencia, en `cliente.medio`) a un grupo que empieza **ahora**. Revisa horario, lugar y mesa. Guarda quién cobró. |
@@ -126,34 +129,20 @@ el cliente o para recepción, en español.
 | `cancelarComoNegocio(id)` | ambos | Devuelve TODO lo pagado en línea, sin plazo. |
 | `liberarPorRetraso(id)` | ambos | Solo pasados los 20 min sin llegar. Sin devolución. |
 | `guardarConfiguracion(config, aunqueHayaConflictos?)` | dueño | Si con la nueva configuración alguna reserva futura se queda sin mesa o fuera de horario, **no guarda** y devuelve los conflictos, salvo que venga `aunqueHayaConflictos`. Nunca cancela nada. |
-| `usuarios()`, `agregarUsuario()`, `quitarUsuario()` | dueño | Acceso al panel. Nadie se puede quitar a sí mismo. |
+| `usuarios()`, `agregarUsuario(u, contraseña)`, `quitarUsuario()` | dueño | Acceso al panel: el dueño crea la cuenta con usuario y contraseña, sin correos. Nadie se puede quitar a sí mismo. |
 | `alCambiar(aviso)` | — | Llama a `aviso()` cuando cambian los datos. Con Supabase: Realtime sobre `reservas`/`partes`. |
 
 ## Modelo de datos
 
 Los tipos exactos están en [`src/negocio/reserva.ts`](src/negocio/reserva.ts)
-y [`src/negocio/configuracion.ts`](src/negocio/configuracion.ts). Una
-propuesta de tablas (ajústala como veas mejor, mientras el contrato devuelva
-lo mismo):
+y [`src/negocio/configuracion.ts`](src/negocio/configuracion.ts). Las tablas
+como quedaron en Supabase (cada reserva completa en `datos` y las columnas de
+búsqueda calculadas de ahí), con su diagrama, están en
+[`BASE-DE-DATOS.md`](BASE-DE-DATOS.md#las-tablas).
 
-```
-configuracion   una sola fila: jsonb con Configuracion (o tablas deportes/horario/dias_cerrados)
-perfiles        id (= auth.users.id), nombre, rol ('dueno' | 'recepcion')
-reservas        id, folio (único), token_privado (único), token_cobro (único),
-                deporte, fecha (date), inicio (int, minutos), duracion (int),
-                precio, con_promo, partes_elegidas, organizador_nombre,
-                organizador_whatsapp, origen, estado, apartada_hasta (timestamptz),
-                mesa, llegaron_en, cancelacion_motivo, cancelada_en, cancelada_por,
-                creada_en
-partes          id, reserva_id, monto, del_organizador, concepto,
-                pago_medio, pago_nombre, pago_en, pago_marcado_por, pago_devuelto,
-                mp_pago_id (id del pago en Mercado Pago, para reembolsos)
-intentos_pago   id, reserva_id, parte_ids, nombre, monto, mp_preferencia_id, resultado
-```
-
-- **Fechas y horas:** la fecha del negocio es un `date` de Sonora y la hora
-  son minutos desde medianoche, igual que en el código. Los instantes
-  (`apartada_hasta`, `pago_en`) son `timestamptz`.
+- **Fechas y horas:** la fecha del negocio es "AAAA-MM-DD" de Sonora y la
+  hora son minutos desde medianoche, igual que en el código. Los instantes
+  (`apartadaHasta`, `pago.en`) son de la hora del servidor.
 - **Folio y tokens:** únicos por restricción en la base. El folio usa
   `23456789ABCDEFGHJKMNPQRSTUVWXYZ` (sin 0/O/1/I/L), 5 caracteres; los
   tokens, 14 caracteres al azar.
@@ -169,24 +158,27 @@ intentos_pago   id, reserva_id, parte_ids, nombre, monto, mp_preferencia_id, res
    (`excluded_payment_types: ticket`): se confirma horas después y la mesa no
    puede quedar apartada tanto tiempo.
 2. El cliente paga en Mercado Pago y regresa. **Regresar no confirma nada.**
-3. El **webhook** de Mercado Pago (una función de Netlify) consulta el pago,
+3. El **webhook** de Mercado Pago (una acción nueva de la Edge Function `api`) consulta el pago,
    y si está aprobado marca las partes como pagadas y la reserva como
    confirmada. Si el apartado ya venció y la mesa ya no está, reembolsa y lo
    deja registrado.
 4. Reembolsos (cancelaciones): API de reembolsos de Mercado Pago con el
    `mp_pago_id` de cada parte.
-5. Las llaves de Mercado Pago van en variables de entorno de Netlify, **nunca**
-   en el código ni con prefijo `VITE_` (lo que empieza con `VITE_` se publica
-   en el sitio).
+5. Las llaves de Mercado Pago van en los secretos de la función (*Edge
+   Functions → Secrets* en Supabase), **nunca** en el código ni con prefijo
+   `VITE_` (lo que empieza con `VITE_` se publica en el sitio).
 
-La pantalla `/pago/<id>` (`src/pantallas/pago-simulado`) solo existe en la
-simulación. Con la versión real, `iniciarPago` devuelve la URL de Mercado Pago
-y esa pantalla no se usa.
+Mientras no haya Mercado Pago, la pantalla `/pago/<id>`
+(`src/pantallas/pago-simulado`) ocupa su lugar en las dos versiones; en la real
+solo funciona si la función tiene el secreto `PAGOS_SIMULADOS=si`. Cuando entre
+Mercado Pago se quita ese secreto y `iniciarPago` devuelve la URL de Mercado
+Pago.
 
 ## Casos que la versión real debe pasar
 
-Son los de `src/datos/simulado.test.ts`. Lo ideal: que esas mismas pruebas
-corran también contra `real.ts` apuntando a una base de pruebas.
+Son los de `src/datos/simulado.test.ts`, y **ya corren contra las dos
+versiones**: la simulada y la real (el mismo servidor de Supabase, con la base
+en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 
 - Aparta con precio por mesa y lo divide en pesos cerrados ($150 entre 4 →
   39/37/37/37).
@@ -209,9 +201,10 @@ corran también contra `real.ts` apuntando a una base de pruebas.
   nunca cancela nada.
 - Una reserva conserva su precio aunque cambie la configuración.
 
-## Cuando esté lista
+## Elegir la versión
 
-En [`src/datos/index.ts`](src/datos/index.ts), elegir la versión con una
-variable de entorno (`VITE_DATOS=real`) para que pruebas y producción puedan ir
-separadas. Con la versión real, el aviso de "Modo demostración" desaparece
-solo (`servicio.modo === 'real'`).
+[`src/datos/index.ts`](src/datos/index.ts) usa la real con
+`VITE_DATOS=real`, `VITE_SUPABASE_URL` y `VITE_SUPABASE_LLAVE_PUBLICA` (ver
+[`BASE-DE-DATOS.md`](BASE-DE-DATOS.md#el-sitio-con-datos-reales)); sin eso, la
+demostración. Así se puede seguir diseñando con datos de ejemplo sin tocar la
+base.

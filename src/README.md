@@ -25,10 +25,18 @@ src/
 │
 ├── datos/                     EL CONTRATO con los datos (ver CONTRATO-DE-DATOS.md).
 │   ├── contrato.ts            Las operaciones que usan las pantallas. La ley.
-│   ├── simulado.ts            La versión de hoy: lee y guarda en el navegador, llama a operaciones.
+│   ├── simulado.ts            Demostración: lee y guarda en el navegador, llama a operaciones.
+│   ├── real.ts                Versión real: manda cada operación al servidor de Supabase.
+│   ├── conexionSupabase.ts    Cómo habla el navegador con Supabase (función api, sesión, Realtime).
+│   ├── usuarios.ts            Usuarios del panel: reglas del nombre y su dirección interna.
 │   ├── ejemplos.ts            Reservas y usuarios de demostración (solo simulado).
-│   ├── simulado.test.ts       Cómo se debe comportar CUALQUIER versión.
-│   └── index.ts               Cuál versión se usa. Las pantallas importan de aquí.
+│   ├── simulado.test.ts       Cómo se debe comportar CUALQUIER versión (corre contra las dos).
+│   └── index.ts               Cuál versión se usa (VITE_DATOS). Las pantallas importan de aquí.
+│
+├── servidor/                  EL SERVIDOR que corre en Supabase (ver BASE-DE-DATOS.md).
+│   ├── api.ts                 Cada acción: quién la puede pedir, qué regla llama, qué guarda.
+│   ├── repositorio.ts         Lo que el servidor necesita de la base (y una versión en memoria).
+│   └── conexionEnMemoria.ts   Para las pruebas: el servidor con la base en memoria.
 │
 ├── mecanismos/                Lo que funciona por debajo de las pantallas.
 │   ├── reserva/estado.ts      Lo que el cliente va eligiendo antes de pagar.
@@ -36,7 +44,8 @@ src/
 │   └── whatsapp/enlaces.ts    Botones que abren WhatsApp con el mensaje escrito.
 │
 ├── pantallas/                 El sitio del cliente (teléfono). Una carpeta por página.
-│   ├── reservar/              "/": deporte y cómo pagan → horario → datos.
+│   ├── reservar/              "/": lista de juegos (fotos) → ficha del juego, donde se
+│   │                          elige cómo pagan, día, hora y datos, y se paga deslizando.
 │   ├── pago-simulado/         "/pago/…": ocupa el lugar de Mercado Pago (solo demo).
 │   ├── mi-reserva/            "/r/…": link privado del organizador.
 │   ├── cobro/                 "/c/…": link de cobro para los amigos.
@@ -50,8 +59,9 @@ src/
 │   ├── Semana.tsx · Caja.tsx · Configuracion.tsx
 │   └── panel.css              TODO el diseño del panel. Se puede rehacer libre.
 │
-├── vista/                     Piezas que usan varias páginas del cliente.
-└── estilos/                   Colores (tokens.css) y piezas compartidas del cliente.
+├── vista/                     Piezas que usan varias páginas del cliente: el pase,
+│                              el deslizador de pagar, las fotos de cada juego.
+└── estilos/                   sitio.css: colores y piezas compartidas del cliente.
 ```
 
 ## Cómo buscar
@@ -68,6 +78,10 @@ src/
 | Algo "se borra solo" o salta de paso al reservar | `mecanismos/reserva/estado.ts` → `reducir` |
 | Una página no carga o se queda en "Cargando…" | `mecanismos/datos/usarDatos.ts` y la operación del servicio |
 | El panel se ve mal | `panel/panel.css` |
+| El sitio del cliente se ve mal | `estilos/sitio.css` (lo compartido) y el `.css` de la pantalla |
+| Con datos reales algo falla y en la demostración no | `servidor/api.ts` y `supabase/fuentes/` (ver `BASE-DE-DATOS.md`) |
+| No deja entrar al panel | `datos/usuarios.ts`, `datos/conexionSupabase.ts` → `entrar`, y la tabla `perfiles` |
+| "Desliza para pagar" no responde o paga con un toque | `vista/Deslizar.tsx` |
 | Un color está mal en modo oscuro | `estilos/tokens.css` |
 
 ## Reglas al añadir

@@ -15,9 +15,11 @@ Si eres nuevo en el proyecto, léelo en este orden:
    no coinciden, manda el documento.
 3. **[`src/README.md`](src/README.md)**: el mapa del código. Qué hay en cada
    archivo y dónde buscar cuando algo falla.
-4. **[`CONTRATO-DE-DATOS.md`](CONTRATO-DE-DATOS.md)**: si vas a hacer la base
-   de datos (Supabase) o los pagos (Mercado Pago), esto es lo tuyo.
-5. **[`COMO-TRABAJAMOS.md`](COMO-TRABAJAMOS.md)**: las reglas para escribir
+4. **[`BASE-DE-DATOS.md`](BASE-DE-DATOS.md)**: la base de datos en Supabase:
+   el diagrama de las tablas, quién puede tocar qué y cómo se sube un cambio.
+5. **[`CONTRATO-DE-DATOS.md`](CONTRATO-DE-DATOS.md)**: el contrato entre las
+   pantallas y los datos, y lo que falta de Mercado Pago.
+6. **[`COMO-TRABAJAMOS.md`](COMO-TRABAJAMOS.md)**: las reglas para escribir
    código aquí.
 
 ## Qué hay en el repositorio
@@ -25,7 +27,9 @@ Si eres nuevo en el proyecto, léelo en este orden:
 | Carpeta o archivo | Qué es |
 |---|---|
 | `RESERVAS.md` | Las reglas del negocio y las decisiones tomadas. |
-| `CONTRATO-DE-DATOS.md` | Cómo se conecta la base de datos real sin tocar pantallas. |
+| `BASE-DE-DATOS.md` | Las tablas de Supabase, permisos y cómo subir cambios. |
+| `CONTRATO-DE-DATOS.md` | El contrato entre pantallas y datos; Mercado Pago. |
+| `supabase/` | Migraciones (`migrations/`) y el servidor (`fuentes/`), que se empaqueta para la Edge Function. |
 | `src/` | El sitio y el panel (Vite + React + TypeScript). Ver `src/README.md`. |
 | `public/imagenes/` | Logo e íconos; se sirven tal cual. |
 | `referencia/` | El prototipo anterior del panel. Solo referencia; no se publica. |
@@ -33,7 +37,8 @@ Si eres nuevo en el proyecto, léelo en este orden:
 
 ## En qué estado está
 
-**Todo funciona "como si fuera real", pero con datos simulados:**
+**Funciona con datos reales en Supabase** (con `VITE_DATOS=real`) o en modo
+demostración con datos en el navegador (sin esa variable):
 
 - **El sitio del cliente** (`/`): reservar con las reglas de `RESERVAS.md`,
   pagar entre 1, 2 o 4, pago simulado de Mercado Pago, link privado (`/r/…`)
@@ -42,9 +47,11 @@ Si eres nuevo en el proyecto, léelo en este orden:
   el local, extender, cambiar horario, cancelar, liberar, semana, caja del día,
   y la configuración de Hugo (mesas, precios, promo, horario, días cerrados,
   usuarios).
-- **Los datos viven en el navegador** (`src/datos/simulado.ts`): el celular del
-  cliente y la laptop de recepción NO ven lo mismo todavía. Eso llega con
-  Supabase.
+- **Datos reales:** Supabase (ver `BASE-DE-DATOS.md`). Probado contra el
+  proyecto real: reservar, pagar entre amigos, link de cobro, cancelar y que
+  no se venda una mesa dos veces. El panel entra con usuario y contraseña.
+- **Lo que falta para abrir al público:** Mercado Pago (hoy el pago en línea es
+  de prueba) y la cuenta de dueño, que se crea en la entrega.
 
 Lo que falta para abrir de verdad está en
 [`RESERVAS.md` → Qué ya está hecho y qué falta](RESERVAS.md#qué-ya-está-hecho-y-qué-falta).
@@ -54,7 +61,7 @@ Lo que falta para abrir de verdad está en
 | Frente | Archivos |
 |---|---|
 | Diseño del panel y del sitio | `src/panel/panel.css`, `src/pantallas/`, `src/estilos/` |
-| Base de datos (Supabase) y pagos (Mercado Pago) | `src/datos/real.ts` (nuevo), siguiendo `CONTRATO-DE-DATOS.md` |
+| Base de datos (Supabase) y pagos (Mercado Pago) | `src/servidor/`, `supabase/`, `src/datos/real.ts`, siguiendo `BASE-DE-DATOS.md` |
 
 Se puede trabajar en los dos a la vez: el diseño no toca `src/datos/` y la
 base no toca pantallas. Lo que los une es `src/datos/contrato.ts`: **quien lo
@@ -85,7 +92,8 @@ enlaces simbólicos de `.claude/skills` no se siguen).
 
 - Sitio: `http://localhost:5190/` (o `reta-saca.netlify.app`).
 - Panel: `http://localhost:5190/panel`. En la demostración hay dos botones para
-  entrar como **Recepción** o como **Hugo (dueño)**; la contraseña no se revisa.
+  entrar como **Recepción** (`recepcion`) o como **Hugo (dueño)** (`hugo`); la
+  contraseña no se revisa.
 - Trae reservas de ejemplo (mañana a las 7 PM Cornhole está lleno).
   **"Restablecer demo"** en el panel borra todo y vuelve a empezar.
 - Abre el sitio y el panel en dos pestañas del mismo navegador: lo que reserves
@@ -97,12 +105,16 @@ enlaces simbólicos de `.claude/skills` no se siguen).
   repositorio privado, Netlify gratis solo publica los cambios de UNA persona,
   y somos dos). Nada secreto va en el código: contraseñas y llaves, en variables de
   entorno de Netlify.
-- Sitio: https://reta-saca.netlify.app — se publica solo con cada `git push`
-  a `main`. Por ahora el proyecto de Netlify es **privado**: solo lo ve quien
-  entra con la cuenta del equipo. Se abre al público con "Make public" en
-  Netlify cuando el sitio esté listo.
-- Un Pull Request genera su propia vista previa en Netlify, con su enlace en
-  el PR, para revisar antes de mezclar a `main`.
+- Sitio: por ahora en **https://retasaca-hmo.netlify.app** (una cuenta
+  temporal de Netlify, con datos reales de Supabase) mientras regresan los
+  créditos de la cuenta del negocio (`reta-saca.netlify.app`).
+- **Un `git push` ya no publica nada.** Netlify cobra créditos por cada
+  publicación y en el plan gratis se acabaron: en la cuenta del negocio las
+  compilaciones están detenidas y la temporal no está ligada a GitHub. Se
+  publica a mano, juntando cambios: `npm run build` (con el `.env.local` de
+  datos reales) y se sube `dist/` en la página de deploys de Netlify.
+- Base de datos: Supabase, proyecto de la cuenta del negocio. Pide acceso a la
+  organización para ver las tablas.
 
 ## Cómo trabajamos dos personas sin pisarnos
 

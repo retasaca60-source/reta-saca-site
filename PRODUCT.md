@@ -57,16 +57,22 @@ persona, y cada quien sabe exactamente cuánto le toca.
 ## Brand Commitments
 
 - Nombre: **Reta Saca**. Logo circular rojo y negro en
-  `public/imagenes/logo.png`; íconos de paleta y costal en `public/imagenes/`.
+  `public/imagenes/logo.png`.
 - Voz: **informal y de aquí**. De tú, directo, con el sabor del nombre
   ("reta", "¿quién saca?"), sin exagerar la jerga.
-- Dirección visual pedida por el negocio: **moderna, tipo Apple**.
+- Dirección visual fijada por el negocio con una referencia (28/09/2026):
+  **app oscura de reservas deportivas**, fondo casi negro cálido, degradado
+  rojo-naranja, tarjetas con la foto de cada juego y "desliza para pagar".
+- **Solo teléfono**: no hay composición de escritorio; en computadora se ve
+  la misma columna centrada.
 
 ## Evidence on Hand
 
-- Logo e íconos (`public/imagenes/`).
-- **No hay fotos** del local, de las mesas ni de gente jugando. No se inventan
-  fotos, reseñas, número de clientes ni ubicación exacta.
+- Logo (`public/imagenes/logo.png`).
+- **Fotos reales del equipo** de cada juego (paletas, costales, dardos) en
+  `public/imagenes/deportes/`, dadas por el negocio. No hay fotos del local
+  ni de gente jugando. No se inventan fotos, reseñas, calificaciones, número
+  de clientes ni ubicación exacta.
 
 ## Product Principles
 
