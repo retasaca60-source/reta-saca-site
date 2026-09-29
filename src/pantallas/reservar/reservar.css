@@ -55,22 +55,19 @@
   -webkit-text-stroke: 2px #ff6a3d;
 }
 
-/* El parche de malla: tejido de hilos naranjas cruzados, girado y con las
-   orillas deshilachadas por una máscara. Detrás de "TA?". */
+/* El parche de malla: tela tejida con las orillas deshilachadas, detrás de
+   "TA?". Es una imagen (public/imagenes/malla.webp) dibujada hilo por hilo:
+   con degradados de CSS salía un óvalo difuminado de cuadrícula fina, que no
+   se parecía a la tela de la referencia. */
 .inicio-malla {
   position: absolute;
   z-index: -1;
-  right: -8px;
-  bottom: -14px;
+  right: -16px;
+  bottom: -40px;
   width: 44%;
-  height: 96%;
-  rotate: -12deg;
-  background:
-    repeating-linear-gradient(0deg, rgba(200, 110, 60, 0.5) 0 1.5px, transparent 1.5px 5px),
-    repeating-linear-gradient(90deg, rgba(200, 110, 60, 0.5) 0 1.5px, transparent 1.5px 5px),
-    rgba(110, 50, 26, 0.45);
-  -webkit-mask-image: radial-gradient(farthest-side, #000 70%, transparent 100%);
-  mask-image: radial-gradient(farthest-side, #000 70%, transparent 100%);
+  aspect-ratio: 451 / 351;
+  background: url('/imagenes/malla.webp') center / contain no-repeat;
+  opacity: 0.85;
   pointer-events: none;
 }
 .inicio-chispas {
