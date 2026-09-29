@@ -5,14 +5,86 @@
 
 .inicio-marca { display: flex; align-items: center; gap: 10px; min-height: 44px; padding-top: 18px; }
 .inicio-marca img { width: 36px; height: 36px; border-radius: 50%; }
-.inicio-marca strong { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.inicio-marca strong {
+  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
 
+/* "LA RETA?" va en contorno, y el Montserrat que sirve Google es variable: sus
+   trazos se enciman y el contorno dibujaba líneas por dentro de la A y la R.
+   La versión estática oficial de la fuente tiene los contornos limpios (la de
+   Fontsource sale de la variable y trae el mismo defecto). */
+@font-face {
+  font-family: 'Montserrat Contorno';
+  font-weight: 800;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/gh/JulietaUla/Montserrat@master/fonts/webfonts/Montserrat-ExtraBold.woff2') format('woff2');
+}
+
+/* El título: primera línea en blanco y "LA RETA?" más grande, en contorno
+   naranja, con un parche de malla detrás y trazos de chispa alrededor. Cada
+   línea se dimensiona al ancho de la columna (--ancho) para que ocupe lo mismo
+   en cualquier teléfono. */
 .inicio-titulo {
-  margin: 26px 0 0;
-  font-size: 40px;
-  line-height: 1.04;
-  font-weight: 500;
-  letter-spacing: -0.04em;
+  --ancho: min(100vw - 32px, 428px);
+  position: relative;
+  isolation: isolate;
+  margin: 22px 0 0;
+  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
+  font-weight: 800;
+  line-height: 0.98;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.inicio-titulo-1 {
+  display: block;
+  font-size: calc(var(--ancho) * 0.0925);
+  letter-spacing: -0.005em;
+  color: var(--tinta);
+}
+.inicio-titulo-2 {
+  display: block;
+  margin-top: 0.04em;
+  font-size: calc(var(--ancho) * 0.176);
+  letter-spacing: 0.035em;
+  font-family: 'Montserrat Contorno', 'Montserrat', sans-serif;
+  color: transparent;
+  -webkit-text-stroke: 2px #ff6a3d;
+}
+
+/* El parche de malla: tejido de hilos naranjas cruzados, girado y con las
+   orillas deshilachadas por una máscara. Detrás de "TA?". */
+.inicio-malla {
+  position: absolute;
+  z-index: -1;
+  right: -8px;
+  bottom: -14px;
+  width: 44%;
+  height: 96%;
+  rotate: -12deg;
+  background:
+    repeating-linear-gradient(0deg, rgba(200, 110, 60, 0.5) 0 1.5px, transparent 1.5px 5px),
+    repeating-linear-gradient(90deg, rgba(200, 110, 60, 0.5) 0 1.5px, transparent 1.5px 5px),
+    rgba(110, 50, 26, 0.45);
+  -webkit-mask-image: radial-gradient(farthest-side, #000 70%, transparent 100%);
+  mask-image: radial-gradient(farthest-side, #000 70%, transparent 100%);
+  pointer-events: none;
+}
+.inicio-chispas {
+  position: absolute;
+  z-index: -1;
+  inset: -18px 0 auto 0;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: none;
+  stroke: rgba(255, 140, 90, 0.7);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  pointer-events: none;
 }
 
 .juegos { display: grid; gap: 16px; margin: 22px 0 0; padding: 0; list-style: none; }

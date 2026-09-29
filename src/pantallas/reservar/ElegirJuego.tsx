@@ -35,9 +35,15 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
       </header>
 
       <h1 className="inicio-titulo">
-        ¿Listos para
-        <br />
-        la reta?
+        <span className="inicio-titulo-1">¿Estás listo para</span>{' '}
+        <span className="inicio-titulo-2">la reta?</span>
+        {/* Adorno: el parche de malla detrás de "reta?" y los trazos de chispa. */}
+        <span className="inicio-malla" aria-hidden="true" />
+        <svg className="inicio-chispas" viewBox="0 0 358 150" aria-hidden="true">
+          <path d="M250 12l-7-10M262 10l3-11M273 14l9-8" />
+          <path d="M352 54l12-6M354 66l13 1" />
+          <path d="M16 142l-12 8M30 146l-6 11" />
+        </svg>
       </h1>
 
       <ul className="juegos">
