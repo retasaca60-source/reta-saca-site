@@ -49,24 +49,20 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
           const foto = FOTO_DE[id]
           return (
             <li key={id}>
-              <button
-                type="button"
-                className="juego"
-                aria-label={`${d.nombre}, ${mesasEnServicio(d)} mesas${precio !== undefined ? `, ${formatoDinero(precio)} la hora` : ''}`}
-                onClick={() => abrir(id)}
-              >
+              <button type="button" className="juego" onClick={() => abrir(id)}>
                 <img className={`juego-foto foto-${id}`} src={foto.src} alt="" style={{ objectPosition: foto.enfoque }} />
                 <span className="juego-palabra" aria-hidden="true">
                   {d.nombre}
                 </span>
-                <span className="juego-pie" aria-hidden="true">
+                <span className="juego-pie">
+                  <strong className="juego-nombre">{d.nombre}</strong>
                   {precio !== undefined && (
                     <span className="juego-precio numeros">
                       <b>{formatoDinero(precio)}</b> /hora
                     </span>
                   )}
-                  <span className="pastilla numeros">{mesasEnServicio(d)} mesas</span>
                 </span>
+                <span className="pastilla juego-mesas numeros">{mesasEnServicio(d)} mesas</span>
               </button>
             </li>
           )

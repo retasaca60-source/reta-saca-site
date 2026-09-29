@@ -47,42 +47,44 @@
     linear-gradient(to top, rgba(12, 6, 4, 0.94) 0%, rgba(12, 6, 4, 0.5) 30%, rgba(12, 6, 4, 0) 55%);
 }
 
-/* El nombre del juego, gigante: es EL nombre de la tarjeta (no se repite
-   abajo) y la jerarquía la lleva solo el tamaño. Relleno sólido en el naranja
-   de la casa, desvaneciéndose hacia abajo. Va en la franja de arriba, donde
-   las fotos son mesa lisa, y no DETRÁS del objeto como en la referencia: eso
-   pide recortes con transparencia de cada foto, y una máscara geométrica
-   imitándolos se ve peor que no hacerlo. */
+/* El nombre gigante sobre la foto: contorno en el naranja de la casa con un
+   relleno tenue, que se desvanece hacia abajo y deja ver el objeto a través.
+   Así lo eligió el negocio: se probó en relleno sólido y arriba de la foto, y
+   se prefirió este. */
 .juego-palabra {
   position: absolute;
   z-index: 1;
-  top: 12px;
+  /* Debajo de la pastilla de mesas, no encima: se cruzaban. */
+  top: 58px;
   left: 16px;
   right: 16px;
   font-family: 'Anton', 'Hanken Grotesk', sans-serif;
-  font-size: min(22cqi, 90px);
-  line-height: 0.9;
+  font-size: min(24cqi, 96px);
+  line-height: 0.92;
   text-transform: uppercase;
   white-space: nowrap;
-  color: #ff6a3d;
-  -webkit-mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, 0.35) 100%);
-  mask-image: linear-gradient(to bottom, #000 45%, rgba(0, 0, 0, 0.35) 100%);
+  color: rgba(204, 61, 29, 0.28);
+  -webkit-text-stroke: 1.5px rgba(255, 143, 102, 0.85);
+  -webkit-mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 35%, transparent 100%);
   pointer-events: none;
 }
 
+.juego-mesas { position: absolute; z-index: 2; top: 14px; right: 14px; }
 .juego-pie {
   position: absolute;
   z-index: 2;
   left: 20px;
-  right: 16px;
-  bottom: 16px;
+  right: 20px;
+  bottom: 18px;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
 }
-.juego-precio { color: rgba(255, 255, 255, 0.78); font-size: 14px; }
-.juego-precio b { color: #fff; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+.juego-nombre { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.juego-precio { flex: none; color: rgba(255, 255, 255, 0.78); font-size: 14px; }
+.juego-precio b { color: #fff; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
 
 .inicio-nota { margin: 16px 4px 0; color: var(--tinta-2); font-size: 14px; }
 /* La lista no tiene barra fija abajo: no hace falta reservarle espacio. */
