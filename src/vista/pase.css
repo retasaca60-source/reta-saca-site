@@ -1,92 +1,178 @@
-/* El pase de la reserva ya pagada: el degradado de la casa, campos de boleto
-   (etiqueta chica, valor grande), perforación con muescas y el resplandor
-   naranja debajo. Sale en mi reserva y en el link de cobro. */
+/* El pase con forma de boleto de avión (referencia: el boleto de "My Flights").
+   Dos piezas, cuerpo y talón, cortadas con máscaras: la muesca de arriba al
+   centro y las dos de la perforación son huecos de verdad (se ve el fondo de
+   la página a través), no círculos pintados del color del fondo, que dejaban
+   manchas sobre el resplandor. Los colores son los de la casa. */
 
 .pase {
   position: relative;
   margin-top: 8px;
-  padding: 16px 18px 18px;
-  border-radius: 22px;
-  background: var(--acento);
   color: #fff;
-  box-shadow: inset 0 1px 0 rgba(255, 210, 190, 0.28), 0 26px 44px -26px var(--resplandor);
   font-variant-numeric: tabular-nums;
-  transition: filter 0.4s var(--curva), opacity 0.4s var(--curva);
+  /* La sombra va en el contenedor con `filter` porque las piezas llevan máscara
+     y una máscara recorta su propio box-shadow. Sigue la forma con las muescas. */
+  filter: drop-shadow(0 24px 22px rgba(255, 96, 48, 0.3));
+  transition: opacity 0.5s var(--curva), translate 0.5s var(--curva), filter 0.4s var(--curva);
 }
-.pase.apagado { filter: grayscale(1); opacity: 0.7; }
+@starting-style {
+  .pase { opacity: 0; translate: 0 10px; }
+}
+.pase.apagado { filter: grayscale(1) opacity(0.7); }
 
-.pase-cabeza { display: flex; align-items: center; gap: 10px; }
-.pase-cabeza img { width: 30px; height: 30px; border-radius: 50%; background: #fff; }
-.pase-marca { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+/* ── Cuerpo ──────────────────────────────────────────────────────────── */
+
+.pase-cuerpo {
+  position: relative;
+  padding: 20px 18px 0;
+  border-radius: 26px 26px 0 0;
+  background:
+    radial-gradient(rgba(255, 225, 210, 0.14) 1px, transparent 1.3px) 0 0 / 9px 9px,
+    var(--acento);
+  /* Muesca arriba al centro y medio círculo en cada esquina de abajo (la
+     perforación). `intersect`: solo queda lo que ninguna muesca quita. */
+  -webkit-mask:
+    radial-gradient(circle 15px at 50% 0, transparent 96%, #000) ,
+    radial-gradient(circle 12px at 0 100%, transparent 96%, #000),
+    radial-gradient(circle 12px at 100% 100%, transparent 96%, #000);
+  -webkit-mask-composite: source-in, source-in;
+  mask:
+    radial-gradient(circle 15px at 50% 0, transparent 96%, #000),
+    radial-gradient(circle 12px at 0 100%, transparent 96%, #000),
+    radial-gradient(circle 12px at 100% 100%, transparent 96%, #000);
+  mask-composite: intersect;
+}
+
+.pase-cabeza { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pase-deporte {
+  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .pase-estado {
-  margin-left: auto;
   padding: 4px 10px;
   border-radius: 999px;
   /* Oscurecer y no aclarar: el texto blanco sobre un rojo más claro bajaba de 4.5:1. */
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.22);
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.pase-principal,
-.pase-secundario,
-.pase-pie { display: flex; gap: 12px; }
-.pase-principal { margin-top: 22px; }
-.pase-secundario { margin-top: 16px; }
-.pase-pie { margin-top: 2px; }
-
-.pase-campo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.pase-campo.derecha { text-align: right; align-items: flex-end; }
+/* "Salida → llegada": inicio y fin grandes, en medio el día, el arco y la duración. */
+.pase-ruta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+  margin-top: 20px;
+}
+.pase-extremo { display: flex; flex-direction: column; gap: 1px; }
+.pase-extremo.derecha { align-items: flex-end; text-align: right; }
 .pase-etiqueta {
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   /* Blanco lleno: sobre el arranque del degradado apenas pasa 4.5:1 a 12 px. */
   color: #fff;
 }
-.pase-valor {
-  font-size: 17px;
-  font-weight: 600;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
+.pase-hora {
+  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
-.pase-principal .pase-valor { font-size: 30px; font-weight: 800; letter-spacing: -0.035em; }
-.pase-campo.fuerte .pase-valor { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; }
-.pase-valor.vacio { color: rgba(255, 255, 255, 0.55); }
+.pase-sufijo { font-size: 13px; font-weight: 600; }
 
-/* El movimiento del sitio: cada dato entra al pase como si se imprimiera. Con
-   @starting-style y no con fotogramas: si el navegador no corre la
-   transición, el valor ya está visible. En reposo el filtro es `none` (un
-   blur(0) dejaría una capa de apilado sin razón). */
-.pase-valor {
-  transition: opacity 0.45s var(--curva), filter 0.45s var(--curva), transform 0.45s var(--curva);
-  filter: none;
+.pase-trayecto { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-bottom: 4px; min-width: 0; }
+.pase-dia, .pase-duracion { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.pase-arco { position: relative; display: block; width: 100%; height: 34px; }
+.pase-arco svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.pase-arco path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 1.5px;
+  stroke-dasharray: 3 4;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
 }
-@starting-style {
-  .pase-valor { opacity: 0; filter: blur(6px); transform: translateY(4px); }
+/* El ícono del juego en la cresta del arco, como el avión de la referencia. */
+.pase-icono {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  translate: -50% -6px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #b92c1b;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.16);
+}
+.pase-icono svg { width: 18px; height: 18px; }
+
+/* La foto en el lugar del avión: se funde arriba y abajo con el rojo del boleto. */
+.pase-foto { height: 210px; margin: 10px -18px 0; }
+.pase-foto img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Entrada larga arriba: la parte alta de la foto es mesa gris desenfocada y
+     con un corte corto quedaba una franja sucia sobre el rojo. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 22%, #000 46%, #000 74%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.35) 22%, #000 46%, #000 74%, transparent 100%);
 }
 
-/* La perforación: línea punteada con una muesca a cada lado, del color del fondo. */
-.pase-corte {
+/* ── Talón ───────────────────────────────────────────────────────────── */
+
+.pase-talon {
   position: relative;
-  height: 1px;
-  margin: 18px -18px 16px;
-  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.45) 55%, transparent 0);
-  background-size: 10px 1px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 20px;
+  border-radius: 0 0 26px 26px;
+  background: #8f1418;
+  -webkit-mask:
+    radial-gradient(circle 12px at 0 0, transparent 96%, #000),
+    radial-gradient(circle 12px at 100% 0, transparent 96%, #000);
+  -webkit-mask-composite: source-in;
+  mask:
+    radial-gradient(circle 12px at 0 0, transparent 96%, #000),
+    radial-gradient(circle 12px at 100% 0, transparent 96%, #000);
+  mask-composite: intersect;
 }
-.pase-corte::before,
-.pase-corte::after {
+/* La perforación, entre las dos muescas. */
+.pase-talon::before {
   content: '';
   position: absolute;
-  top: -11px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--fondo);
+  top: 0;
+  left: 18px;
+  right: 18px;
+  height: 1.5px;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.5) 55%, transparent 0) 0 0 / 10px 1.5px repeat-x;
 }
-.pase-corte::before { left: -11px; }
-.pase-corte::after { right: -11px; }
+
+.pase-campo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pase-campo.derecha { align-items: flex-end; text-align: right; }
+.pase-campo .pase-etiqueta + .pase-valor + .pase-etiqueta { margin-top: 8px; }
+.pase-valor { font-size: 16px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.pase-folio {
+  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.pase-total {
+  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}

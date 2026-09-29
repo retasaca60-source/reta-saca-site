@@ -1,73 +1,97 @@
-// El pase de la reserva, al estilo de un pase de Wallet. Mientras el cliente
-// elige, los campos se van llenando; al pagar queda completo con su folio. Es
-// también el resumen: no hay otra tarjeta que repita los mismos datos.
-//
-// Cada valor lleva `key={valor}`: al cambiar, el campo se vuelve a montar y
-// entra con su transición (pase.css). Ese es el único movimiento del sitio.
+// El pase de la reserva, con forma de boleto de avión: arriba el juego y el
+// estado; en medio "salida → llegada", que aquí es la hora de inicio y la de
+// fin con el día y la duración sobre un arco punteado; al centro la foto del
+// juego; y abajo, pasando la perforación, el talón con el nombre, el folio y
+// el total. Sale en mi reserva (/r/) y en el link de cobro (/c/).
 
+import type { Configuracion, DeporteId } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
+import { formatoDuracion, formatoHora } from '../negocio/tiempo'
+import { FOTO_PASE } from './fotos'
+import { IconoDeporte } from './IconoDeporte'
 import './pase.css'
 
 export interface DatosDelPase {
-  deporte?: string
-  dia?: string
-  hora?: string
-  duracion?: string
-  pagan?: string
-  total?: number
-  /** Lo que paga quien reserva ahora. */
-  tuParte?: number
-  titular?: string
-  folio?: string
-  /** Texto de estado en la cabeza del pase ("Confirmada", "Apartada"…). */
-  estado?: string
+  deporteId: DeporteId
+  deporte: string
+  /** "Hoy", "Mañana" o "Sáb 3/10". */
+  dia: string
+  /** Minutos desde medianoche. */
+  inicio: number
+  /** Minutos. */
+  duracion: number
+  titular: string
+  total: number
+  folio: string
+  /** Texto de estado en la cabeza del pase ("Confirmada", "Apartada hasta…"). */
+  estado: string
   /** Pase apagado (cancelado). */
   apagado?: boolean
 }
 
-export function Pase({ datos }: { datos: DatosDelPase }) {
-  const d = datos
+/** "7:00 PM" → ["7:00", "PM"]: la hora va grande y el AM/PM chico, como el código del aeropuerto y su ciudad. */
+const partir = (minutos: number) => formatoHora(minutos % (24 * 60)).split(' ')
+
+export function Pase({ datos: d, config }: { datos: DatosDelPase; config: Configuracion }) {
+  const [horaInicio, sufijoInicio] = partir(d.inicio)
+  const [horaFin, sufijoFin] = partir(d.inicio + d.duracion)
+  const foto = FOTO_PASE[d.deporteId]
+
   return (
-    <section className={'pase' + (d.apagado ? ' apagado' : '')} aria-label="Tu pase">
-      <header className="pase-cabeza">
-        <img src="/imagenes/logo.png" alt="" />
-        <span className="pase-marca">Reta Saca</span>
-        <span className="pase-estado">{d.estado ?? d.folio ?? 'Pase'}</span>
-      </header>
+    <section
+      className={'pase' + (d.apagado ? ' apagado' : '')}
+      aria-label={`Pase de ${d.deporte}, ${d.dia} de ${horaInicio} ${sufijoInicio} a ${horaFin} ${sufijoFin}, folio ${d.folio}`}
+    >
+      <div className="pase-cuerpo">
+        <header className="pase-cabeza">
+          <span className="pase-deporte">{d.deporte}</span>
+          <span className="pase-estado">{d.estado}</span>
+        </header>
 
-      <div className="pase-principal">
-        <Campo etiqueta="Deporte" valor={d.deporte} />
-        <Campo etiqueta="Hora" valor={d.hora} derecha />
+        <div className="pase-ruta numeros">
+          <div className="pase-extremo">
+            <span className="pase-etiqueta">Inicio</span>
+            <span className="pase-hora">{horaInicio}</span>
+            <span className="pase-sufijo">{sufijoInicio}</span>
+          </div>
+
+          <div className="pase-trayecto" aria-hidden="true">
+            <span className="pase-dia">{d.dia}</span>
+            <span className="pase-arco">
+              <svg viewBox="0 0 120 34" preserveAspectRatio="none">
+                <path d="M4 30 Q60 -8 116 30" />
+              </svg>
+              <span className="pase-icono">
+                <IconoDeporte id={d.deporteId} config={config} />
+              </span>
+            </span>
+            <span className="pase-duracion">{formatoDuracion(d.duracion)}</span>
+          </div>
+
+          <div className="pase-extremo derecha">
+            <span className="pase-etiqueta">Fin</span>
+            <span className="pase-hora">{horaFin}</span>
+            <span className="pase-sufijo">{sufijoFin}</span>
+          </div>
+        </div>
+
+        <div className="pase-foto" aria-hidden="true">
+          <img src={foto.src} alt="" style={{ objectPosition: foto.enfoque }} />
+        </div>
       </div>
 
-      <div className="pase-secundario">
-        <Campo etiqueta="Día" valor={d.dia} />
-        <Campo etiqueta="Tiempo" valor={d.duracion} />
-        <Campo etiqueta={d.titular ? 'A nombre de' : 'Pagan'} valor={d.titular ?? d.pagan} derecha />
-      </div>
-
-      <div className="pase-corte" aria-hidden="true" />
-
-      <footer className="pase-pie">
-        <Campo etiqueta="Total por la mesa" valor={d.total !== undefined ? formatoDinero(d.total) : undefined} />
-        <Campo
-          etiqueta={d.folio ? 'Folio' : 'Pagas tú'}
-          valor={d.folio ?? (d.tuParte !== undefined ? formatoDinero(d.tuParte) : undefined)}
-          derecha
-          fuerte
-        />
+      <footer className="pase-talon">
+        <div className="pase-campo">
+          <span className="pase-etiqueta">A nombre de</span>
+          <span className="pase-valor">{d.titular}</span>
+          <span className="pase-etiqueta">Folio</span>
+          <span className="pase-folio numeros">{d.folio}</span>
+        </div>
+        <div className="pase-campo derecha">
+          <span className="pase-etiqueta">Total por la mesa</span>
+          <span className="pase-total numeros">{formatoDinero(d.total)}</span>
+        </div>
       </footer>
     </section>
-  )
-}
-
-function Campo({ etiqueta, valor, derecha, fuerte }: { etiqueta: string; valor?: string; derecha?: boolean; fuerte?: boolean }) {
-  return (
-    <div className={'pase-campo' + (derecha ? ' derecha' : '') + (fuerte ? ' fuerte' : '')}>
-      <span className="pase-etiqueta">{etiqueta}</span>
-      <span key={valor ?? 'vacio'} className={'pase-valor' + (valor ? '' : ' vacio')}>
-        {valor ?? '—'}
-      </span>
-    </div>
   )
 }

@@ -7,7 +7,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { servicio } from '../../datos'
 import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { formatoDinero } from '../../negocio/formato'
-import { formatoDuracion, formatoHora, nombreDelDia } from '../../negocio/tiempo'
+import { nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 
 export default function Cobro() {
@@ -63,11 +63,13 @@ export default function Cobro() {
 
       <div style={{ marginTop: 18 }}>
         <Pase
+          config={config}
           datos={{
+            deporteId: v.deporte,
             deporte: d.nombre,
-            hora: formatoHora(v.inicio),
             dia: nombreDelDia(v.fecha),
-            duracion: formatoDuracion(v.duracion),
+            inicio: v.inicio,
+            duracion: v.duracion,
             titular: v.organizador,
             total: v.partes.reduce((s, p) => s + p.monto, 0),
             folio: v.folio,

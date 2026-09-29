@@ -11,3 +11,15 @@ export const FOTO_DE: Record<DeporteId, { src: string; enfoque: string }> = {
   cornhole: { src: '/imagenes/deportes/cornhole.webp', enfoque: '50% 42%' },
   popdarts: { src: '/imagenes/deportes/popdarts.webp', enfoque: '60% 58%' },
 }
+
+/**
+ * La foto del centro del pase (mi reserva y link de cobro), en el lugar donde
+ * el boleto de avión de la referencia lleva el avión. Ping Pong tiene una toma
+ * hecha para eso (paleta y pelota de frente); los otros dos usan su foto de
+ * tarjeta, encuadrada en su objeto.
+ */
+export const FOTO_PASE: Record<DeporteId, { src: string; enfoque: string }> = {
+  pingpong: { src: '/imagenes/deportes/pingpong-pase.webp', enfoque: '50% 66%' },
+  cornhole: { src: '/imagenes/deportes/cornhole.webp', enfoque: '50% 45%' },
+  popdarts: { src: '/imagenes/deportes/popdarts.webp', enfoque: '60% 60%' },
+}

@@ -9,7 +9,7 @@ import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../../mecanismos/whatsapp/enlaces'
 import { formatoDinero } from '../../negocio/formato'
 import { pagado, pendiente, puedeCancelarConDevolucion, total, type Reserva } from '../../negocio/reserva'
-import { fechaLarga, formatoDuracion, formatoHora, instante, nombreDelDia } from '../../negocio/tiempo'
+import { fechaLarga, formatoHora, instante, nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import './mi-reserva.css'
 
@@ -88,11 +88,13 @@ export default function MiReserva() {
 
       <div style={{ marginTop: 18 }}>
         <Pase
+          config={config}
           datos={{
+            deporteId: r.deporte,
             deporte: d.nombre,
-            hora: formatoHora(r.inicio),
             dia: nombreDelDia(r.fecha),
-            duracion: formatoDuracion(r.duracion),
+            inicio: r.inicio,
+            duracion: r.duracion,
             titular: r.organizador.nombre,
             total: total(r),
             folio: r.folio,
