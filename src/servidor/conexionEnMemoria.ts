@@ -7,6 +7,7 @@
 // pruebas lo notan aquí y no en producción.
 
 import { USUARIOS_DEMO } from '../datos/ejemplos'
+import { normalizarUsuario } from '../datos/usuarios'
 import { ErrorDeDatos } from '../negocio/errores'
 import { CONFIGURACION_INICIAL } from '../negocio/configuracion'
 import type { Conexion } from '../datos/real'
@@ -17,8 +18,9 @@ const porLaRed = <T>(x: T): T => (x === undefined ? x : JSON.parse(JSON.stringif
 
 export function conexionEnMemoria(reloj: () => number): { conexion: Conexion; repo: Repositorio } {
   const repo = repositorioEnMemoria(CONFIGURACION_INICIAL)
-  // Las cuentas del panel: los mismos usuarios de la demostración.
-  const cuentas = new Map(USUARIOS_DEMO.map((u) => [u.correo, u.id]))
+  // Las cuentas del panel por usuario (en Supabase, las de Auth): de inicio, los
+  // mismos usuarios de la demostración.
+  const cuentas = new Map(USUARIOS_DEMO.map((u) => [u.usuario, u.id]))
   const perfilesListos = Promise.all(USUARIOS_DEMO.map((u) => repo.guardarPerfil(u)))
   let cuentaId: string | null = null
 
@@ -33,13 +35,13 @@ export function conexionEnMemoria(reloj: () => number): { conexion: Conexion; re
           cuentaId,
           pagosSimulados: true,
           cuentas: {
-            invitar: async (correo) => {
+            crear: async (usuario) => {
               const id = crypto.randomUUID()
-              cuentas.set(correo, id)
+              cuentas.set(usuario, id)
               return id
             },
             borrar: async (id) => {
-              for (const [correo, x] of cuentas) if (x === id) cuentas.delete(correo)
+              for (const [usuario, x] of cuentas) if (x === id) cuentas.delete(usuario)
             },
           },
         },
@@ -47,9 +49,9 @@ export function conexionEnMemoria(reloj: () => number): { conexion: Conexion; re
       if ('error' in r) throw new ErrorDeDatos(r.error.codigo, r.error.mensaje)
       return porLaRed(r.resultado)
     },
-    entrar: async (correo) => {
-      const id = cuentas.get(correo.toLowerCase())
-      if (!id) throw new ErrorDeDatos('sin_sesion', 'Correo o contraseña incorrectos.')
+    entrar: async (usuario) => {
+      const id = cuentas.get(normalizarUsuario(usuario))
+      if (!id) throw new ErrorDeDatos('sin_sesion', 'Usuario o contraseña incorrectos.')
       cuentaId = id
     },
     salir: async () => {

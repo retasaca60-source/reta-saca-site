@@ -10,8 +10,8 @@ import { sumarDias, type Momento } from '../negocio/tiempo'
 import type { Usuario } from './contrato'
 
 export const USUARIOS_DEMO: Usuario[] = [
-  { id: 'u-hugo', nombre: 'Hugo', correo: 'hugo@demo.retasaca', rol: 'dueno' },
-  { id: 'u-recepcion', nombre: 'Recepción', correo: 'recepcion@demo.retasaca', rol: 'recepcion' },
+  { id: 'u-hugo', nombre: 'Hugo', usuario: 'hugo', rol: 'dueno' },
+  { id: 'u-recepcion', nombre: 'Recepción', usuario: 'recepcion', rol: 'recepcion' },
 ]
 
 /**

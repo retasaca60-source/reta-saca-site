@@ -9,6 +9,7 @@
 // revise y guarde en una sola transacción.
 
 import type { Rol, Usuario } from '../datos/contrato'
+import { MINIMO_CONTRASENA, normalizarUsuario, usuarioValido } from '../datos/usuarios'
 import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
 import { ErrorDeDatos, type CodigoDeError } from '../negocio/errores'
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
@@ -20,8 +21,8 @@ import { FolioRepetido, type Repositorio } from './repositorio'
 
 /** Alta y baja de cuentas del panel (Supabase Auth). */
 export interface Cuentas {
-  /** Manda la invitación por correo y devuelve el id de la cuenta. */
-  invitar(correo: string): Promise<string>
+  /** Crea la cuenta ya confirmada, con esa contraseña, y devuelve su id. */
+  crear(usuario: string, contrasena: string): Promise<string>
   borrar(id: string): Promise<void>
 }
 
@@ -342,15 +343,21 @@ const ACCIONES: Record<string, Accion> = {
     await dueno(e)
     const u = d.usuario as Datos | undefined
     if (!u || typeof u !== 'object') throw invalido('usuario')
-    const correo = texto(u, 'correo').trim().toLowerCase()
+    const usuario = normalizarUsuario(texto(u, 'usuario'))
+    const contrasena = texto(d, 'contrasena')
+    const nombre = texto(u, 'nombre').trim()
     const rol = texto(u, 'rol') as Rol
     if (rol !== 'dueno' && rol !== 'recepcion') throw invalido('rol')
-    if (!/^\S+@\S+\.\S+$/.test(correo)) throw new ErrorDeDatos('datos_invalidos', 'Ese correo no parece válido.')
-    if ((await e.repo.perfiles()).some((x) => x.correo.toLowerCase() === correo)) {
-      throw new ErrorDeDatos('datos_invalidos', 'Ese correo ya tiene acceso.')
+    if (nombre.length < 2) throw new ErrorDeDatos('datos_invalidos', 'Escribe el nombre de la persona.')
+    if (!usuarioValido(usuario)) {
+      throw new ErrorDeDatos('datos_invalidos', 'El usuario va de 3 a 30 letras o números, sin espacios ni acentos.')
     }
-    const id = await e.cuentas.invitar(correo)
-    const nuevo: Usuario = { id, nombre: texto(u, 'nombre').trim(), correo, rol }
+    if (contrasena.length < MINIMO_CONTRASENA) {
+      throw new ErrorDeDatos('datos_invalidos', `La contraseña necesita al menos ${MINIMO_CONTRASENA} caracteres.`)
+    }
+    if ((await e.repo.perfiles()).some((x) => x.usuario === usuario)) throw new ErrorDeDatos('datos_invalidos', 'Ese usuario ya existe.')
+    const id = await e.cuentas.crear(usuario, contrasena)
+    const nuevo: Usuario = { id, nombre, usuario, rol }
     await e.repo.guardarPerfil(nuevo)
     return nuevo
   },

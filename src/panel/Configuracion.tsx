@@ -240,7 +240,8 @@ export function Configuracion() {
 function Usuarios() {
   const { datos: usuarios, error } = usarDatos(() => servicio.usuarios(), [])
   const [nombre, setNombre] = useState('')
-  const [correo, setCorreo] = useState('')
+  const [usuario, setUsuario] = useState('')
+  const [contrasena, setContrasena] = useState('')
   const [rol, setRol] = useState<Rol>('recepcion')
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
 
@@ -262,7 +263,7 @@ function Usuarios() {
           {usuarios?.map((u) => (
             <tr key={u.id}>
               <td>{u.nombre}</td>
-              <td>{u.correo}</td>
+              <td>{u.usuario}</td>
               <td>{u.rol === 'dueno' ? 'Dueño' : 'Recepción'}</td>
               <td className="derecha">
                 <button type="button" className="panel-boton discreto" onClick={() => confirm(`¿Quitarle el acceso a ${u.nombre}?`) && hacer(() => servicio.quitarUsuario(u.id))}>
@@ -275,7 +276,16 @@ function Usuarios() {
       </table>
       <div className="fila-detalle sin-borde">
         <input type="text" placeholder="Nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} />
-        <input type="email" placeholder="Correo" value={correo} onChange={(e) => setCorreo(e.target.value)} />
+        <input
+          type="text"
+          placeholder="Usuario (ej. recepcion)"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          value={usuario}
+          onChange={(e) => setUsuario(e.target.value)}
+        />
+        <input type="password" placeholder="Contraseña" autoComplete="new-password" value={contrasena} onChange={(e) => setContrasena(e.target.value)} />
         <select value={rol} onChange={(e) => setRol(e.target.value as Rol)}>
           <option value="recepcion">Recepción</option>
           <option value="dueno">Dueño</option>
@@ -283,19 +293,23 @@ function Usuarios() {
         <button
           type="button"
           className="panel-boton"
-          disabled={nombre.trim().length < 2 || !correo}
+          disabled={nombre.trim().length < 2 || !usuario.trim() || !contrasena}
           onClick={() =>
             hacer(async () => {
-              await servicio.agregarUsuario({ nombre: nombre.trim(), correo: correo.trim(), rol })
+              await servicio.agregarUsuario({ nombre: nombre.trim(), usuario: usuario.trim(), rol }, contrasena)
               setNombre('')
-              setCorreo('')
+              setUsuario('')
+              setContrasena('')
             })
           }
         >
           Dar acceso
         </button>
       </div>
-      <p className="nota">Cada persona entra con su propio correo: así queda registrado quién marcó cada pago.</p>
+      <p className="nota">
+        Cada persona entra con su propio usuario: así queda registrado quién marcó cada pago. La contraseña se la pones tú aquí
+        (mínimo 8 caracteres) y se la dices en persona; no se manda ningún correo.
+      </p>
       {errorAccion && <p className="panel-error">{errorAccion}</p>}
     </section>
   )

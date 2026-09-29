@@ -11,6 +11,7 @@
 import { createClient, type RealtimeChannel } from '@supabase/supabase-js'
 import { ErrorDeDatos } from './contrato'
 import type { Conexion } from './real'
+import { correoInterno } from './usuarios'
 
 export function conexionSupabase(url: string, llavePublica: string): Conexion {
   const supabase = createClient(url, llavePublica)
@@ -72,9 +73,9 @@ export function conexionSupabase(url: string, llavePublica: string): Conexion {
       return cuerpo.resultado
     },
 
-    entrar: async (correo, contrasena) => {
-      const { error } = await supabase.auth.signInWithPassword({ email: correo, password: contrasena })
-      if (error) throw new ErrorDeDatos('sin_sesion', 'Correo o contraseña incorrectos.')
+    entrar: async (usuario, contrasena) => {
+      const { error } = await supabase.auth.signInWithPassword({ email: correoInterno(usuario), password: contrasena })
+      if (error) throw new ErrorDeDatos('sin_sesion', 'Usuario o contraseña incorrectos.')
     },
 
     salir: async () => {

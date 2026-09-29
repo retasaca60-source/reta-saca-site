@@ -11,6 +11,7 @@
 
 import postgres from 'npm:postgres@3.4.9'
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
+import { correoInterno } from '../../src/datos/usuarios'
 import { atender, type Peticion } from '../../src/servidor/api'
 import { repositorioPostgres } from './postgres'
 
@@ -41,9 +42,6 @@ const admin = createClient(URL_SUPABASE, LLAVE_SERVIDOR, { auth: { persistSessio
  * línea (y sin él, nadie puede confirmar una reserva sin pagar de verdad).
  */
 const pagosSimulados = Deno.env.get('PAGOS_SIMULADOS') === 'si'
-
-/** A dónde manda el correo de invitación del panel. */
-const SITIO = Deno.env.get('SITIO_URL') ?? 'https://reta-saca.netlify.app'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -81,9 +79,10 @@ Deno.serve(async (peticion) => {
     cuentaId: await cuentaDe(peticion),
     pagosSimulados,
     cuentas: {
-      invitar: async (correo) => {
-        const { data, error } = await admin.auth.admin.inviteUserByEmail(correo, { redirectTo: `${SITIO}/panel` })
-        if (error || !data.user) throw error ?? new Error('No se pudo invitar')
+      // Cuenta ya confirmada y con su contraseña: no se manda ningún correo.
+      crear: async (usuario, contrasena) => {
+        const { data, error } = await admin.auth.admin.createUser({ email: correoInterno(usuario), password: contrasena, email_confirm: true })
+        if (error || !data.user) throw error ?? new Error('No se pudo crear la cuenta')
         return data.user.id
       },
       borrar: async (id) => {

@@ -25,8 +25,8 @@ import {
 export interface Conexion {
   /** Manda una acción al servidor. Devuelve el resultado o lanza ErrorDeDatos con el mensaje para la persona. */
   llamar(accion: string, datos?: Record<string, unknown>): Promise<unknown>
-  /** Inicia sesión (Supabase Auth). Si el correo o la contraseña no cuadran, lanza ErrorDeDatos('sin_sesion'). */
-  entrar(correo: string, contrasena: string): Promise<void>
+  /** Inicia sesión (Supabase Auth). Si el usuario o la contraseña no cuadran, lanza ErrorDeDatos('sin_sesion'). */
+  entrar(usuario: string, contrasena: string): Promise<void>
   salir(): Promise<void>
   /** Avisa cuando cambian los datos o la sesión. Devuelve cómo dejar de escuchar. */
   escuchar(aviso: () => void): () => void
@@ -49,13 +49,13 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     cancelarComoCliente: (token) => llamar<Reserva>('cancelarComoCliente', { token }),
 
     sesion: () => llamar<Usuario | null>('yo'),
-    iniciarSesion: async (correo, contrasena) => {
-      await conexion.entrar(correo.trim(), contrasena)
+    iniciarSesion: async (usuario, contrasena) => {
+      await conexion.entrar(usuario, contrasena)
       // Tener cuenta en Supabase no basta: hace falta un perfil del panel.
       const yo = await llamar<Usuario | null>('yo')
       if (!yo) {
         await conexion.salir()
-        throw new ErrorDeDatos('sin_sesion', 'Ese correo no tiene acceso al panel.')
+        throw new ErrorDeDatos('sin_sesion', 'Ese usuario no tiene acceso al panel.')
       }
       return yo
     },
@@ -73,7 +73,7 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     guardarConfiguracion: (config, aunqueHayaConflictos = false) =>
       llamar<{ guardada: boolean; conflictos: Conflicto[] }>('guardarConfiguracion', { config, aunqueHayaConflictos }),
     usuarios: () => llamar<Usuario[]>('usuarios'),
-    agregarUsuario: (usuario) => llamar<Usuario>('agregarUsuario', { usuario: { ...usuario } }),
+    agregarUsuario: (usuario, contrasena) => llamar<Usuario>('agregarUsuario', { usuario: { ...usuario }, contrasena }),
     quitarUsuario: async (id) => void (await llamar('quitarUsuario', { id })),
 
     alCambiar: (aviso) => conexion.escuchar(aviso),

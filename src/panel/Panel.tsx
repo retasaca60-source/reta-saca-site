@@ -74,12 +74,12 @@ function Marco({ usuario }: { usuario: Usuario }) {
 }
 
 function Entrar() {
-  const [correo, setCorreo] = useState('')
+  const [usuario, setUsuario] = useState('')
   const [contrasena, setContrasena] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
-  const entrar = async (c = correo, p = contrasena) => {
+  const entrar = async (c = usuario, p = contrasena) => {
     setEnviando(true)
     setError(null)
     try {
@@ -103,8 +103,17 @@ function Entrar() {
           Reta <span>Saca</span> <small>panel</small>
         </div>
         <label>
-          Correo
-          <input type="email" autoComplete="username" value={correo} onChange={(e) => setCorreo(e.target.value)} required />
+          Usuario
+          <input
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            value={usuario}
+            onChange={(e) => setUsuario(e.target.value)}
+            required
+          />
         </label>
         <label>
           Contraseña
@@ -117,10 +126,10 @@ function Entrar() {
         {servicioSimulado && (
           <div className="panel-demo-entrar">
             <p>Demostración: la contraseña no se revisa. Entra como:</p>
-            <button type="button" className="panel-boton" onClick={() => entrar('recepcion@demo.retasaca', '')}>
+            <button type="button" className="panel-boton" onClick={() => entrar('recepcion', '')}>
               Recepción
             </button>
-            <button type="button" className="panel-boton" onClick={() => entrar('hugo@demo.retasaca', '')}>
+            <button type="button" className="panel-boton" onClick={() => entrar('hugo', '')}>
               Hugo (dueño)
             </button>
           </div>

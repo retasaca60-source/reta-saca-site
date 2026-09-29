@@ -84,14 +84,14 @@ export function repositorioPostgres(sql: Sql): Repositorio {
     },
 
     perfil: async (id) => {
-      const [f] = await q`select id::text, nombre, correo, rol from public.perfiles where id::text = ${id}`
+      const [f] = await q`select id::text, nombre, usuario, rol from public.perfiles where id::text = ${id}`
       return (f as Usuario | undefined) ?? null
     },
-    perfiles: async () => (await q`select id::text, nombre, correo, rol from public.perfiles order by nombre`) as unknown as Usuario[],
+    perfiles: async () => (await q`select id::text, nombre, usuario, rol from public.perfiles order by nombre`) as unknown as Usuario[],
     guardarPerfil: async (u) => {
       await q`
-        insert into public.perfiles (id, nombre, correo, rol) values (${u.id}, ${u.nombre}, ${u.correo}, ${u.rol})
-        on conflict (id) do update set nombre = excluded.nombre, correo = excluded.correo, rol = excluded.rol`
+        insert into public.perfiles (id, nombre, usuario, rol) values (${u.id}, ${u.nombre}, ${u.usuario}, ${u.rol})
+        on conflict (id) do update set nombre = excluded.nombre, usuario = excluded.usuario, rol = excluded.rol`
     },
     borrarPerfil: async (id) => {
       await q`delete from public.perfiles where id::text = ${id}`

@@ -9,7 +9,7 @@
 // - Los datos son de este navegador: el celular del cliente y la laptop de
 //   recepción NO ven lo mismo. (Dos pestañas del mismo navegador sí.)
 // - La hora sale del reloj del aparato; la real usa la del servidor.
-// - Cualquiera entra al panel con los correos de demostración: la contraseña no
+// - Cualquiera entra al panel con los usuarios de demostración: la contraseña no
 //   se revisa.
 
 import { CONFIGURACION_INICIAL, ORDEN_DEPORTES, type Configuracion } from '../negocio/configuracion'
@@ -18,6 +18,7 @@ import * as op from '../negocio/operaciones'
 import type { Reserva } from '../negocio/reserva'
 import { momentoDe } from '../negocio/tiempo'
 import { ErrorDeDatos, type IntentoDePago, type PagoSimulado, type ServicioDeDatos, type Usuario } from './contrato'
+import { MINIMO_CONTRASENA, normalizarUsuario, usuarioValido } from './usuarios'
 import { sembrar, USUARIOS_DEMO } from './ejemplos'
 
 // ─── Almacén ─────────────────────────────────────────────────────────────
@@ -86,6 +87,9 @@ function esEstadoValido(x: unknown): x is Estado {
     const d = c.deportes[id]
     if (!d || typeof d.mesas !== 'number' || !Array.isArray(d.fueraDeServicio) || !Array.isArray(d.duraciones) || typeof d.precios !== 'object') return false
   }
+  // Antes los usuarios del panel entraban con correo: lo guardado por esa versión
+  // no trae `usuario` y no dejaría entrar a nadie.
+  if (!e.usuarios.every((u) => u && typeof u.usuario === 'string' && typeof u.id === 'string')) return false
   return e.reservas.every(
     (r) =>
       r &&
@@ -243,10 +247,10 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     // ── Panel ──
 
     sesion: () => consultar((e) => e.usuarios.find((u) => u.id === e.sesion) ?? null),
-    iniciarSesion: (correo) =>
+    iniciarSesion: (usuario) =>
       cambiar((e) => {
-        const u = e.usuarios.find((x) => x.correo.toLowerCase() === correo.trim().toLowerCase())
-        if (!u) throw new ErrorDeDatos('sin_sesion', 'Ese correo no tiene acceso al panel.')
+        const u = e.usuarios.find((x) => x.usuario === normalizarUsuario(usuario))
+        if (!u) throw new ErrorDeDatos('sin_sesion', 'Ese usuario no tiene acceso al panel.')
         e.sesion = u.id
         return u
       }),
@@ -294,14 +298,19 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         usuarioActual(e)
         return e.usuarios
       }),
-    agregarUsuario: (u) =>
+    agregarUsuario: (u, contrasena) =>
       cambiar((e) => {
         soloDueno(e)
-        if (!/^\S+@\S+\.\S+$/.test(u.correo)) throw new ErrorDeDatos('datos_invalidos', 'Ese correo no parece válido.')
-        if (e.usuarios.some((x) => x.correo.toLowerCase() === u.correo.toLowerCase())) {
-          throw new ErrorDeDatos('datos_invalidos', 'Ese correo ya tiene acceso.')
+        const usuario = normalizarUsuario(u.usuario)
+        if (!usuarioValido(usuario)) {
+          throw new ErrorDeDatos('datos_invalidos', 'El usuario va de 3 a 30 letras o números, sin espacios ni acentos.')
         }
-        const nuevo = { ...u, id: nuevoId() }
+        // En la demostración la contraseña no se guarda, pero se pide igual que en la real.
+        if (contrasena.length < MINIMO_CONTRASENA) {
+          throw new ErrorDeDatos('datos_invalidos', `La contraseña necesita al menos ${MINIMO_CONTRASENA} caracteres.`)
+        }
+        if (e.usuarios.some((x) => x.usuario === usuario)) throw new ErrorDeDatos('datos_invalidos', 'Ese usuario ya existe.')
+        const nuevo = { ...u, usuario, id: nuevoId() }
         e.usuarios.push(nuevo)
         return nuevo
       }),

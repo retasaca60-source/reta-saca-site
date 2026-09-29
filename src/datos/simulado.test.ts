@@ -279,7 +279,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
 
   describe('panel', () => {
     beforeEach(async () => {
-      await s.iniciarSesion('recepcion@demo.retasaca', '')
+      await s.iniciarSesion('recepcion', '')
     })
 
     it('sin sesión no se ven reservas', async () => {
@@ -411,6 +411,18 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('no_llego')
     })
 
+    it('el dueño da acceso con usuario y contraseña; el nuevo usuario entra', async () => {
+      await s.iniciarSesion('hugo', '')
+      expect(await codigoDe(s.agregarUsuario({ nombre: 'Luz', usuario: 'luz rosa', rol: 'recepcion' }, 'secreto123'))).toBe('datos_invalidos')
+      expect(await codigoDe(s.agregarUsuario({ nombre: 'Luz', usuario: 'luz', rol: 'recepcion' }, 'corta'))).toBe('datos_invalidos')
+      expect(await codigoDe(s.agregarUsuario({ nombre: 'Otra', usuario: 'recepcion', rol: 'recepcion' }, 'secreto123'))).toBe('datos_invalidos')
+      const luz = await s.agregarUsuario({ nombre: 'Luz', usuario: 'Luz', rol: 'recepcion' }, 'secreto123')
+      expect(luz.usuario).toBe('luz')
+      await s.cerrarSesion()
+      expect((await s.iniciarSesion(' LUZ ', 'secreto123')).nombre).toBe('Luz')
+      expect(await codigoDe(s.agregarUsuario({ nombre: 'X', usuario: 'xxx', rol: 'dueno' }, 'secreto123'))).toBe('no_permitido')
+    })
+
     it('recepción no puede cambiar la configuración; el dueño sí', async () => {
       const config = await s.configuracion()
 
@@ -418,7 +430,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
         await codigoDe(s.guardarConfiguracion(config)),
       ).toBe('no_permitido')
 
-      await s.iniciarSesion('hugo@demo.retasaca', '')
+      await s.iniciarSesion('hugo', '')
 
       expect(
         (await s.guardarConfiguracion(config)).guardada,
@@ -426,7 +438,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
 
     it('quitar mesas con reservas encima avisa y no guarda, salvo que Hugo insista', async () => {
-      await s.iniciarSesion('hugo@demo.retasaca', '')
+      await s.iniciarSesion('hugo', '')
 
       for (let i = 0; i < 3; i++) {
         await reservarYPagar({
@@ -465,7 +477,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     it('una reserva conserva su precio aunque Hugo lo cambie después', async () => {
       const r = await reservarYPagar()
 
-      await s.iniciarSesion('hugo@demo.retasaca', '')
+      await s.iniciarSesion('hugo', '')
 
       const config = await s.configuracion()
       config.deportes.popdarts.precios[60] = 200
@@ -528,7 +540,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
 describe('datos de ejemplo', () => {
   it('respetan el horario y el inventario: guardar la configuración tal cual no da conflictos', async () => {
     const conEjemplos = crearServicioSimulado({ almacen: almacenEnMemoria(), reloj: () => reloj })
-    await conEjemplos.iniciarSesion('hugo@demo.retasaca', '')
+    await conEjemplos.iniciarSesion('hugo', '')
     const r = await conEjemplos.guardarConfiguracion(await conEjemplos.configuracion())
     expect(r.conflictos).toEqual([])
   })

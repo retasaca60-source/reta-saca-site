@@ -32,7 +32,8 @@ export type Rol = 'dueno' | 'recepcion'
 export interface Usuario {
   id: string
   nombre: string
-  correo: string
+  /** Nombre corto para entrar al panel ("recepcion"). Ver datos/usuarios.ts. */
+  usuario: string
   rol: Rol
 }
 
@@ -86,7 +87,7 @@ export interface ServicioDeDatos {
 
   // Panel
   sesion(): Promise<Usuario | null>
-  iniciarSesion(correo: string, contrasena: string): Promise<Usuario>
+  iniciarSesion(usuario: string, contrasena: string): Promise<Usuario>
   cerrarSesion(): Promise<void>
   /** Reservas entre dos fechas "AAAA-MM-DD" (incluidas), de todos los estados. */
   reservasEntre(desde: string, hasta: string): Promise<Reserva[]>
@@ -106,7 +107,8 @@ export interface ServicioDeDatos {
   /** Solo el dueño. Sin `aunqueHayaConflictos`, si hay conflictos NO guarda y los devuelve. */
   guardarConfiguracion(config: Configuracion, aunqueHayaConflictos?: boolean): Promise<{ guardada: boolean; conflictos: Conflicto[] }>
   usuarios(): Promise<Usuario[]>
-  agregarUsuario(u: Omit<Usuario, 'id'>): Promise<Usuario>
+  /** Solo el dueño. Crea la cuenta ya lista, con la contraseña que él le pone (no se manda correo). */
+  agregarUsuario(u: Omit<Usuario, 'id'>, contrasena: string): Promise<Usuario>
   quitarUsuario(id: string): Promise<void>
 
   /** Avisa cuando cambian los datos (otra pestaña, otro aparato). Devuelve cómo dejar de escuchar. */
