@@ -76,16 +76,6 @@ html:has(.sitio) { scrollbar-color: rgba(255, 190, 160, 0.28) #0f0908; }
 .barra-app img { width: 34px; height: 34px; border-radius: 50%; }
 .barra-app strong { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
 
-.aviso-demo {
-  margin: 14px 0 0;
-  padding: 8px 14px;
-  border-radius: 14px;
-  background: var(--ambar-suave);
-  color: var(--ambar);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
 /* ── Títulos y texto ──────────────────────────────────────────────────── */
 
 .titulo-grande {

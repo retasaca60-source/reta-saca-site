@@ -12,7 +12,6 @@ import { mesasEnServicio, precioDeLista, type Configuracion, type Duracion, type
 import { formatoDinero } from '../../negocio/formato'
 import { precioDe } from '../../negocio/precios'
 import { repartir } from '../../negocio/reserva'
-import { AvisoDemo } from '../../vista/AvisoDemo'
 import { Deslizar } from '../../vista/Deslizar'
 import { FOTO_DE } from '../../vista/fotos'
 import { IconoAtras } from '../../vista/Iconos'
@@ -106,7 +105,6 @@ export function Ficha({ borrador, despachar, config }: Props) {
             {error}
           </p>
         )}
-        <AvisoDemo />
       </section>
 
       <div className="barra-accion barra-reserva">

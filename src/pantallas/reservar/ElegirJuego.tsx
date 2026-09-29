@@ -5,7 +5,6 @@ import type { Dispatch } from 'react'
 import type { Accion, Borrador } from '../../mecanismos/reserva/estado'
 import { mesasEnServicio, ORDEN_DEPORTES, precioDeLista, type Configuracion, type DeporteId } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
-import { AvisoDemo } from '../../vista/AvisoDemo'
 import { FOTO_DE } from '../../vista/fotos'
 import { cambiarDePantalla } from '../../vista/transicion'
 
@@ -40,7 +39,6 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
         <br />
         la reta?
       </h1>
-      <AvisoDemo />
 
       <ul className="juegos">
         {ORDEN_DEPORTES.map((id) => {
