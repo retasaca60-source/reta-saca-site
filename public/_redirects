@@ -1,0 +1,4 @@
+# Es una aplicacion de una sola pagina: /r/<token>, /c/<token> y /panel no son
+# archivos. Netlify.toml ya lo dice para los deploys desde GitHub; este archivo
+# es para cuando se publica arrastrando la carpeta (ahi netlify.toml no se lee).
+/*    /index.html   200
