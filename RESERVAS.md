@@ -514,3 +514,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 28/09/2026 | Las reglas de cada operación viven en `src/negocio/operaciones`, escritas una vez | La versión real las llama igual que la simulada; antes habría tenido que reescribirlas. |
 | 28/09/2026 | El panel funciona como caja: al cliente sin reserva se le cobra al registrarlo, en un solo paso | Nadie juega sin pagar; registrar y cobrar por separado hacía fácil olvidar el cobro. |
 | 28/09/2026 | La caja solo cobra renta de mesas; cierre por día, sin fondo ni arqueo; comprobante: ticket de la terminal | Así opera el local. |
+| 28/09/2026 | El sitio del cliente se diseña solo para teléfono; en computadora se ve la misma columna centrada | Los clientes reservan desde el celular. Una segunda composición de escritorio era doble trabajo que nadie iba a usar. |
