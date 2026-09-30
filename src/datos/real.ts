@@ -14,7 +14,7 @@ import {
   ErrorDeDatos,
   type Conflicto,
   type HorarioDisponible,
-  type IntentoDePago,
+  type VistaDePagoSimulado,
   type PagoDelDia,
   type PagoSimulado,
   type ServicioDeDatos,
@@ -79,7 +79,7 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     alCambiar: (aviso) => conexion.escuchar(aviso),
 
     pagoSimulado: {
-      obtener: (id) => llamar<{ intento: IntentoDePago; reserva: Reserva } | null>('pagoSimuladoObtener', { id }),
+      obtener: (id) => llamar<VistaDePagoSimulado | null>('pagoSimuladoObtener', { id }),
       confirmar: (id) => llamar<string>('pagoSimuladoConfirmar', { id }),
       rechazar: (id) => llamar<string>('pagoSimuladoRechazar', { id }),
     },

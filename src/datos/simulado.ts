@@ -333,11 +333,27 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     // ── Solo simulado: el lugar de Mercado Pago ──
 
     pagoSimulado: {
-      obtener: (id) =>
+        obtener: (id) =>
         consultar((e) => {
           const intento = e.intentos.find((i) => i.id === id)
           const reserva = intento && e.reservas.find((r) => r.id === intento.reservaId)
-          return intento && reserva ? { intento, reserva } : null
+
+          if (!intento || !reserva) return null
+
+          // La demostración entrega los mismos campos que el servidor:
+          // el pago no necesita los datos privados del organizador.
+          return {
+            intento: {
+              nombre: intento.nombre,
+              monto: intento.monto,
+              resultado: intento.resultado,
+            },
+            reserva: {
+              folio: reserva.folio,
+              fecha: reserva.fecha,
+              inicio: reserva.inicio,
+            },
+          }
         }),
       confirmar: (id) =>
         cambiar((e) => {

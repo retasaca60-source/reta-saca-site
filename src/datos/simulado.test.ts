@@ -147,7 +147,48 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(despues!.partes.every((p) => p.pago)).toBe(true)
       expect(despues!.partes[1].pago!.nombre).toBe('Luis')
     })
+    it('el pago de un amigo solo entrega los campos de la pantalla y permite pagar', async () => {
+      const r = await reservarYPagar({
+        deporte: 'pingpong',
+        partes: 4,
+      })
 
+      const parte = r.partes[1]
+      const { url } = await s.iniciarPago(
+        r.tokenCobro,
+        [parte.id],
+        'Luis',
+      )
+      const id = url.split('/').pop()!
+
+      // La comparación exacta falla si se vuelve a incluir la reserva
+      // completa, el WhatsApp, los tokens o cualquier otro campo extra.
+      expect(await s.pagoSimulado.obtener(id)).toEqual({
+        intento: {
+          nombre: 'Luis',
+          monto: parte.monto,
+          resultado: null,
+        },
+        reserva: {
+          folio: r.folio,
+          fecha: r.fecha,
+          inicio: r.inicio,
+        },
+      })
+
+      expect(await s.pagoSimulado.confirmar(id)).toBe(
+        `/c/${r.tokenCobro}?pago=aprobado`,
+      )
+
+      const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
+
+      expect(despues!.partes[1].pago!.nombre).toBe('Luis')
+
+      // El WhatsApp se conserva en la reserva privada.
+      expect(despues!.organizador.whatsapp).toBe(
+        r.organizador.whatsapp,
+      )
+    })
     it('no se paga dos veces la misma parte', async () => {
       const r = await reservarYPagar()
 

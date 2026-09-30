@@ -55,8 +55,13 @@ export interface IntentoDePago {
  * La pantalla /pago/<id> que ocupa el lugar de Mercado Pago. La tienen la
  * versión simulada y la real mientras los pagos en línea sean de prueba.
  */
+export interface VistaDePagoSimulado {
+  intento: Pick<IntentoDePago, 'nombre' | 'monto' | 'resultado'>
+  reserva: Pick<Reserva, 'folio' | 'fecha' | 'inicio'>
+}
+
 export interface PagoSimulado {
-  obtener(id: string): Promise<{ intento: IntentoDePago; reserva: Reserva } | null>
+  obtener(id: string): Promise<VistaDePagoSimulado | null>
   /** Paga y devuelve a dónde regresar. */
   confirmar(id: string): Promise<string>
   /** Cancela y devuelve a dónde regresar. */

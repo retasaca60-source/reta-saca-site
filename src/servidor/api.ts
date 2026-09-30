@@ -247,9 +247,26 @@ const ACCIONES: Record<string, Accion> = {
 
   pagoSimuladoObtener: async (d, e) => {
     if (!e.pagosSimulados) return null
+
     const intento = await e.repo.intento(texto(d, 'id'))
     const reserva = intento && (await e.repo.reservaPor('id', intento.reservaId))
-    return intento && reserva ? { intento, reserva } : null
+
+    if (!intento || !reserva) return null
+
+    // Se eligen los campos explícitamente: agregar datos a Reserva no debe
+    // publicarlos automáticamente en la pantalla de pago.
+    return {
+      intento: {
+        nombre: intento.nombre,
+        monto: intento.monto,
+        resultado: intento.resultado,
+      },
+      reserva: {
+        folio: reserva.folio,
+        fecha: reserva.fecha,
+        inicio: reserva.inicio,
+      },
+    }
   },
 
   pagoSimuladoConfirmar: async (d, e) => {
