@@ -8,3 +8,6 @@ dist/
 .netlify/
 .vercel/
 *.tsbuildinfo
+
+# Notas de origen que deja la herramienta de imágenes: no se publican con el sitio.
+public/imagenes/**/*.json
