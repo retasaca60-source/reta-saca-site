@@ -105,7 +105,7 @@ function duracion(d: Datos, campo = 'duracion'): Duracion {
 }
 function medioDelLocal(d: Datos, campo = 'medio'): Exclude<MedioDePago, 'en_linea'> {
   const v = texto(d, campo)
-  if (v !== 'efectivo' && v !== 'tarjeta' && v !== 'transferencia') throw invalido(campo)
+  if (v !== 'efectivo' && v !== 'tarjeta') throw invalido(campo)
   return v
 }
 

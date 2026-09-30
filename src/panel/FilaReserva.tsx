@@ -201,7 +201,6 @@ function Cobrar({ r, ocupado, hacer }: { r: Reserva; ocupado: boolean; hacer: Ha
         <select value={medio} onChange={(e) => setMedio(e.target.value as typeof medio)}>
           <option value="efectivo">Efectivo</option>
           <option value="tarjeta">Tarjeta</option>
-          <option value="transferencia">Transferencia</option>
         </select>
         <input type="text" placeholder={`Quién paga (${r.organizador.nombre})`} value={nombre} onChange={(e) => setNombre(e.target.value)} />
         <button type="button" className="panel-boton primario" disabled={ocupado || !elegidas.length} onClick={() => hacer(() => servicio.marcarPago(r.id, elegidas, medio, nombre))}>

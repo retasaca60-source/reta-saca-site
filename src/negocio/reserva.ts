@@ -4,7 +4,8 @@
 import type { Configuracion, DeporteId, Duracion, Partes } from './configuracion'
 import { instante } from './tiempo'
 
-export type MedioDePago = 'en_linea' | 'efectivo' | 'tarjeta' | 'transferencia'
+// Sin transferencia: el negocio cobra en el local solo en efectivo o con la terminal.
+export type MedioDePago = 'en_linea' | 'efectivo' | 'tarjeta'
 
 export interface Pago {
   medio: MedioDePago

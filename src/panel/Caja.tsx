@@ -11,7 +11,6 @@ import { ahoraEnSonora, fechaLarga, formatoHora, momentoDe } from '../negocio/ti
 const MEDIOS: { medio: MedioDePago; nombre: string }[] = [
   { medio: 'efectivo', nombre: 'Efectivo' },
   { medio: 'tarjeta', nombre: 'Tarjeta' },
-  { medio: 'transferencia', nombre: 'Transferencia' },
   { medio: 'en_linea', nombre: 'En línea (Mercado Pago)' },
 ]
 

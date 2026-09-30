@@ -246,7 +246,7 @@ primero**, sin vender la misma mesa dos veces:
 ### Pagos en el local
 
 - Lo que no se pagó en línea se paga en el local en **efectivo, tarjeta o
-  transferencia**. Recepción lo marca en el panel y elige el medio.
+  tarjeta** (sin transferencia). Recepción lo marca en el panel y elige el medio.
 - Queda registrado **quién de recepción** lo marcó.
 
 ### Medio de pago en línea: Mercado Pago
@@ -286,7 +286,7 @@ primero**, sin vender la misma mesa dos veces:
 ### Si quieren jugar más
 
 - Recepción **extiende** la reserva desde el panel **si la mesa sigue libre**, y
-  cobra ahí mismo (efectivo, tarjeta o transferencia).
+  cobra ahí mismo (efectivo o tarjeta).
 - "Libre" quiere decir dos cosas: que haya mesa en el inventario para ese
   tiempo extra **y** que la mesa donde ya están sentados no se la hayan dado
   a otro grupo. Si el grupo de las 8 ya está en su mesa, el panel avisa quién
@@ -336,10 +336,10 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 - Ver las reservas de hoy y de la semana, y qué mesas están ocupadas ahora.
 - **Asignar la mesa** cuando llega el grupo (las reservas no traen número de
   mesa: recepción acomoda según quién llegó y qué mesas funcionan).
-- **Marcar pagos del local** (efectivo, tarjeta o transferencia).
+- **Marcar pagos del local** (efectivo o tarjeta).
 - **Caja del mostrador**: el panel funciona como caja para quien llega sin
   reserva. En un solo paso se elige deporte, tiempo y mesa, se ve el total, se
-  elige cómo paga (efectivo, tarjeta o transferencia) y queda **cobrado y
+  elige cómo paga (efectivo o tarjeta) y queda **cobrado y
   registrado**. Nadie juega sin haber pagado. Con efectivo, la caja calcula el
   cambio. El tiempo extra se cobra después, con "Cobrar".
   - Se registra como una reserva que empieza ahora: así el sitio no vende en
@@ -521,3 +521,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 29/09/2026 | El panel entra con usuario y contraseña, sin correo; el dueño crea las cuentas desde el panel | Solo se usa en el local y nadie necesita recibir correos. No hay invitaciones que se pierdan ni contraseñas que llegan por correo. |
 | 29/09/2026 | La cuenta de dueño y todas las cuentas (GitHub, Netlify, Supabase, Mercado Pago) se entregan a Hugo al final | Para que él tenga el control completo del negocio. |
 | 29/09/2026 | El pase de la reserva tiene forma de boleto de avión, con la foto del juego al centro | Lo pidió el negocio con una referencia; el inicio y el fin del horario se leen como salida y llegada. |
+| 30/09/2026 | En el local se cobra solo en efectivo o con tarjeta; sin transferencia | Lo decidió el negocio. |

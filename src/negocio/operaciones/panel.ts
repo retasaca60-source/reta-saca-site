@@ -108,7 +108,7 @@ function quienTieneLaMesa(ctx: Contexto, r: Reserva, mesa: string, desde: number
   )
 }
 
-/** Pago en el local (efectivo, tarjeta o transferencia). Queda quién lo marcó. */
+/** Pago en el local (efectivo o tarjeta). Queda quién lo marcó. */
 export function marcarPago(
   ctx: Contexto,
   r: Reserva,

@@ -104,7 +104,7 @@ export default function Cobro() {
               <input id="cobro-nombre" type="text" placeholder="Para que sepan quién pagó" autoComplete="name" value={nombre} onChange={(e) => setNombre(e.target.value)} />
             </div>
           </div>
-          <p className="nota-chica">También puedes pagar en el local: efectivo, tarjeta o transferencia.</p>
+          <p className="nota-chica">También puedes pagar en el local, en efectivo o con tarjeta.</p>
           {errorPago && (
             <p className="aviso aviso-error" role="alert">
               {errorPago}

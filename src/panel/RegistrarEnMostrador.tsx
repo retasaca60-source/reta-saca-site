@@ -8,16 +8,15 @@ import { servicio } from '../datos'
 import { mensajeDeError } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
-import { bloqueEn } from '../negocio/horario'
+import { bloqueEn, estaCerrado } from '../negocio/horario'
 import { precioSinReserva } from '../negocio/operaciones'
 import { fin, ocupaMesa, type MedioDePago, type Reserva } from '../negocio/reserva'
-import { ahoraEnSonora, formatoHora } from '../negocio/tiempo'
+import { ahoraEnSonora, diaDeLaSemana, formatoHora } from '../negocio/tiempo'
 
 type Medio = Exclude<MedioDePago, 'en_linea'>
 const MEDIOS: { medio: Medio; nombre: string }[] = [
   { medio: 'efectivo', nombre: 'Efectivo' },
   { medio: 'tarjeta', nombre: 'Tarjeta' },
-  { medio: 'transferencia', nombre: 'Transferencia' },
 ]
 
 export function RegistrarEnMostrador({ config, reservas }: { config: Configuracion; reservas: Reserva[] }) {
@@ -48,8 +47,15 @@ export function RegistrarEnMostrador({ config, reservas }: { config: Configuraci
   const cambio = recibido - precio
   // Mismas razones que da la operación, pero antes de intentar cobrar.
   const bloque = bloqueEn(config, ahora.fecha, ahora.minutos)
+  // Si está cerrado, se dice cuándo abre: antes solo decía "cerrado" en letra
+  // chica lejos del botón, y el botón gris parecía descompuesto.
+  const abreHoy = estaCerrado(config, ahora.fecha)
+    ? undefined
+    : (config.horario[diaDeLaSemana(ahora.fecha)] ?? []).find((b) => b.desde > ahora.minutos)
   const impedimento = !bloque
-    ? 'El local está cerrado a esta hora.'
+    ? abreHoy
+      ? `El local está cerrado: abre a las ${formatoHora(abreHoy.desde)}. La caja cobra solo en horario.`
+      : 'El local ya cerró por hoy. La caja cobra solo en horario.'
     : termina > bloque.hasta
       ? `No alcanza: se cierra a las ${formatoHora(bloque.hasta)}. Elige menos tiempo.`
       : null
@@ -146,12 +152,14 @@ export function RegistrarEnMostrador({ config, reservas }: { config: Configuraci
             {pagaCon && <span className={cambio < 0 ? 'panel-error' : 'nota bien'}>{cambio < 0 ? `Faltan ${formatoDinero(-cambio)}` : `Cambio ${formatoDinero(cambio)}`}</span>}
           </label>
         )}
-        <button type="button" className="panel-boton primario grande" disabled={!listo} onClick={cobrar}>
-          {ocupado ? 'Cobrando…' : `Cobrar ${formatoDinero(precio)} y registrar`}
-        </button>
+        <div className="caja-cobrar">
+          {impedimento && <p className="panel-error">{impedimento}</p>}
+          <button type="button" className="panel-boton primario grande" disabled={!listo} onClick={cobrar}>
+            {ocupado ? 'Cobrando…' : `Cobrar ${formatoDinero(precio)} y registrar`}
+          </button>
+        </div>
       </div>
 
-      {impedimento && <p className="nota">{impedimento}</p>}
       {hecho && <p className="nota bien">{hecho}</p>}
       {error && <p className="panel-error">{error}</p>}
     </div>
