@@ -522,3 +522,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 29/09/2026 | La cuenta de dueño y todas las cuentas (GitHub, Netlify, Supabase, Mercado Pago) se entregan a Hugo al final | Para que él tenga el control completo del negocio. |
 | 29/09/2026 | El pase de la reserva tiene forma de boleto de avión, con la foto del juego al centro | Lo pidió el negocio con una referencia; el inicio y el fin del horario se leen como salida y llegada. |
 | 30/09/2026 | En el local se cobra solo en efectivo o con tarjeta; sin transferencia | Lo decidió el negocio. |
+| 30/09/2026 | El recuadro "Antes de pagar" ya no dice la regla de devolución por cancelar | Lo pidió el negocio. La regla sigue igual y se explica al cancelar en la página de la reserva. |

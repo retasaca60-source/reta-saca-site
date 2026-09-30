@@ -57,7 +57,6 @@ export function SeccionDatos({ borrador, despachar, config }: Props) {
       <div className="grupo">
         <ul className="reglas">
           <li>Tu mesa queda apartada {r.minutosDeApartado} minutos mientras pagas.</li>
-          <li>Si cancelas hasta {r.horasParaCancelar} horas antes, te devolvemos todo. Después ya no hay devolución.</li>
           <li>Hay {r.minutosDeTolerancia} minutos de tolerancia; llegar tarde no recorre tu horario.</li>
           {partes !== null && partes > 1 && <li>Lo que tus amigos no paguen, lo cubres tú en el local.</li>}
         </ul>
