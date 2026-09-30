@@ -215,7 +215,6 @@ export function Configuracion() {
               ['diasDeAnticipacion', 'Días que se puede reservar hacia adelante'],
               ['minutosDeCorte', 'Para hoy: minutos antes del inicio'],
               ['minutosDeApartado', 'Minutos que se aparta la mesa al pagar'],
-              ['horasParaCancelar', 'Horas antes para cancelar con devolución'],
               ['minutosDeTolerancia', 'Minutos de tolerancia al llegar'],
               ['reservasActivasPorWhatsapp', 'Reservas activas por WhatsApp'],
             ] as const

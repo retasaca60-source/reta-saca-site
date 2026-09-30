@@ -87,7 +87,7 @@ export interface ServicioDeDatos {
   iniciarPago(token: string, parteIds: string[], nombre: string): Promise<{ url: string }>
   reservaPorTokenPrivado(token: string): Promise<Reserva | null>
   vistaDeCobro(tokenCobro: string): Promise<VistaDeCobro | null>
-  /** Cancela desde el link privado. Con devolución solo hasta N horas antes. */
+  /** Cancela desde el link privado. Si pagó en línea, la devolución queda por revisar (la decide el negocio). */
   cancelarComoCliente(tokenPrivado: string): Promise<Reserva>
 
   // Panel
@@ -105,8 +105,12 @@ export interface ServicioDeDatos {
   marcarPago(reservaId: string, parteIds: string[], medio: Exclude<MedioDePago, 'en_linea'>, nombre?: string): Promise<Reserva>
   extender(reservaId: string, minutos: Duracion): Promise<Reserva>
   cambiarHorario(reservaId: string, fecha: string, inicio: number): Promise<Reserva>
-  /** Cancelación del negocio: devuelve TODO lo pagado en línea, sin plazo. */
+  /** Cancelación del negocio: lo pagado en línea queda por devolver. */
   cancelarComoNegocio(reservaId: string): Promise<Reserva>
+  /** Canceladas con pagos en línea cuya devolución nadie ha resuelto, de cualquier fecha. */
+  devolucionesPorRevisar(): Promise<Reserva[]>
+  /** El negocio transfirió la devolución por su banco, o decidió que no hay. */
+  resolverDevolucion(reservaId: string, decision: 'transferida' | 'sin_devolucion'): Promise<Reserva>
   /** Pasada la tolerancia sin llegar: libera la mesa, sin devolución. */
   liberarPorRetraso(reservaId: string): Promise<Reserva>
   /** Solo el dueño. Sin `aunqueHayaConflictos`, si hay conflictos NO guarda y los devuelve. */

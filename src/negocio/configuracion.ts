@@ -59,8 +59,6 @@ export interface Configuracion {
     pasoDeInicio: number
     /** Cuánto se aparta la mesa mientras se paga. */
     minutosDeApartado: number
-    /** Hasta cuántas horas antes se cancela con devolución. */
-    horasParaCancelar: number
     /** Después de cuántos minutos sin llegar se puede liberar la mesa. */
     minutosDeTolerancia: number
     /** Reservas activas por número de WhatsApp. */
@@ -133,7 +131,6 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     minutosDeCorte: 30,
     pasoDeInicio: 30,
     minutosDeApartado: 10,
-    horasParaCancelar: 2,
     minutosDeTolerancia: 20,
     reservasActivasPorWhatsapp: 2,
   },

@@ -8,7 +8,7 @@ import { mensajeDeError } from '../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../mecanismos/whatsapp/enlaces'
 import type { Configuracion, Duracion } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
-import { fin, pagado, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
+import { fin, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
 import { etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
 type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar'
@@ -117,9 +117,12 @@ export function FilaReserva({ r, config, conFecha = false }: { r: Reserva; confi
       {abierto === 'cambiar' && <Cambiar r={r} ocupado={ocupado} hacer={hacer} />}
       {abierto === 'cancelar' && (
         <div className="fila-detalle">
-          <span>Cancelación del negocio: se devuelve TODO lo pagado en línea. Avísale al organizador por WhatsApp.</span>
+          <span>
+            Cancelación del negocio.
+            {pagadoEnLinea(r) > 0 && ` Pagaron ${formatoDinero(pagadoEnLinea(r))} en línea: queda por devolver en Caja, por transferencia.`} Avísale al organizador por WhatsApp.
+          </span>
           <button type="button" className="panel-boton peligro" disabled={ocupado} onClick={() => hacer(() => servicio.cancelarComoNegocio(r.id))}>
-            Sí, cancelar y devolver
+            Sí, cancelar
           </button>
         </div>
       )}
@@ -134,6 +137,9 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   if (r.estado === 'cancelada') {
     const motivo = { cliente: 'Canceló el cliente', negocio: 'Cancelada por el negocio', no_llego: 'No llegaron', apartado_vencido: 'No pagó a tiempo' }
     e.push(['apagada', r.cancelacion ? motivo[r.cancelacion.motivo] : 'Cancelada'])
+    if (r.devolucion?.estado === 'por_revisar') e.push(['aviso', `Devolución por revisar ${formatoDinero(r.devolucion.monto)}`])
+    if (r.devolucion?.estado === 'transferida') e.push(['neutra', 'Devolución transferida'])
+    if (r.devolucion?.estado === 'sin_devolucion') e.push(['neutra', 'Sin devolución'])
   }
   if (r.origen === 'mostrador') e.push(['neutra', 'Sin reserva'])
   if (r.llegaronEn && r.estado !== 'cancelada') e.push(['bien', r.mesa ? `En ${r.mesa}` : 'Llegaron'])

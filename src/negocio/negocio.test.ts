@@ -7,7 +7,7 @@ import { CONFIGURACION_INICIAL as C, type Configuracion } from './configuracion'
 import { ocupadasEn } from './disponibilidad'
 import { diasReservables, iniciosPosibles } from './horario'
 import { esPromo, precioDe } from './precios'
-import { puedeCancelarConDevolucion, puedeLiberarPorRetraso, repartir, type Reserva } from './reserva'
+import { puedeLiberarPorRetraso, repartir, type Reserva } from './reserva'
 import { diaDeLaSemana, formatoHora, instante, momentoDe } from './tiempo'
 
 const h = (x: number, m = 0) => x * 60 + m
@@ -109,10 +109,6 @@ describe('disponibilidad (RESERVAS.md §2)', () => {
 
 describe('cancelación y tolerancia (RESERVAS.md §7)', () => {
   const r = reserva({ inicio: h(19) })
-  it('con devolución hasta 2 horas antes', () => {
-    expect(puedeCancelarConDevolucion(r, C, instante(VIERNES, h(17)))).toBe(true)
-    expect(puedeCancelarConDevolucion(r, C, instante(VIERNES, h(17, 1)))).toBe(false)
-  })
   it('se puede liberar la mesa a los 20 minutos si no llegaron', () => {
     expect(puedeLiberarPorRetraso(r, C, instante(VIERNES, h(19, 19)))).toBe(false)
     expect(puedeLiberarPorRetraso(r, C, instante(VIERNES, h(19, 20)))).toBe(true)

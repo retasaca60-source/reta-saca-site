@@ -281,6 +281,12 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     extender: (id, minutos) => enPanel(id, (ctx, r) => op.extender(ctx, r, minutos)),
     cambiarHorario: (id, fecha, inicio) => enPanel(id, (ctx, r) => op.cambiarHorario(ctx, r, fecha, inicio)),
     cancelarComoNegocio: (id) => enPanel(id, (ctx, r, quien) => op.cancelarComoNegocio(ctx, r, quien.nombre)),
+    devolucionesPorRevisar: () =>
+      consultar((e) => {
+        usuarioActual(e)
+        return e.reservas.filter((r) => r.devolucion?.estado === 'por_revisar').sort((a, b) => (b.cancelacion?.en ?? '').localeCompare(a.cancelacion?.en ?? ''))
+      }),
+    resolverDevolucion: (id, decision) => enPanel(id, (ctx, r, quien) => op.resolverDevolucion(ctx, r, decision, quien.nombre)),
     liberarPorRetraso: (id) => enPanel(id, (ctx, r, quien) => op.liberarPorRetraso(ctx, r, quien.nombre)),
 
     guardarConfiguracion: (config, aunqueHayaConflictos = false) =>

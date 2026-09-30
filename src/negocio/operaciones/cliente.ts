@@ -8,10 +8,10 @@ import { ErrorDeDatos } from '../errores'
 import { iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDe } from '../precios'
-import { estaActiva, puedeCancelarConDevolucion, repartir, type Reserva } from '../reserva'
+import { estaActiva, repartir, type Reserva } from '../reserva'
 import { instante, momentoDe } from '../tiempo'
 import type { DeporteId, Duracion } from '../configuracion'
-import { copia, devolverPagosEnLinea, type Contexto } from './contexto'
+import { abrirDevolucion, copia, type Contexto } from './contexto'
 import type { HorarioDisponible, SolicitudDeReserva, VistaDeCobro } from './tipos'
 
 export function horariosDisponibles(ctx: Contexto, deporte: DeporteId, fecha: string, duracion: Duracion): HorarioDisponible[] {
@@ -133,13 +133,14 @@ export function confirmarPagoEnLinea(ctx: Contexto, r: Reserva, parteIds: string
 
 /**
  * El cliente cancela desde su link. Siempre se puede antes de empezar (libera
- * la mesa para otro), pero solo se devuelve el dinero hasta N horas antes.
+ * la mesa para otro). Si pagó en línea, la devolución queda por revisar: la
+ * decide el negocio caso por caso.
  */
 export function cancelarComoCliente(ctx: Contexto, r: Reserva): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Esta reserva ya estaba cancelada.')
   if (instante(r.fecha, r.inicio) <= ctx.ahora) throw new ErrorDeDatos('no_permitido', 'La reserva ya empezó. Habla con recepción.')
   const nueva = copia(r)
-  if (puedeCancelarConDevolucion(r, ctx.config, ctx.ahora)) devolverPagosEnLinea(nueva)
+  abrirDevolucion(nueva)
   nueva.estado = 'cancelada'
   nueva.cancelacion = { motivo: 'cliente', en: new Date(ctx.ahora).toISOString() }
   return nueva

@@ -27,6 +27,8 @@ export interface Repositorio {
   /** Reservas con fecha entre dos días "AAAA-MM-DD" (incluidos), de todos los estados. */
   reservasEntre(desde: string, hasta: string): Promise<Reserva[]>
   reservaPor(campo: 'id' | 'tokenPrivado' | 'tokenCobro', valor: string): Promise<Reserva | null>
+  /** Canceladas con devolución por revisar, de cualquier fecha; las más recientes primero. */
+  devolucionesPorRevisar(): Promise<Reserva[]>
   /** Crea o reemplaza la reserva completa. Si el folio ya lo tiene otra, lanza FolioRepetido. */
   guardar(r: Reserva): Promise<void>
 
@@ -65,6 +67,11 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
 
     reservasEntre: async (desde, hasta) => [...reservas.values()].filter((r) => r.fecha >= desde && r.fecha <= hasta).map(clon),
     reservaPor: async (campo, valor) => clon([...reservas.values()].find((r) => r[campo] === valor) ?? null),
+    devolucionesPorRevisar: async () =>
+      [...reservas.values()]
+        .filter((r) => r.devolucion?.estado === 'por_revisar')
+        .sort((a, b) => (b.cancelacion?.en ?? '').localeCompare(a.cancelacion?.en ?? ''))
+        .map(clon),
     guardar: async (r) => {
       if ([...reservas.values()].some((x) => x.folio === r.folio && x.id !== r.id)) throw new FolioRepetido()
       reservas.set(r.id, clon(r))

@@ -41,6 +41,16 @@ export function repositorioPostgres(sql: Sql): Repositorio {
     reservasEntre: async (desde, hasta) =>
       (await q`select datos from public.reservas where fecha between ${desde} and ${hasta}`).map((f) => f.datos as Reserva),
 
+    // Sin columna propia: son pocas y se buscan en el jsonb. Una devolución
+    // pendiente de hace semanas tiene que seguir apareciendo.
+    devolucionesPorRevisar: async () =>
+      (
+        await q`
+          select datos from public.reservas
+          where estado = 'cancelada' and datos -> 'devolucion' ->> 'estado' = 'por_revisar'
+          order by datos -> 'cancelacion' ->> 'en' desc`
+      ).map((f) => f.datos as Reserva),
+
     reservaPor: async (campo, valor) => {
       // Se compara como texto: un "id" que no es uuid (lo mandó cualquiera) no
       // debe tronar la consulta, solo no encontrar nada.

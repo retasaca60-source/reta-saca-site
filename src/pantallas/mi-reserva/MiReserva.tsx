@@ -8,8 +8,8 @@ import { servicio } from '../../datos'
 import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../../mecanismos/whatsapp/enlaces'
 import { formatoDinero } from '../../negocio/formato'
-import { pagado, pendiente, puedeCancelarConDevolucion, total, type Reserva } from '../../negocio/reserva'
-import { fechaLarga, formatoHora, instante, nombreDelDia } from '../../negocio/tiempo'
+import { pagado, pagadoEnLinea, pendiente, total, type Reserva } from '../../negocio/reserva'
+import { fechaLarga, formatoHora, instante, momentoDe, nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import './mi-reserva.css'
 
@@ -50,7 +50,7 @@ export default function MiReserva() {
   const linkPrivado = direccion(`/r/${r.tokenPrivado}`)
   const cuando = `${fechaLarga(r.fecha)} a las ${formatoHora(r.inicio)}`
   const yaEmpezo = instante(r.fecha, r.inicio) <= ahora
-  const conDevolucion = puedeCancelarConDevolucion(r, config, ahora)
+  const enLinea = pagadoEnLinea(r)
   const recienPagada = pago === 'aprobado' && r.estado === 'confirmada'
 
   const ejecutar = async (nombre: string, f: () => Promise<unknown>) => {
@@ -150,6 +150,8 @@ export default function MiReserva() {
         </div>
       )}
 
+      {r.devolucion && <AvisoDeDevolucion r={r} whatsappNegocio={config.whatsappNegocio} cuando={cuando} deporte={d.nombre} />}
+
       {r.estado !== 'cancelada' && !yaEmpezo && (
         <div className="zona-cancelar">
           {!confirmandoCancelar ? (
@@ -159,16 +161,16 @@ export default function MiReserva() {
           ) : (
             <div className="grupo confirmar-cancelar">
               <p>
-                {conDevolucion
-                  ? 'Te devolvemos todo lo pagado en línea, a cada quien.'
-                  : `Faltan menos de ${config.reglas.horasParaCancelar} horas: si cancelas, NO hay devolución. La mesa se libera para alguien más.`}
+                La mesa se libera para alguien más.
+                {enLinea > 0 &&
+                  ` Lo pagado en línea (${formatoDinero(enLinea)}) no se devuelve solo: el negocio revisa cada caso y, si procede, te lo transfiere.`}
               </p>
               <div className="confirmar-botones">
                 <button type="button" className="boton boton-secundario" onClick={() => setConfirmandoCancelar(false)}>
                   Mejor no
                 </button>
                 <button type="button" className="boton boton-principal" disabled={accion !== null} onClick={cancelar}>
-                  {conDevolucion ? 'Sí, cancelar' : 'Cancelar sin devolución'}
+                  Sí, cancelar
                 </button>
               </div>
             </div>
@@ -201,6 +203,41 @@ function textoDeEstado(r: Reserva): string {
     return r.cancelacion ? motivo[r.cancelacion.motivo] : 'Cancelada'
   }
   return 'Confirmada'
+}
+
+/**
+ * Qué pasa con lo pagado en línea de una cancelada. El sitio no pide ni guarda
+ * datos bancarios: la CLABE va directo al WhatsApp del negocio.
+ */
+function AvisoDeDevolucion({ r, whatsappNegocio, cuando, deporte }: { r: Reserva; whatsappNegocio: string; cuando: string; deporte: string }) {
+  const dv = r.devolucion!
+  const monto = formatoDinero(dv.monto)
+  if (dv.estado === 'transferida') {
+    const dia = dv.en ? ` el ${fechaLarga(momentoDe(Date.parse(dv.en)).fecha)}` : ''
+    return <p className="aviso aviso-alerta">El negocio te transfirió {monto}{dia}.</p>
+  }
+  if (dv.estado === 'sin_devolucion') return <p className="aviso aviso-alerta">El negocio revisó tu cancelación: no hay devolución.</p>
+  return (
+    <div className="grupo confirmar-cancelar">
+      <p>
+        Pagaron {monto} en línea. El negocio revisa tu cancelación y, si procede, te lo transfiere.{' '}
+        {whatsappNegocio ? 'Mándale tu folio y tu CLABE:' : `Pídelo en recepción con tu folio ${r.folio}.`}
+      </p>
+      {whatsappNegocio && (
+        <a
+          className="boton boton-principal"
+          href={enlaceWhatsApp(
+            `Hola, cancelé mi reserva de ${deporte} del ${cuando}. Folio ${r.folio}, a nombre de ${r.organizador.nombre}; pagamos ${monto} en línea. Mi CLABE para la devolución es: `,
+            whatsappNegocio,
+          )}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Pedir mi devolución por WhatsApp
+        </a>
+      )}
+    </div>
+  )
 }
 
 function ListaDePagos({ r }: { r: Reserva }) {

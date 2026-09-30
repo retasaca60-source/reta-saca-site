@@ -15,8 +15,23 @@ export interface Pago {
   en: string
   /** En pagos del local: quién de recepción lo marcó. */
   marcadoPor?: string
-  /** Pago en línea devuelto por una cancelación. */
+  /** Pago en línea que el negocio devolvió por transferencia tras una cancelación. */
   devuelto?: boolean
+}
+
+/**
+ * Lo pagado en línea de una reserva cancelada. El sistema no devuelve dinero
+ * ni promete devolverlo: el negocio decide caso por caso y, si devuelve, lo
+ * transfiere desde su banco. Antes se marcaba "devuelto" al cancelar, dando por
+ * hecho que Mercado Pago lo regresaba solo; el negocio prefirió decidir él.
+ */
+export interface Devolucion {
+  /** Lo pagado en línea al momento de cancelar. */
+  monto: number
+  estado: 'por_revisar' | 'transferida' | 'sin_devolucion'
+  /** Quién de recepción lo resolvió, y cuándo (ISO). */
+  por?: string
+  en?: string
 }
 
 export interface Parte {
@@ -67,6 +82,8 @@ export interface Reserva {
   mesa: string | null
   llegaronEn: string | null
   cancelacion: { motivo: MotivoCancelacion; en: string; por?: string } | null
+  /** Solo en canceladas que tenían pagos en línea. Falta en las guardadas antes de que existiera. */
+  devolucion?: Devolucion | null
   creadaEn: string
 }
 
@@ -83,6 +100,9 @@ export const total = (r: Reserva) => r.partes.reduce((s, p) => s + p.monto, 0)
 export const pagado = (r: Reserva) => r.partes.reduce((s, p) => s + (p.pago && !p.pago.devuelto ? p.monto : 0), 0)
 export const pendiente = (r: Reserva) => total(r) - pagado(r)
 export const partesPendientes = (r: Reserva) => r.partes.filter((p) => !p.pago)
+/** Lo pagado en línea que sigue en manos del negocio (sin lo ya devuelto). */
+export const pagadoEnLinea = (r: Reserva) =>
+  r.partes.reduce((s, p) => s + (p.pago?.medio === 'en_linea' && !p.pago.devuelto ? p.monto : 0), 0)
 
 /**
  * Divide un total en partes de pesos cerrados. La primera es la del
@@ -94,10 +114,6 @@ export function repartir(total: number, partes: number): number[] {
   return [total - base * (partes - 1), ...Array(partes - 1).fill(base)]
 }
 
-/** ¿El cliente todavía puede cancelar con devolución? Hasta N horas antes del inicio. */
-export function puedeCancelarConDevolucion(r: Reserva, config: Configuracion, ahoraMs: number): boolean {
-  return ahoraMs <= instante(r.fecha, r.inicio) - config.reglas.horasParaCancelar * 3600_000
-}
 
 /** ¿Ya pasó la tolerancia sin que llegaran? Recepción puede liberar la mesa. */
 export function puedeLiberarPorRetraso(r: Reserva, config: Configuracion, ahoraMs: number): boolean {

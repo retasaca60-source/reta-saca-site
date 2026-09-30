@@ -7,6 +7,7 @@ import { usarDatos } from '../mecanismos/datos/usarDatos'
 import { formatoDinero } from '../negocio/formato'
 import type { MedioDePago } from '../negocio/reserva'
 import { ahoraEnSonora, fechaLarga, formatoHora, momentoDe } from '../negocio/tiempo'
+import { Devoluciones } from './Devoluciones'
 
 const MEDIOS: { medio: MedioDePago; nombre: string }[] = [
   { medio: 'efectivo', nombre: 'Efectivo' },
@@ -28,6 +29,7 @@ export function Caja() {
         <h1>Caja · {fechaLarga(fecha)}</h1>
         <input type="date" value={fecha} onChange={(e) => e.target.value && setFecha(e.target.value)} />
       </div>
+      <Devoluciones />
       {error && <p className="panel-error">{error}</p>}
       {!pagos && !error && <p>Cargando…</p>}
       {pagos && (
@@ -44,7 +46,7 @@ export function Caja() {
               <strong>{formatoDinero(suma(vigentes))}</strong>
             </div>
           </div>
-          {devueltos.length > 0 && <p className="nota">Devuelto por cancelaciones: {formatoDinero(suma(devueltos))} (no cuenta en el total).</p>}
+          {devueltos.length > 0 && <p className="nota">Devuelto por transferencia tras cancelaciones: {formatoDinero(suma(devueltos))} (no cuenta en el total).</p>}
           <table className="panel-tabla">
             <thead>
               <tr>

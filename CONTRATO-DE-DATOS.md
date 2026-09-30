@@ -112,7 +112,7 @@ el cliente o para recepción, en español.
 | `iniciarPago(token, parteIds, nombre)` | `token` es el privado o el de cobro. Crea el pago en Mercado Pago (una "preferencia" por las partes elegidas) y devuelve `{ url }` a donde mandar al cliente. Si es el link de cobro, `nombre` es de quien paga. Si el apartado se venció pero la mesa sigue libre, lo renueva. | `no_encontrada`, `no_permitido` (cancelada), `datos_invalidos` (parte ya pagada, nombre vacío) |
 | `reservaPorTokenPrivado(token)` | La reserva completa, o `null`. | — |
 | `vistaDeCobro(tokenCobro)` | Vista **recortada** (`VistaDeCobro`): sin WhatsApp ni token privado. | — |
-| `cancelarComoCliente(tokenPrivado)` | Cancela. Si faltan más de 2 h, devuelve lo pagado en línea (reembolso en Mercado Pago); si faltan menos, cancela sin devolver. Ya empezada, no. | `no_encontrada`, `no_permitido` |
+| `cancelarComoCliente(tokenPrivado)` | Cancela. Si pagó en línea, deja `devolucion` por revisar: el sistema no devuelve dinero, lo decide el negocio. Ya empezada, no. | `no_encontrada`, `no_permitido` |
 
 ### Del panel (con sesión)
 
@@ -126,7 +126,9 @@ el cliente o para recepción, en español.
 | `marcarPago(id, parteIds, medio, nombre?)` | ambos | Efectivo o tarjeta. Guarda quién lo marcó. |
 | `extender(id, minutos)` | ambos | Revisa cierre y lugar; agrega una parte "extension" por cobrar. |
 | `cambiarHorario(id, fecha, inicio)` | ambos | Revisa horario y lugar; si el nuevo cuesta más, agrega la diferencia por cobrar. |
-| `cancelarComoNegocio(id)` | ambos | Devuelve TODO lo pagado en línea, sin plazo. |
+| `cancelarComoNegocio(id)` | ambos | Lo pagado en línea queda con `devolucion` por revisar. |
+| `devolucionesPorRevisar()` | ambos | Canceladas con devolución pendiente, de cualquier fecha. |
+| `resolverDevolucion(id, 'transferida' \| 'sin_devolucion')` | ambos | El negocio ya transfirió (los pagos en línea quedan `devuelto`) o decidió no devolver. Guarda quién y cuándo. |
 | `liberarPorRetraso(id)` | ambos | Solo pasados los 20 min sin llegar. Sin devolución. |
 | `guardarConfiguracion(config, aunqueHayaConflictos?)` | dueño | Si con la nueva configuración alguna reserva futura se queda sin mesa o fuera de horario, **no guarda** y devuelve los conflictos, salvo que venga `aunqueHayaConflictos`. Nunca cancela nada. |
 | `usuarios()`, `agregarUsuario(u, contraseña)`, `quitarUsuario()` | dueño | Acceso al panel: el dueño crea la cuenta con usuario y contraseña, sin correos. Nadie se puede quitar a sí mismo. |
@@ -191,7 +193,7 @@ en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 - El link de cobro no enseña el WhatsApp del organizador.
 - Un amigo paga su parte con su nombre, o "lo que falta".
 - No se paga dos veces la misma parte.
-- Cancelar hasta 2 h antes devuelve; después cancela sin devolver.
+- Cancelar deja lo pagado en línea por revisar; el negocio lo resuelve y lo transferido deja de contar como cobrado.
 - Sin sesión no se ven reservas; recepción no cambia configuración.
 - Marcar pago guarda quién lo marcó.
 - No asigna una mesa que ya tiene otro grupo.

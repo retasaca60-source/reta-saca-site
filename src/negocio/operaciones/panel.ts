@@ -11,7 +11,7 @@ import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDe, precioDeExtension, precioSiExiste } from '../precios'
 import { fin, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
 import { formatoHora, momentoDe } from '../tiempo'
-import { copia, devolverPagosEnLinea, type Contexto } from './contexto'
+import { abrirDevolucion, copia, type Contexto } from './contexto'
 import type { ClienteSinReserva, PagoDelDia } from './tipos'
 
 /**
@@ -187,13 +187,26 @@ export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio:
   return nueva
 }
 
-/** Cancela el negocio: se devuelve TODO lo pagado en línea, sin importar el plazo. */
+/** Cancela el negocio. Lo pagado en línea queda por devolver, por transferencia. */
 export function cancelarComoNegocio(ctx: Contexto, r: Reserva, quien: string): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Ya estaba cancelada.')
   const nueva = copia(r)
-  devolverPagosEnLinea(nueva)
+  abrirDevolucion(nueva)
   nueva.estado = 'cancelada'
   nueva.cancelacion = { motivo: 'negocio', en: new Date(ctx.ahora).toISOString(), por: quien }
+  return nueva
+}
+
+/**
+ * El negocio resolvió la devolución de una cancelación: la transfirió desde su
+ * banco, o decidió que no hay. Queda quién lo marcó y cuándo.
+ */
+export function resolverDevolucion(ctx: Contexto, r: Reserva, decision: 'transferida' | 'sin_devolucion', quien: string): Reserva {
+  if (r.devolucion?.estado !== 'por_revisar') throw new ErrorDeDatos('no_permitido', 'Esta reserva no tiene una devolución por revisar.')
+  const nueva = copia(r)
+  // Lo transferido deja de contar como cobrado, en la reserva y en la caja.
+  if (decision === 'transferida') for (const p of nueva.partes) if (p.pago?.medio === 'en_linea') p.pago.devuelto = true
+  nueva.devolucion = { ...r.devolucion, estado: decision, por: quien, en: new Date(ctx.ahora).toISOString() }
   return nueva
 }
 

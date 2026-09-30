@@ -335,6 +335,15 @@ const ACCIONES: Record<string, Accion> = {
   extender: enPanel((d, ctx, r) => op.extender(ctx, r, duracion(d, 'minutos'))),
   cambiarHorario: enPanel((d, ctx, r) => op.cambiarHorario(ctx, r, fecha(d, 'fecha'), numero(d, 'inicio'))),
   cancelarComoNegocio: enPanel((_d, ctx, r, quien) => op.cancelarComoNegocio(ctx, r, quien.nombre)),
+  devolucionesPorRevisar: async (_d, e) => {
+    await usuarioDe(e)
+    return e.repo.devolucionesPorRevisar()
+  },
+  resolverDevolucion: enPanel((d, ctx, r, quien) => {
+    const decision = d.decision
+    if (decision !== 'transferida' && decision !== 'sin_devolucion') throw invalido('decision')
+    return op.resolverDevolucion(ctx, r, decision, quien.nombre)
+  }),
   liberarPorRetraso: enPanel((_d, ctx, r, quien) => op.liberarPorRetraso(ctx, r, quien.nombre)),
 
   guardarConfiguracion: async (d, e) => {

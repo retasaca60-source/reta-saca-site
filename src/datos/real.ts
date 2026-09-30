@@ -69,6 +69,8 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     extender: (reservaId, minutos) => llamar<Reserva>('extender', { reservaId, minutos }),
     cambiarHorario: (reservaId, fecha, inicio) => llamar<Reserva>('cambiarHorario', { reservaId, fecha, inicio }),
     cancelarComoNegocio: (reservaId) => llamar<Reserva>('cancelarComoNegocio', { reservaId }),
+    devolucionesPorRevisar: () => llamar<Reserva[]>('devolucionesPorRevisar', {}),
+    resolverDevolucion: (reservaId, decision) => llamar<Reserva>('resolverDevolucion', { reservaId, decision }),
     liberarPorRetraso: (reservaId) => llamar<Reserva>('liberarPorRetraso', { reservaId }),
     guardarConfiguracion: (config, aunqueHayaConflictos = false) =>
       llamar<{ guardada: boolean; conflictos: Conflicto[] }>('guardarConfiguracion', { config, aunqueHayaConflictos }),

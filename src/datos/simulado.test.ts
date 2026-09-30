@@ -303,18 +303,38 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
   })
 
   describe('cancelar', () => {
-    it('hasta 2 h antes devuelve lo pagado en línea; después cancela sin devolver', async () => {
+    it('lo pagado en línea queda por revisar, falte lo que falte; nada se marca devuelto', async () => {
       const a = await reservarYPagar({ inicio: h(19) })
-      reloj = instante(VIERNES, h(16, 59))
-      const cancelada = await s.cancelarComoCliente(a.tokenPrivado)
-      expect(cancelada.partes[0].pago!.devuelto).toBe(true)
-
-      reloj = instante(VIERNES, h(15))
-      const b = await reservarYPagar({ inicio: h(20), organizador: { nombre: 'Beto', whatsapp: '6620000009' } })
       reloj = instante(VIERNES, h(18, 30))
-      const sinDevolver = await s.cancelarComoCliente(b.tokenPrivado)
-      expect(sinDevolver.estado).toBe('cancelada')
-      expect(sinDevolver.partes[0].pago!.devuelto).toBeUndefined()
+      const cancelada = await s.cancelarComoCliente(a.tokenPrivado)
+      expect(cancelada.estado).toBe('cancelada')
+      expect(cancelada.partes[0].pago!.devuelto).toBeUndefined()
+      expect(cancelada.devolucion).toEqual({ monto: cancelada.partes[0].monto, estado: 'por_revisar' })
+    })
+    it('sin pagos en línea no queda devolución que revisar', async () => {
+      const r = await s.apartar(pedido())
+      expect((await s.cancelarComoCliente(r.tokenPrivado)).devolucion).toBeNull()
+    })
+    it('el negocio la resuelve: lo transferido deja de contar como cobrado', async () => {
+      const a = await reservarYPagar({ inicio: h(19) })
+      const b = await reservarYPagar({ inicio: h(20), organizador: { nombre: 'Beto', whatsapp: '6620000009' } })
+      await s.cancelarComoCliente(a.tokenPrivado)
+      await s.cancelarComoCliente(b.tokenPrivado)
+
+      expect(await codigoDe(s.devolucionesPorRevisar())).toBe('sin_sesion')
+      await s.iniciarSesion('recepcion', '')
+      expect((await s.devolucionesPorRevisar()).map((r) => r.folio).sort()).toEqual([a.folio, b.folio].sort())
+
+      const transferida = await s.resolverDevolucion(a.id, 'transferida')
+      expect(transferida.devolucion).toMatchObject({ estado: 'transferida', por: 'Recepción' })
+      expect(transferida.partes[0].pago!.devuelto).toBe(true)
+      expect((await s.pagosDelDia(VIERNES)).find((p) => p.folio === a.folio)!.devuelto).toBe(true)
+
+      const sinDevolucion = await s.resolverDevolucion(b.id, 'sin_devolucion')
+      expect(sinDevolucion.partes[0].pago!.devuelto).toBeUndefined()
+
+      expect(await s.devolucionesPorRevisar()).toEqual([])
+      expect(await codigoDe(s.resolverDevolucion(a.id, 'sin_devolucion'))).toBe('no_permitido')
     })
   })
 

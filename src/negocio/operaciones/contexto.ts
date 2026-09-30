@@ -1,7 +1,7 @@
 // Lo que toda operación necesita saber del mundo.
 
 import type { Configuracion } from '../configuracion'
-import type { Reserva } from '../reserva'
+import { pagadoEnLinea, type Reserva } from '../reserva'
 
 export interface Contexto {
   config: Configuracion
@@ -19,9 +19,11 @@ export interface Contexto {
 export const copia = (r: Reserva): Reserva => structuredClone(r)
 
 /**
- * Marca como devueltos los pagos en línea de una COPIA (la devolución real la
- * hace Mercado Pago). Interno de las operaciones: no sale en su interfaz.
+ * Al cancelar una COPIA: si hubo pagos en línea, la devolución queda por
+ * revisar y la decide el negocio. Lo cobrado en el local no entra: eso se
+ * arregla en persona y ya está cuadrado en la caja de su día.
  */
-export function devolverPagosEnLinea(r: Reserva): void {
-  for (const p of r.partes) if (p.pago?.medio === 'en_linea') p.pago.devuelto = true
+export function abrirDevolucion(r: Reserva): void {
+  const monto = pagadoEnLinea(r)
+  r.devolucion = monto > 0 ? { monto, estado: 'por_revisar' } : null
 }

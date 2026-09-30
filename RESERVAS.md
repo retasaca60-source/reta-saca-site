@@ -262,19 +262,34 @@ primero**, sin vender la misma mesa dos veces:
 
 ## 7. Cancelaciones, retrasos y cambios
 
+### Devoluciones: las decide el negocio, por transferencia
+
+- **El sistema no devuelve dinero ni promete devolverlo.** Si una reserva
+  cancelada tenía pagos en línea, queda con **"devolución por revisar"** y el
+  negocio decide **caso por caso** si devuelve.
+- Si devuelve, lo hace **por transferencia** desde su banco. El cliente le manda
+  su folio y su **CLABE por WhatsApp** con un botón de su página de reserva; el
+  sitio **no pide ni guarda datos bancarios**.
+- En el panel, **Caja → Devoluciones por revisar** junta las pendientes de
+  cualquier fecha. Recepción marca **"Ya se transfirió"** (deja de contar como
+  cobrado) o **"Sin devolución"**; queda quién lo marcó y cuándo, y el cliente
+  lo ve en su página.
+- Lo cobrado **en el local** no entra: eso se arregla en persona y ya está
+  cuadrado en la caja de su día.
+
 ### Si cancela el cliente
 
-- **Hasta 2 horas antes** del inicio: se devuelve **todo lo pagado en línea**, a
-  cada persona que pagó, por Mercado Pago. Se cancela desde el link privado.
-- **Menos de 2 horas antes:** no hay devolución.
+- Cancela desde su link privado, en cualquier momento **antes de que empiece**.
+  La mesa se libera para alguien más.
+- Antes de confirmar, la página le dice que lo pagado en línea no se devuelve
+  solo: lo revisa el negocio.
 
 ### Si cancela el negocio
 
 (Se descompuso una mesa, evento privado, se fue la luz…)
 
-- Se devuelve **todo**, siempre, sin importar las 2 horas.
-- Recepción cancela desde el panel (eso devuelve a todos los que pagaron) y le
-  avisa al organizador con el botón de WhatsApp.
+- Recepción cancela desde el panel y le avisa al organizador con el botón de
+  WhatsApp. Lo pagado en línea queda por devolver en Caja, igual que arriba.
 
 ### Si llegan tarde
 
@@ -418,7 +433,7 @@ mentira que ocupa el lugar de Mercado Pago. Ver `CONTRATO-DE-DATOS.md`.
 | Disponibilidad por tramo completo (una reserva de 90 min ocupa la media hora siguiente) | Hecho |
 | Pago dividido: partes en pesos cerrados, apartado de 10 min, firme con el primer pago | Hecho (pago simulado) |
 | Link privado `/r/…` y link de cobro `/c/…` ("mi parte" y "lo que falta") | Hecho |
-| Cancelación con y sin devolución, máximo 2 reservas por WhatsApp | Hecho |
+| Cancelación con devolución por revisar, máximo 2 reservas por WhatsApp | Hecho |
 | Botones de WhatsApp (compartir cobro, enviarme mi link, avisar al negocio) | Hecho ("Avisar al negocio" aparece cuando Hugo ponga el número) |
 | Panel: mesas ahora, sentar, cobrar en el local, extender, cambiar, cancelar, liberar | Hecho |
 | Panel: semana, caja del día | Hecho |
@@ -430,7 +445,8 @@ mentira que ocupa el lugar de Mercado Pago. Ver `CONTRATO-DE-DATOS.md`.
 1. **Base de datos real (Supabase)**: que las reservas vivan en el servidor y
    todos vean lo mismo; que el servidor decida precio, lugar, hora y
    permisos. Guía completa: `CONTRATO-DE-DATOS.md`.
-2. **Mercado Pago real**: cobros, aviso de pago (webhook) y devoluciones.
+2. **Mercado Pago real**: cobros y aviso de pago (webhook). Las devoluciones
+   no pasan por Mercado Pago: el negocio transfiere.
    Espera la cuenta del negocio.
 3. **Usuarios reales del panel** (Supabase Auth). Hoy se entra con botones de
    demostración.
@@ -523,3 +539,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 29/09/2026 | El pase de la reserva tiene forma de boleto de avión, con la foto del juego al centro | Lo pidió el negocio con una referencia; el inicio y el fin del horario se leen como salida y llegada. |
 | 30/09/2026 | En el local se cobra solo en efectivo o con tarjeta; sin transferencia | Lo decidió el negocio. |
 | 30/09/2026 | El recuadro "Antes de pagar" ya no dice la regla de devolución por cancelar | Lo pidió el negocio. La regla sigue igual y se explica al cancelar en la página de la reserva. |
+| 30/09/2026 | Las devoluciones las decide el negocio caso por caso y las hace por transferencia; el cliente manda su CLABE por WhatsApp | Lo decidió el negocio. Sustituye la devolución automática hasta 2 h antes. El sitio no guarda datos bancarios. |
