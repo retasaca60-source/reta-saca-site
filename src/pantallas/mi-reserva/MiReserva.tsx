@@ -82,12 +82,16 @@ export default function MiReserva() {
   return (
     <>
       <h1 className="titulo-grande" style={{ marginTop: 20 }}>
-        {recienPagada ? '¡Listo! Ya tienen mesa' : 'Tu reserva'}
+        {recienPagada
+  ? r.deporte === 'cornhole'
+    ? '¡Listo! Ya tienen tablero'
+    : '¡Listo! Ya tienen mesa'
+  : 'Tu reserva'}
       </h1>
       {recienPagada && <p className="nota">Guarda este link: aquí ves quién ya pagó, compartes el cobro y puedes cancelar.</p>}
       {pago === 'cancelado' && r.estado === 'apartada' && (
         <p className="aviso aviso-alerta" role="alert">
-          No se hizo el pago. Tu mesa sigue apartada unos minutos: puedes intentarlo otra vez.
+          No se hizo el pago. Tu reserva sigue apartada unos minutos: puedes intentarlo otra vez.
         </p>
       )}
 
@@ -127,7 +131,7 @@ export default function MiReserva() {
           {r.partesElegidas > 1 && falta > 0 && (
             <a
               className="boton boton-principal"
-              href={enlaceWhatsApp(`Ya aparté la mesa de ${d.nombre} para el ${cuando} en Reta Saca. Aquí pagas tu parte: ${linkCobro}`)}
+              href={enlaceWhatsApp(`Ya aparté ${r.deporte === 'cornhole' ? 'el tablero' : 'la mesa'} de ${d.nombre} para el ${cuando} en Reta Saca. Aquí pagas tu parte: ${linkCobro}`)}
               target="_blank"
               rel="noreferrer"
             >
@@ -166,7 +170,9 @@ export default function MiReserva() {
           ) : (
             <div className="grupo confirmar-cancelar">
               <p>
-                La mesa se libera para alguien más.
+                {r.deporte === 'cornhole'
+  ? 'El tablero se libera para alguien más.'
+  : 'La mesa se libera para alguien más.'}
                 {enLinea > 0 &&
                   ` Lo pagado en línea (${formatoDinero(enLinea)}) no se devuelve solo: el negocio revisa cada caso y, si procede, te lo transfiere.`}
               </p>

@@ -131,7 +131,7 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     minutosDeCorte: 30,
     pasoDeInicio: 30,
     minutosDeApartado: 10,
-    minutosDeTolerancia: 20,
+    minutosDeTolerancia: 30,
     reservasActivasPorWhatsapp: 2,
   },
   whatsappNegocio: '',

@@ -459,13 +459,13 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
         inicio: h(19),
       })
 
-      reloj = instante(VIERNES, h(19, 10))
+      reloj = instante(VIERNES, h(19, 29))
 
       expect(
         await codigoDe(s.liberarPorRetraso(r.id)),
       ).toBe('no_permitido')
 
-      reloj = instante(VIERNES, h(19, 20))
+      reloj = instante(VIERNES, h(19, 30))
 
       expect(
         (await s.liberarPorRetraso(r.id)).cancelacion?.motivo,

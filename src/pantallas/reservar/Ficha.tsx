@@ -26,11 +26,6 @@ interface Props {
   config: Configuracion
 }
 
-const FORMAS: { partes: Partes; nombre: string }[] = [
-  { partes: 1, nombre: 'Uno paga todo' },
-  { partes: 2, nombre: 'Entre 2' },
-  { partes: 4, nombre: 'Entre 4' },
-]
 
 export function Ficha({ borrador, despachar, config }: Props) {
   const navegar = useNavigate()
@@ -75,7 +70,12 @@ export function Ficha({ borrador, despachar, config }: Props) {
         <button type="button" className="boton-redondo ficha-volver" onClick={volver} aria-label="Volver a los juegos">
           <IconoAtras />
         </button>
-        <span className="pastilla ficha-mesas numeros">{mesasEnServicio(d)} mesas</span>
+        <span className="pastilla ficha-mesas numeros">
+  {mesasEnServicio(d)}{' '}
+  {deporte === 'cornhole'
+    ? mesasEnServicio(d) === 1 ? 'tablero' : 'tableros'
+    : mesasEnServicio(d) === 1 ? 'mesa' : 'mesas'}
+</span>
       </div>
 
       <section className="ficha-hoja">
@@ -96,7 +96,7 @@ export function Ficha({ borrador, despachar, config }: Props) {
         )}
 
         {/* Primero se elige el horario y después cómo se pagará. */}
-        {d.seDivide ? (
+                {d.seDivide ? (
           <>
             <h2 className="titulo-seccion">¿Cómo pagan?</h2>
 
@@ -105,27 +105,60 @@ export function Ficha({ borrador, despachar, config }: Props) {
               role="group"
               aria-label="Cómo pagan"
             >
-              {FORMAS.map((f) => (
-                <button
-                  key={f.partes}
-                  type="button"
-                  aria-pressed={partes === f.partes}
-                  onClick={() =>
-                    despachar({
-                      tipo: 'elegirPartes',
-                      partes: f.partes,
-                    })
-                  }
-                >
-                  {f.nombre}
-                </button>
-              ))}
+              <button
+                type="button"
+                aria-pressed={partes === 1}
+                onClick={() =>
+                  despachar({ tipo: 'elegirPartes', partes: 1 })
+                }
+              >
+                Pagar el total
+              </button>
+
+              <button
+                type="button"
+                aria-pressed={partes > 1}
+                onClick={() =>
+                  despachar({
+                    tipo: 'elegirPartes',
+                    partes: partes === 4 ? 4 : 2,
+                  })
+                }
+              >
+                Pagar mi parte
+              </button>
             </div>
 
+            {partes > 1 && (
+              <div className="grupo">
+                <div className="campo-form">
+                  <label htmlFor="dividir-pago">
+                    ¿Entre cuántos dividen el pago?
+                  </label>
+
+                  <select
+                    id="dividir-pago"
+                    value={partes}
+                    onChange={(e) =>
+                      despachar({
+                        tipo: 'elegirPartes',
+                        partes: Number(e.target.value) as Partes,
+                      })
+                    }
+                  >
+                    <option value={2}>Entre 2 personas</option>
+                    <option value={4}>Entre 4 personas</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             <p className="nota">
-              El precio es por mesa. Si lo dividen, tú pagas tu parte
-              al reservar y les mandas un link a tus amigos; o la
-              pagan en el local.
+              El precio es por{' '}
+              {deporte === 'cornhole' ? 'tablero' : 'mesa'}.
+              {partes > 1
+                ? ' Tú pagas tu parte al reservar y les mandas un link a tus amigos; también pueden pagar en el local.'
+                : ' Pagas el total al reservar.'}
             </p>
           </>
         ) : (
@@ -150,10 +183,24 @@ export function Ficha({ borrador, despachar, config }: Props) {
       <div className="barra-accion barra-reserva">
         <div className="barra-precio numeros">
           <b>{formatoDinero(tuParte ?? precioDeLista(d) ?? 0)}</b>
-          <span>{tuParte === null ? 'la hora' : partes > 1 ? 'tu parte' : 'por la mesa'}</span>
+          <span>
+  {tuParte === null
+    ? 'la hora'
+    : partes > 1
+      ? 'tu parte'
+      : deporte === 'cornhole'
+        ? 'por el tablero'
+        : 'por la mesa'}
+</span>
         </div>
         <Deslizar
-          etiqueta={enviando ? 'Apartando tu mesa…' : queFalta(borrador) ?? 'Desliza para pagar'}
+          etiqueta={
+  enviando
+    ? deporte === 'cornhole'
+      ? 'Apartando tu tablero…'
+      : 'Apartando tu mesa…'
+    : queFalta(borrador) ?? 'Desliza para pagar'
+}
           listo={queFalta(borrador) === null}
           ocupado={enviando}
           icono={<IconoDeporte id={deporte} config={config} />}

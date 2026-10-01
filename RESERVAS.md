@@ -168,11 +168,11 @@ tarde).
 1. **Elige el deporte.**
 2. **Elige día, duración y hora.** Solo aparecen las horas en que cabe la
    reserva (sección 2). Las llenas se ven como "Lleno".
-3. **Si es Ping Pong o Cornhole, elige cómo van a pagar:** todo una persona,
-   entre 2 o entre 4. En Popdarts se paga completo y la aclaración del
-   precio por mesa aparece debajo de los horarios.
+3. **Si es Ping Pong o Cornhole, elige cómo pagar:** “Pagar el total”
+   o “Pagar mi parte”. Al elegir su parte, indica si divide entre 2 o 4
+   personas. En Popdarts se paga completo.
 4. **Escribe su nombre y su WhatsApp** (10 dígitos). Antes de pagar ve el
-   resumen y **las reglas**: cancelación hasta 2 horas antes, 20 minutos de
+   resumen y **las reglas**: cancelación hasta 2 horas antes, 30 minutos de
    tolerancia, que lo que no se pague lo cubre él, y el aviso de privacidad.
 5. **Paga con Mercado Pago:** todo, o solo su parte. Mientras paga, la mesa
    queda apartada 10 minutos.
@@ -294,7 +294,7 @@ primero**, sin vender la misma mesa dos veces:
 
 ### Si llegan tarde
 
-- Hay **20 minutos de tolerancia**. Si a los 20 minutos no ha llegado nadie,
+- Hay **30 minutos de tolerancia**. Si a los 20 minutos no ha llegado nadie,
   recepción puede **liberar la mesa**, sin devolución.
 - Llegar tarde **no recorre** la reserva: si era de 7:00 a 8:00 y llegan 7:15,
   juegan hasta las 8:00.
@@ -365,7 +365,7 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
   - Solo se cobra la renta de mesas; no hay venta de productos.
   - El comprobante es el **ticket de la terminal** de cobro.
 - **Cambiar** horario, **extender** tiempo, **cancelar** y **liberar** una mesa
-  después de los 20 minutos de tolerancia.
+  después de los 30 minutos de tolerancia.
 - Reenviar por WhatsApp el link privado al organizador.
 - **Cierre de caja del día**: cuánto se cobró en línea y cuánto en el local, por
   medio. Lo que se cuadra contra la caja es el efectivo. Es un cierre por día,
@@ -542,4 +542,7 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 30/09/2026 | El recuadro "Antes de pagar" ya no dice la regla de devolución por cancelar | Lo pidió el negocio. La regla sigue igual y se explica al cancelar en la página de la reserva. |
 | 30/09/2026 | Las devoluciones las decide el negocio caso por caso y las hace por transferencia; el cliente manda su CLABE por WhatsApp | Lo decidió el negocio. Sustituye la devolución automática hasta 2 h antes. El sitio no guarda datos bancarios. |
 | 30/09/2026 | Mercado Pago con Checkout Pro: se confirma preguntándole a Mercado Pago por el pago (al volver y por su aviso), solo pagos al momento | La conexión se programa con una llave de prueba; para cobrar de verdad solo se cambia la llave por la del negocio. |
-| 30/09/2026 | Horario antes de la forma de pago; aclaración de precio en Popdarts; etiquetas “90 min” y “Datos” | Ajustes solicitados para simplificar la pantalla de reserva. |
+| 30/09/2026 | Horario antes de la forma de pago; aclaración de precio en Popdarts; etiquetas “90 min” y “Datos” | Ajustes solicitados para simplificar la pantalla de reserva. 
+| 30/09/2026 | Tolerancia de 30 minutos | Sustituye la tolerancia anterior de 20 minutos por solicitud del negocio; llegar tarde no recorre el horario. |
+| 30/09/2026 | Mostrar “tablero” y “tableros” para Cornhole en el flujo del cliente | Usar el nombre correcto del equipo, conservando los campos internos de datos. |
+| 30/09/2026 | Dos opciones principales de pago: total o mi parte | Al dividir, un selector permite indicar entre 2 o 4 personas para calcular el cobro. |

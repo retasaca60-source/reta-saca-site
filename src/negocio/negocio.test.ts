@@ -109,9 +109,21 @@ describe('disponibilidad (RESERVAS.md §2)', () => {
 
 describe('cancelación y tolerancia (RESERVAS.md §7)', () => {
   const r = reserva({ inicio: h(19) })
-  it('se puede liberar la mesa a los 20 minutos si no llegaron', () => {
-    expect(puedeLiberarPorRetraso(r, C, instante(VIERNES, h(19, 19)))).toBe(false)
-    expect(puedeLiberarPorRetraso(r, C, instante(VIERNES, h(19, 20)))).toBe(true)
-    expect(puedeLiberarPorRetraso({ ...r, llegaronEn: 'ya' }, C, instante(VIERNES, h(19, 30)))).toBe(false)
+    it('se puede liberar la mesa a los 30 minutos si no llegaron', () => {
+    expect(
+      puedeLiberarPorRetraso(r, C, instante(VIERNES, h(19, 29))),
+    ).toBe(false)
+
+    expect(
+      puedeLiberarPorRetraso(r, C, instante(VIERNES, h(19, 30))),
+    ).toBe(true)
+
+    expect(
+      puedeLiberarPorRetraso(
+        { ...r, llegaronEn: 'ya' },
+        C,
+        instante(VIERNES, h(19, 30)),
+      ),
+    ).toBe(false)
   })
 })

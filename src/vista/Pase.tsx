@@ -88,7 +88,11 @@ export function Pase({ datos: d, config }: { datos: DatosDelPase; config: Config
           <span className="pase-folio numeros">{d.folio}</span>
         </div>
         <div className="pase-campo derecha">
-          <span className="pase-etiqueta">Total por la mesa</span>
+          <span className="pase-etiqueta">
+  {d.deporteId === 'cornhole'
+    ? 'Total por el tablero'
+    : 'Total por la mesa'}
+</span>
           <span className="pase-total numeros">{formatoDinero(d.total)}</span>
         </div>
       </footer>

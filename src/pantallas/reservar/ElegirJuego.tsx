@@ -81,7 +81,12 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
                     </span>
                   )}
                 </span>
-                <span className="pastilla juego-mesas numeros">{mesasEnServicio(d)} mesas</span>
+                <span className="pastilla juego-mesas numeros">
+  {mesasEnServicio(d)}{' '}
+  {id === 'cornhole'
+    ? mesasEnServicio(d) === 1 ? 'tablero' : 'tableros'
+    : mesasEnServicio(d) === 1 ? 'mesa' : 'mesas'}
+</span>
               </button>
             </li>
           )

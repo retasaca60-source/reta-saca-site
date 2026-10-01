@@ -63,7 +63,11 @@ export default function Cobro() {
   return (
     <>
       <h1 className="titulo-grande" style={{ marginTop: 20 }}>
-        {recienPagado ? '¡Pagado! Nos vemos en la mesa' : `${v.organizador} te invitó a jugar`}
+        {recienPagado
+  ? v.deporte === 'cornhole'
+    ? '¡Pagado! Nos vemos en el tablero'
+    : '¡Pagado! Nos vemos en la mesa'
+  : `${v.organizador} te invitó a jugar`}
       </h1>
 
       <div style={{ marginTop: 18 }}>
@@ -131,7 +135,7 @@ export default function Cobro() {
       )}
 
       <Link className="enlace-discreto" to="/">
-        Reservar otra mesa
+        Hacer otra reserva
       </Link>
     </>
   )

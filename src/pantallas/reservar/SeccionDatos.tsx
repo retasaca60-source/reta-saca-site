@@ -56,7 +56,12 @@ export function SeccionDatos({ borrador, despachar, config }: Props) {
       <h2 className="titulo-seccion">Antes de pagar</h2>
       <div className="grupo">
         <ul className="reglas">
-          <li>Tu mesa queda apartada {r.minutosDeApartado} minutos mientras pagas.</li>
+          <li>
+  {borrador.deporte === 'cornhole'
+    ? 'Tu tablero queda apartado'
+    : 'Tu mesa queda apartada'}{' '}
+  {r.minutosDeApartado} minutos mientras pagas.
+</li>
           <li>Hay {r.minutosDeTolerancia} minutos de tolerancia; llegar tarde no recorre tu horario.</li>
           {partes !== null && partes > 1 && <li>Lo que tus amigos no paguen, lo cubres tú en el local.</li>}
         </ul>
