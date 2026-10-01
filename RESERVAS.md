@@ -166,10 +166,11 @@ tarde).
 ## 5. Cómo reserva un cliente, paso a paso
 
 1. **Elige el deporte.**
-2. **Si es Ping Pong o Cornhole, elige cómo van a pagar:** todo una persona,
-   entre 2 o entre 4. En Popdarts este paso no aparece.
-3. **Elige día, duración y hora.** Solo aparecen las horas en que cabe la
+2. **Elige día, duración y hora.** Solo aparecen las horas en que cabe la
    reserva (sección 2). Las llenas se ven como "Lleno".
+3. **Si es Ping Pong o Cornhole, elige cómo van a pagar:** todo una persona,
+   entre 2 o entre 4. En Popdarts se paga completo y la aclaración del
+   precio por mesa aparece debajo de los horarios.
 4. **Escribe su nombre y su WhatsApp** (10 dígitos). Antes de pagar ve el
    resumen y **las reglas**: cancelación hasta 2 horas antes, 20 minutos de
    tolerancia, que lo que no se pague lo cubre él, y el aviso de privacidad.
@@ -541,3 +542,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 30/09/2026 | El recuadro "Antes de pagar" ya no dice la regla de devolución por cancelar | Lo pidió el negocio. La regla sigue igual y se explica al cancelar en la página de la reserva. |
 | 30/09/2026 | Las devoluciones las decide el negocio caso por caso y las hace por transferencia; el cliente manda su CLABE por WhatsApp | Lo decidió el negocio. Sustituye la devolución automática hasta 2 h antes. El sitio no guarda datos bancarios. |
 | 30/09/2026 | Mercado Pago con Checkout Pro: se confirma preguntándole a Mercado Pago por el pago (al volver y por su aviso), solo pagos al momento | La conexión se programa con una llave de prueba; para cobrar de verdad solo se cambia la llave por la del negocio. |
+| 30/09/2026 | Horario antes de la forma de pago; aclaración de precio en Popdarts; etiquetas “90 min” y “Datos” | Ajustes solicitados para simplificar la pantalla de reserva. |

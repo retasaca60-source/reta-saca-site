@@ -94,10 +94,14 @@ export function minutosDe(hora: string): number {
   return h * 60 + m
 }
 
-/** 90 → "1 h 30 min" */
+/** Mantiene la etiqueta de 90 min igual en horarios, pases y resúmenes. */
 export function formatoDuracion(minutos: number): string {
+  if (minutos === 90) return '90 min'
+
   const h = Math.floor(minutos / 60)
   const m = minutos % 60
+
   if (!h) return `${m} min`
+
   return m ? `${h} h ${m} min` : `${h} h`
 }

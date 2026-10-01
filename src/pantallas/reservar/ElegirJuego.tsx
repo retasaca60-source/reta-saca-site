@@ -88,7 +88,6 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
         })}
       </ul>
 
-      <p className="inicio-nota">El precio es por mesa, jueguen 2 o 4.</p>
     </>
   )
 }

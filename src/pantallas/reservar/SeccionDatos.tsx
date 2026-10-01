@@ -19,7 +19,7 @@ export function SeccionDatos({ borrador, despachar, config }: Props) {
 
   return (
     <>
-      <h2 className="titulo-seccion">¿A nombre de quién?</h2>
+      <h2 className="titulo-seccion">Datos</h2>
       <div className="grupo">
         <div className="campo-form">
           <label htmlFor="ff-name">Nombre</label>

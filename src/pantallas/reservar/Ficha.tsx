@@ -79,26 +79,66 @@ export function Ficha({ borrador, despachar, config }: Props) {
       </div>
 
       <section className="ficha-hoja">
-        <h1 className="ficha-titulo">{d.nombre}</h1>
+                <h1 className="ficha-titulo">{d.nombre}</h1>
 
+        <SeccionHorario
+          borrador={borrador}
+          despachar={despachar}
+          config={config}
+          deporte={deporte}
+        />
+
+        {/* La aclaración se muestra al elegir Popdarts, junto a sus horarios. */}
+        {deporte === 'popdarts' && (
+          <p className="nota">
+            El precio es por mesa, jueguen 2 o 4.
+          </p>
+        )}
+
+        {/* Primero se elige el horario y después cómo se pagará. */}
         {d.seDivide ? (
           <>
             <h2 className="titulo-seccion">¿Cómo pagan?</h2>
-            <div className="segmentado" role="group" aria-label="Cómo pagan">
+
+            <div
+              className="segmentado"
+              role="group"
+              aria-label="Cómo pagan"
+            >
               {FORMAS.map((f) => (
-                <button key={f.partes} type="button" aria-pressed={partes === f.partes} onClick={() => despachar({ tipo: 'elegirPartes', partes: f.partes })}>
+                <button
+                  key={f.partes}
+                  type="button"
+                  aria-pressed={partes === f.partes}
+                  onClick={() =>
+                    despachar({
+                      tipo: 'elegirPartes',
+                      partes: f.partes,
+                    })
+                  }
+                >
                   {f.nombre}
                 </button>
               ))}
             </div>
-            <p className="nota">El precio es por mesa. Si lo dividen, tú pagas tu parte al reservar y les mandas un link a tus amigos; o la pagan en el local.</p>
+
+            <p className="nota">
+              El precio es por mesa. Si lo dividen, tú pagas tu parte
+              al reservar y les mandas un link a tus amigos; o la
+              pagan en el local.
+            </p>
           </>
         ) : (
-          <p className="nota">El precio es por mesa y se paga completo al reservar.</p>
+          <p className="nota">
+            Se paga completo al reservar.
+          </p>
         )}
 
-        <SeccionHorario borrador={borrador} despachar={despachar} config={config} deporte={deporte} />
-        <SeccionDatos borrador={borrador} despachar={despachar} config={config} />
+        <SeccionDatos
+          borrador={borrador}
+          despachar={despachar}
+          config={config}
+        />
 
         {error && (
           <p className="aviso aviso-error" role="alert">
