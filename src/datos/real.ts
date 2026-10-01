@@ -46,6 +46,9 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     iniciarPago: (token, parteIds, nombre) => llamar<{ url: string }>('iniciarPago', { token, parteIds, nombre }),
     reservaPorTokenPrivado: (token) => llamar<Reserva | null>('reservaPorTokenPrivado', { token }),
     vistaDeCobro: (token) => llamar<VistaDeCobro | null>('vistaDeCobro', { token }),
+    verificarPagoEnLinea: async (pagoId) => {
+      await llamar<null>('verificarPagoEnLinea', { pagoId })
+    },
     cancelarComoCliente: (token) => llamar<Reserva>('cancelarComoCliente', { token }),
 
     sesion: () => llamar<Usuario | null>('yo'),

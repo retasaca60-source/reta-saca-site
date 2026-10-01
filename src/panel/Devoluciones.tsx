@@ -31,14 +31,17 @@ export function Devoluciones() {
 function Devolucion({ r, alResolver }: { r: Reserva; alResolver: () => void }) {
   const [ocupado, setOcupado] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const pagos = r.partes.filter((p) => p.pago?.medio === 'en_linea' && !p.pago.devuelto)
+  // En una vigente, lo que se devuelve es un pago que llegó sin mesa (la nota),
+  // no los pagos que sí cuentan.
+  const pagos = r.estado === 'cancelada' ? r.partes.filter((p) => p.pago?.medio === 'en_linea' && !p.pago.devuelto) : []
   const monto = formatoDinero(r.devolucion!.monto)
-  const quien = r.cancelacion?.motivo === 'negocio' ? `la canceló ${r.cancelacion.por ?? 'el negocio'}` : 'la canceló el cliente'
+  const quien =
+    r.estado !== 'cancelada' ? 'reserva vigente' : r.cancelacion?.motivo === 'negocio' ? `la canceló ${r.cancelacion.por ?? 'el negocio'}` : 'la canceló el cliente'
 
   const resolver = async (decision: 'transferida' | 'sin_devolucion') => {
     const pregunta =
       decision === 'transferida'
-        ? `¿Ya se transfirieron ${monto} a ${r.organizador.nombre}? Deja de contar como cobrado en la caja.`
+        ? `¿Ya se transfirieron ${monto}? Deja de contar como cobrado en la caja.`
         : `¿No se le devuelve nada a ${r.organizador.nombre}? El cliente lo verá en su reserva.`
     if (!confirm(pregunta)) return
     setOcupado(true)
@@ -65,7 +68,8 @@ function Devolucion({ r, alResolver }: { r: Reserva; alResolver: () => void }) {
         {r.folio} · {etiquetaFecha(r.fecha)}, {formatoHora(r.inicio)} · {quien}
       </small>
       {r.organizador.whatsapp && <small>WhatsApp {whatsappLegible(r.organizador.whatsapp)}</small>}
-      <small>Pagaron en línea: {pagos.map((p) => `${p.pago!.nombre} ${formatoDinero(p.monto)}`).join(', ')}</small>
+      {pagos.length > 0 && <small>Pagaron en línea: {pagos.map((p) => `${p.pago!.nombre} ${formatoDinero(p.monto)}`).join(', ')}</small>}
+      {r.devolucion!.nota && <small>{r.devolucion!.nota}</small>}
       <div className="fila-acciones">
         <button type="button" className="panel-boton primario" disabled={ocupado} onClick={() => resolver('transferida')}>
           Ya se transfirió

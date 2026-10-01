@@ -47,7 +47,7 @@ export function repositorioPostgres(sql: Sql): Repositorio {
       (
         await q`
           select datos from public.reservas
-          where estado = 'cancelada' and datos -> 'devolucion' ->> 'estado' = 'por_revisar'
+          where datos -> 'devolucion' ->> 'estado' = 'por_revisar'
           order by datos -> 'cancelacion' ->> 'en' desc`
       ).map((f) => f.datos as Reserva),
 

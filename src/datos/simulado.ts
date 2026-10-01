@@ -241,6 +241,8 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         const r = e.reservas.find((x) => x.tokenCobro === token)
         return r ? op.vistaDeCobro(r) : null
       }),
+    // En la simulación no hay Mercado Pago: el pago ya quedó al confirmar la pantalla simulada.
+    verificarPagoEnLinea: async () => {},
     cancelarComoCliente: (token) =>
       cambiar((e) => poner(e, op.cancelarComoCliente(contexto(e), existe(e.reservas.find((x) => x.tokenPrivado === token))))),
 

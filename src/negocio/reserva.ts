@@ -26,8 +26,12 @@ export interface Pago {
  * hecho que Mercado Pago lo regresaba solo; el negocio prefirió decidir él.
  */
 export interface Devolucion {
-  /** Lo pagado en línea al momento de cancelar. */
+  /** Lo pagado en línea al momento de cancelar, más `extra`. */
   monto: number
+  /** Cobrado en línea sin quedar en ninguna parte: se pagó cuando ya no había mesa. */
+  extra?: number
+  /** Qué pasó, cuando no es una cancelación normal. */
+  nota?: string
   estado: 'por_revisar' | 'transferida' | 'sin_devolucion'
   /** Quién de recepción lo resolvió, y cuándo (ISO). */
   por?: string

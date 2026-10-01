@@ -8,10 +8,11 @@
 // puede decidir: quién es quién, la hora, y que todo lo que ocupa mesa se
 // revise y guarde en una sola transacción.
 
-import type { Rol, Usuario } from '../datos/contrato'
+import type { IntentoDePago, Rol, Usuario } from '../datos/contrato'
 import { MINIMO_CONTRASENA, normalizarUsuario, usuarioValido } from '../datos/usuarios'
 import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
 import { ErrorDeDatos, type CodigoDeError } from '../negocio/errores'
+import { formatoDinero } from '../negocio/formato'
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
 import type { ClienteSinReserva, SolicitudDeReserva } from '../negocio/operaciones'
@@ -26,6 +27,35 @@ export interface Cuentas {
   borrar(id: string): Promise<void>
 }
 
+/** Lo que se le pide a Mercado Pago. La versión de verdad está en supabase/fuentes/mercadopago.ts. */
+export interface MercadoPago {
+  /** Crea el cobro (una "preferencia" de Checkout Pro) y devuelve a dónde mandar a quien paga. */
+  crearCobro(c: CobroNuevo): Promise<string>
+  /** Pregunta por un pago directamente a Mercado Pago. null si no existe. */
+  consultarPago(id: string): Promise<PagoDeMercadoPago | null>
+}
+
+export interface CobroNuevo {
+  /** El id del intento: Mercado Pago lo devuelve como referencia en cada pago. */
+  intentoId: string
+  titulo: string
+  monto: number
+  /** URL completa a la que regresa al terminar, sin parámetros. */
+  volverA: string
+  /** Hasta cuándo se puede pagar (ms): el fin del apartado. null si la mesa ya es suya. */
+  venceEn: number | null
+}
+
+export interface PagoDeMercadoPago {
+  id: string
+  /** "approved", "rejected", "in_process"… */
+  estado: string
+  /** La referencia con la que se creó el cobro: el id del intento. */
+  referencia: string | null
+  monto: number
+  moneda: string
+}
+
 export interface Entorno {
   repo: Repositorio
   /** Hora del servidor en ms. */
@@ -35,10 +65,18 @@ export interface Entorno {
   cuentas: Cuentas
   /**
    * Mientras no haya Mercado Pago, el pago en línea es la pantalla simulada
-   * (/pago/<id>). Con esto apagado, iniciarPago no deja pagar en línea.
+   * (/pago/<id>). Con Mercado Pago conectado se ignora: si no, cualquiera
+   * podría confirmar desde la pantalla simulada un cobro que nunca pagó.
    */
   pagosSimulados: boolean
+  /** Mercado Pago, si hay llave (MP_ACCESS_TOKEN). */
+  mercadoPago: MercadoPago | null
+  /** De dónde viene quien paga ("https://…"), para que Mercado Pago lo regrese ahí. */
+  sitio: string
 }
+
+/** La pantalla simulada solo existe mientras no haya Mercado Pago de verdad. */
+const conPagoSimulado = (e: Entorno) => e.pagosSimulados && !e.mercadoPago
 
 export interface Peticion {
   accion: string
@@ -174,6 +212,47 @@ function enPanel(f: (d: Datos, ctx: op.Contexto, r: Reserva, quien: Usuario) => 
   }
 }
 
+/**
+ * Registra un pago de Mercado Pago: lo usan el aviso de Mercado Pago y el
+ * regreso de quien pagó, y da igual cuál llegue primero o si llegan los dos.
+ *
+ * Nada de lo que manda quien llama se cree: con el id se le pregunta a
+ * Mercado Pago, y solo cuenta un pago aprobado, en pesos, por el monto exacto
+ * del intento. Lanza si Mercado Pago no contesta, para que el aviso se
+ * reintente; lo demás (un id que no es nuestro, un pago rechazado) se ignora.
+ */
+export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<void> {
+  if (!e.mercadoPago || !/^\d{1,30}$/.test(pagoId)) return
+  const pago = await e.mercadoPago.consultarPago(pagoId)
+  if (!pago || pago.estado !== 'approved' || !pago.referencia) return
+  const referencia = pago.referencia
+  await e.repo.enTransaccion(async (repo) => {
+    const intento = await repo.intento(referencia)
+    if (!intento || intento.resultado === 'pagado') return
+    if (pago.monto !== intento.monto || pago.moneda !== 'MXN') {
+      console.error('[mercadopago] el pago no coincide con su intento', pago.id, intento.id)
+      return
+    }
+    const ctx = await contexto(e, repo)
+    const r = await reservaPor(repo, 'id', intento.reservaId, ctx.ahora)
+    try {
+      await repo.guardar(op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
+    } catch (error) {
+      if (!(error instanceof ErrorDeDatos)) throw error
+      // Mercado Pago ya cobró, pero la mesa se fue o alguien pagó esas partes
+      // antes: el dinero entró y queda por devolver, como una cancelación.
+      // La nota no copia el mensaje del error: ese le habla a quien paga ("no
+      // se hizo ningún cobro") y aquí el cobro sí se hizo.
+      const motivo =
+        error.codigo === 'apartado_vencido'
+          ? 'el apartado ya se había vencido y la mesa estaba ocupada'
+          : 'esas partes ya estaban pagadas o la reserva estaba cancelada'
+      await repo.guardar(op.pagoSinLugar(r, intento.monto, `${intento.nombre} pagó ${formatoDinero(intento.monto)} en línea, pero ${motivo}.`))
+    }
+    await repo.cerrarIntento(intento.id, 'pagado')
+  })
+}
+
 // ─── Las acciones ────────────────────────────────────────────────────────
 
 type Accion = (d: Datos, entorno: Entorno) => Promise<unknown>
@@ -207,8 +286,9 @@ const ACCIONES: Record<string, Accion> = {
     const token = texto(d, 'token')
     const parteIds = textos(d, 'parteIds')
     const nombre = texto(d, 'nombre', true)
-    if (!e.pagosSimulados) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos. Paga en el local.')
-    return e.repo.enTransaccion(async (repo) => {
+    if (!e.mercadoPago && !conPagoSimulado(e)) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos. Paga en el local.')
+    const config = await e.repo.config()
+    const { intento, reserva } = await e.repo.enTransaccion(async (repo) => {
       const ahora = e.ahora()
       const r = (await repo.reservaPor('tokenPrivado', token)) ?? (await repo.reservaPor('tokenCobro', token))
       if (!r) throw noEncontrada()
@@ -217,9 +297,33 @@ const ACCIONES: Record<string, Accion> = {
       const pago = op.prepararPago(actual, parteIds, delOrganizador ? actual.organizador.nombre : nombre)
       const id = nuevoId()
       const volverA = delOrganizador ? `/r/${actual.tokenPrivado}` : `/c/${actual.tokenCobro}`
-      await repo.crearIntento({ id, reservaId: actual.id, parteIds, ...pago, volverA, resultado: null })
-      return { url: `/pago/${id}` }
+      const intento: IntentoDePago = { id, reservaId: actual.id, parteIds, ...pago, volverA, resultado: null }
+      await repo.crearIntento(intento)
+      return { intento, reserva: actual }
     })
+    if (!e.mercadoPago) return { url: `/pago/${intento.id}` }
+    // Fuera de la transacción: mientras Mercado Pago contesta, nadie más
+    // tiene por qué esperar el candado de las mesas.
+    const url = await e.mercadoPago.crearCobro({
+      intentoId: intento.id,
+      titulo: `Reta Saca · ${config.deportes[reserva.deporte].nombre} · ${reserva.folio}`,
+      monto: intento.monto,
+      volverA: e.sitio + intento.volverA,
+      venceEn: reserva.estado === 'apartada' ? reserva.apartadaHasta : null,
+    })
+    return { url }
+  },
+
+  /**
+   * Quien regresa de Mercado Pago trae el id de su pago: se registra en ese
+   * momento, sin esperar el aviso de Mercado Pago (que puede tardar). Lo que
+   * manda el navegador es solo el id; si se pagó y cuánto, se le pregunta a
+   * Mercado Pago.
+   */
+  verificarPagoEnLinea: async (d, e) => {
+    if (!e.mercadoPago) return null
+    await registrarPagoEnLinea(texto(d, 'pagoId'), e)
+    return null
   },
 
   reservaPorTokenPrivado: async (d, e) => {
@@ -246,7 +350,7 @@ const ACCIONES: Record<string, Accion> = {
   // ── Pago simulado (solo mientras no hay Mercado Pago) ──
 
   pagoSimuladoObtener: async (d, e) => {
-    if (!e.pagosSimulados) return null
+    if (!conPagoSimulado(e)) return null
 
     const intento = await e.repo.intento(texto(d, 'id'))
     const reserva = intento && (await e.repo.reservaPor('id', intento.reservaId))
@@ -270,7 +374,7 @@ const ACCIONES: Record<string, Accion> = {
   },
 
   pagoSimuladoConfirmar: async (d, e) => {
-    if (!e.pagosSimulados) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos.')
+    if (!conPagoSimulado(e)) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos.')
     const id = texto(d, 'id')
     return e.repo.enTransaccion(async (repo) => {
       const intento = await repo.intento(id)
@@ -285,6 +389,7 @@ const ACCIONES: Record<string, Accion> = {
   },
 
   pagoSimuladoRechazar: async (d, e) => {
+    if (!conPagoSimulado(e)) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos.')
     const intento = await e.repo.intento(texto(d, 'id'))
     if (!intento) throw new ErrorDeDatos('no_encontrada', 'Ese pago no existe.')
     await e.repo.cerrarIntento(intento.id, 'cancelado')

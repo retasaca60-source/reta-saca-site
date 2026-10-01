@@ -137,10 +137,11 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   if (r.estado === 'cancelada') {
     const motivo = { cliente: 'Canceló el cliente', negocio: 'Cancelada por el negocio', no_llego: 'No llegaron', apartado_vencido: 'No pagó a tiempo' }
     e.push(['apagada', r.cancelacion ? motivo[r.cancelacion.motivo] : 'Cancelada'])
-    if (r.devolucion?.estado === 'por_revisar') e.push(['aviso', `Devolución por revisar ${formatoDinero(r.devolucion.monto)}`])
-    if (r.devolucion?.estado === 'transferida') e.push(['neutra', 'Devolución transferida'])
-    if (r.devolucion?.estado === 'sin_devolucion') e.push(['neutra', 'Sin devolución'])
   }
+  // También en una vigente: un pago que llegó cuando ya no había lugar.
+  if (r.devolucion?.estado === 'por_revisar') e.push(['aviso', `Devolución por revisar ${formatoDinero(r.devolucion.monto)}`])
+  if (r.devolucion?.estado === 'transferida') e.push(['neutra', 'Devolución transferida'])
+  if (r.devolucion?.estado === 'sin_devolucion') e.push(['neutra', 'Sin devolución'])
   if (r.origen === 'mostrador') e.push(['neutra', 'Sin reserva'])
   if (r.llegaronEn && r.estado !== 'cancelada') e.push(['bien', r.mesa ? `En ${r.mesa}` : 'Llegaron'])
   else if (puedeLiberarPorRetraso(r, config, Date.now())) e.push(['mal', 'Retraso'])

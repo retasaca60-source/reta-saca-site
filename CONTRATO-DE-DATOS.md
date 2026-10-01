@@ -3,7 +3,7 @@
 Para quien trabaja en **Supabase y Mercado Pago**. La versión real ya existe y
 corre en Supabase; cómo quedaron las tablas, los permisos y cómo se sube un
 cambio está en [`BASE-DE-DATOS.md`](BASE-DE-DATOS.md). Aquí está el contrato
-que cualquier versión tiene que cumplir y lo que falta (Mercado Pago).
+que cualquier versión tiene que cumplir y cómo se cobra con Mercado Pago.
 
 ## La idea en una línea
 
@@ -88,7 +88,7 @@ nunca solo en el código de las pantallas:
 | **Quién ve qué**: el link de cobro **no** devuelve el WhatsApp del organizador ni su token privado | El link de cobro se reenvía en grupos. |
 | **Roles**: solo el dueño cambia configuración y usuarios | Recepción no debe poder cambiar precios. |
 | **Marcar pagos**: queda quién lo marcó (`marcadoPor`), lo pone el servidor con el usuario de la sesión | Lo que da fe no lo escribe el interesado. |
-| **Confirmar un pago en línea**: solo por el aviso (webhook) de Mercado Pago | Si el navegador pudiera decir "ya pagué", cualquiera lo diría. |
+| **Confirmar un pago en línea**: solo preguntándole a Mercado Pago por el pago | Si el navegador pudiera decir "ya pagué", cualquiera lo diría. |
 
 Dos trampas de Supabase que conviene tener presentes: "RLS filtra filas, no columnas" (una
 política que deja editar la fila deja editar TODAS sus columnas: estados y
@@ -154,27 +154,37 @@ búsqueda calculadas de ahí), con su diagrama, están en
 
 ## Pagos con Mercado Pago
 
-1. `iniciarPago` crea una **preferencia** de Checkout Pro con el monto de las
-   partes, `external_reference` = id del intento, `back_urls` a
-   `/r/<token>?pago=aprobado` (o `/c/<token>`), y **sin OXXO**
-   (`excluded_payment_types: ticket`): se confirma horas después y la mesa no
-   puede quedar apartada tanto tiempo.
-2. El cliente paga en Mercado Pago y regresa. **Regresar no confirma nada.**
-3. El **webhook** de Mercado Pago (una acción nueva de la Edge Function `api`) consulta el pago,
-   y si está aprobado marca las partes como pagadas y la reserva como
-   confirmada. Si el apartado ya venció y la mesa ya no está, reembolsa y lo
-   deja registrado.
-4. Reembolsos (cancelaciones): API de reembolsos de Mercado Pago con el
-   `mp_pago_id` de cada parte.
-5. Las llaves de Mercado Pago van en los secretos de la función (*Edge
-   Functions → Secrets* en Supabase), **nunca** en el código ni con prefijo
-   `VITE_` (lo que empieza con `VITE_` se publica en el sitio).
+Checkout Pro con la API de Preferences, sin el SDK: son dos llamadas
+(`supabase/fuentes/mercadopago.ts`).
 
-Mientras no haya Mercado Pago, la pantalla `/pago/<id>`
-(`src/pantallas/pago-simulado`) ocupa su lugar en las dos versiones; en la real
-solo funciona si la función tiene el secreto `PAGOS_SIMULADOS=si`. Cuando entre
-Mercado Pago se quita ese secreto y `iniciarPago` devuelve la URL de Mercado
-Pago.
+1. `iniciarPago` crea una **preferencia** por el monto de las partes, con
+   `external_reference` = id del intento, regreso a `/r/<token>` o
+   `/c/<token>` (`?pago=aprobado|cancelado`), `binary_mode` (aprobado o
+   rechazado, sin "pendiente") y **solo pagos que se confirman al momento**:
+   fuera OXXO, cajeros y transferencias, porque la mesa se aparta 10 minutos.
+   La preferencia **vence con el apartado**.
+2. El cliente paga en Mercado Pago y regresa con `payment_id` en la URL. La
+   página manda ese id al servidor (`verificarPagoEnLinea`) para no esperar el
+   aviso. **El id no confirma nada por sí solo.**
+3. Mercado Pago también avisa a la función (`/functions/v1/api?aviso=mercadopago`).
+   En los dos casos el servidor **le pregunta a Mercado Pago por el pago** con
+   su llave y solo cuenta uno **aprobado, en MXN y por el monto exacto** del
+   intento. Da igual cuál llegue primero o si llega dos veces: se registra una
+   vez (`registrarPagoEnLinea` en `src/servidor/api.ts`).
+4. Si el pago llega cuando ya no hay mesa (se venció el apartado y otro la
+   tomó), la reserva no cambia y el dinero queda como **devolución por
+   revisar**, con una nota de qué pasó.
+5. **Devoluciones**: no pasan por Mercado Pago. El negocio decide y transfiere
+   desde su banco (`RESERVAS.md` §7).
+6. La llave va en los secretos de la función (`MP_ACCESS_TOKEN`), **nunca** en
+   el código ni con prefijo `VITE_` (lo que empieza con `VITE_` se publica en
+   el sitio). Con la llave de prueba se cobra de mentira; para cobrar de
+   verdad solo se cambia por la de producción del negocio.
+
+Sin `MP_ACCESS_TOKEN`, la pantalla `/pago/<id>` (`src/pantallas/pago-simulado`)
+ocupa el lugar de Mercado Pago si la función tiene `PAGOS_SIMULADOS=si`. Con la
+llave puesta, esa pantalla deja de funcionar aunque el secreto siga: si no,
+cualquiera confirmaría ahí un cobro que nunca pagó.
 
 ## Casos que la versión real debe pasar
 

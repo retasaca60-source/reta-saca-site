@@ -187,7 +187,9 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 
 | Nombre | Valor | Para qué |
 |---|---|---|
-| `PAGOS_SIMULADOS` | `si` | Mientras no haya Mercado Pago, el pago en línea es la pantalla de prueba. **Sin Mercado Pago no se debe abrir al público**: cualquiera "paga" sin pagar. |
+| `MP_ACCESS_TOKEN` | El *Access Token* de Mercado Pago | Con él, el pago en línea va por Mercado Pago. El de **prueba** cobra de mentira; para abrir al público se cambia por el de **producción** de la cuenta del negocio. |
+| `MP_USAR_SANDBOX` | `si` (opcional) | Solo si con la llave de prueba Mercado Pago pide su página de pruebas (`sandbox_init_point`) en vez de la normal. |
+| `PAGOS_SIMULADOS` | `si` | Sin `MP_ACCESS_TOKEN`, el pago en línea es la pantalla de prueba del sitio. Con la llave puesta se ignora. **Sin Mercado Pago no se debe abrir al público**: cualquiera "paga" sin pagar. |
 
 `SUPABASE_URL`, `SUPABASE_DB_URL` y las llaves de servidor las pone Supabase
 solo; ninguna llave secreta va en el código.
@@ -209,8 +211,9 @@ demostración, con los datos en el navegador.
 
 ## Pendiente
 
-- **Mercado Pago**: crear la preferencia en `iniciarPago` y confirmar solo por
-  el aviso (webhook), que será otra acción de la misma función.
+- **Mercado Pago de producción**: el cobro ya está conectado y se prueba con la
+  llave de prueba. Para cobrar de verdad falta la cuenta del negocio y cambiar
+  `MP_ACCESS_TOKEN` por su llave de producción.
 - **Que Supabase no pause el proyecto**: los proyectos gratis se pausan tras
   una semana sin actividad.
 - **La cuenta de dueño**: se crea en la entrega (arriba).

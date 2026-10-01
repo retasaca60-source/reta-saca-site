@@ -205,7 +205,11 @@ export function resolverDevolucion(ctx: Contexto, r: Reserva, decision: 'transfe
   if (r.devolucion?.estado !== 'por_revisar') throw new ErrorDeDatos('no_permitido', 'Esta reserva no tiene una devolución por revisar.')
   const nueva = copia(r)
   // Lo transferido deja de contar como cobrado, en la reserva y en la caja.
-  if (decision === 'transferida') for (const p of nueva.partes) if (p.pago?.medio === 'en_linea') p.pago.devuelto = true
+  // Solo en una cancelada: en una vigente lo devuelto es un pago que llegó de
+  // más (sin parte), y los pagos que sí cuentan se quedan.
+  if (decision === 'transferida' && r.estado === 'cancelada') {
+    for (const p of nueva.partes) if (p.pago?.medio === 'en_linea') p.pago.devuelto = true
+  }
   nueva.devolucion = { ...r.devolucion, estado: decision, por: quien, en: new Date(ctx.ahora).toISOString() }
   return nueva
 }

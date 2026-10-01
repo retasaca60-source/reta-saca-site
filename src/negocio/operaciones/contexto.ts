@@ -24,6 +24,8 @@ export const copia = (r: Reserva): Reserva => structuredClone(r)
  * arregla en persona y ya está cuadrado en la caja de su día.
  */
 export function abrirDevolucion(r: Reserva): void {
-  const monto = pagadoEnLinea(r)
-  r.devolucion = monto > 0 ? { monto, estado: 'por_revisar' } : null
+  const previa = r.devolucion?.estado === 'por_revisar' ? r.devolucion : null
+  const extra = previa?.extra ?? 0
+  const monto = pagadoEnLinea(r) + extra
+  r.devolucion = monto > 0 ? { ...previa, monto, estado: 'por_revisar' } : null
 }

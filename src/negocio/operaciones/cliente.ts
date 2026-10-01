@@ -146,6 +146,23 @@ export function cancelarComoCliente(ctx: Contexto, r: Reserva): Reserva {
   return nueva
 }
 
+/**
+ * Mercado Pago cobró un pago que ya no se pudo aplicar (se fue la mesa, o
+ * alguien pagó esas partes antes). La reserva no cambia; el dinero queda por
+ * devolver junto con lo que ya hubiera pendiente.
+ */
+export function pagoSinLugar(r: Reserva, monto: number, nota: string): Reserva {
+  const nueva = copia(r)
+  const previa = r.devolucion?.estado === 'por_revisar' ? r.devolucion : null
+  nueva.devolucion = {
+    monto: (previa?.monto ?? 0) + monto,
+    extra: (previa?.extra ?? 0) + monto,
+    estado: 'por_revisar',
+    nota: previa?.nota ? `${previa.nota} ${nota}` : nota,
+  }
+  return nueva
+}
+
 /** Un apartado cuyo plazo pasó sin pagar deja de ocupar mesa. null si no aplica. */
 export function vencerApartado(r: Reserva, ahora: number): Reserva | null {
   if (r.estado !== 'apartada' || r.apartadaHasta === null || r.apartadaHasta > ahora) return null

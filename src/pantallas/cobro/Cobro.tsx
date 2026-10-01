@@ -9,12 +9,17 @@ import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { formatoDinero } from '../../negocio/formato'
 import { nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
+import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 
 export default function Cobro() {
   const { token = '' } = useParams()
   const [busqueda] = useSearchParams()
   const navegar = useNavigate()
-  const { datos, cargando, error } = usarDatos(() => Promise.all([servicio.vistaDeCobro(token), servicio.configuracion()]), [token])
+  const pagoId = pagoDeMercadoPago(busqueda)
+  const { datos, cargando, error } = usarDatos(async () => {
+    await registrarAlVolver(pagoId)
+    return Promise.all([servicio.vistaDeCobro(token), servicio.configuracion()])
+  }, [token, pagoId])
   const [nombre, setNombre] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [errorPago, setErrorPago] = useState<string | null>(null)

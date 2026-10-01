@@ -11,6 +11,7 @@ import { formatoDinero } from '../../negocio/formato'
 import { pagado, pagadoEnLinea, pendiente, total, type Reserva } from '../../negocio/reserva'
 import { fechaLarga, formatoHora, instante, momentoDe, nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
+import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 import './mi-reserva.css'
 
 export default function MiReserva() {
@@ -18,7 +19,11 @@ export default function MiReserva() {
   const navegar = useNavigate()
   const [busqueda] = useSearchParams()
   const pago = busqueda.get('pago')
-  const { datos, cargando, error } = usarDatos(() => Promise.all([servicio.reservaPorTokenPrivado(token), servicio.configuracion()]), [token])
+  const pagoId = pagoDeMercadoPago(busqueda)
+  const { datos, cargando, error } = usarDatos(async () => {
+    await registrarAlVolver(pagoId)
+    return Promise.all([servicio.reservaPorTokenPrivado(token), servicio.configuracion()])
+  }, [token, pagoId])
   const [accion, setAccion] = useState<string | null>(null)
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
   const [confirmandoCancelar, setConfirmandoCancelar] = useState(false)

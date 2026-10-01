@@ -86,6 +86,8 @@ export interface ServicioDeDatos {
    */
   iniciarPago(token: string, parteIds: string[], nombre: string): Promise<{ url: string }>
   reservaPorTokenPrivado(token: string): Promise<Reserva | null>
+  /** Al regresar de Mercado Pago: registra ese pago si está aprobado. Lo decide Mercado Pago, no el navegador. */
+  verificarPagoEnLinea(pagoId: string): Promise<void>
   vistaDeCobro(tokenCobro: string): Promise<VistaDeCobro | null>
   /** Cancela desde el link privado. Si pagó en línea, la devolución queda por revisar (la decide el negocio). */
   cancelarComoCliente(tokenPrivado: string): Promise<Reserva>
@@ -107,7 +109,7 @@ export interface ServicioDeDatos {
   cambiarHorario(reservaId: string, fecha: string, inicio: number): Promise<Reserva>
   /** Cancelación del negocio: lo pagado en línea queda por devolver. */
   cancelarComoNegocio(reservaId: string): Promise<Reserva>
-  /** Canceladas con pagos en línea cuya devolución nadie ha resuelto, de cualquier fecha. */
+  /** Reservas con devolución por revisar (canceladas, o con un pago que llegó sin mesa), de cualquier fecha. */
   devolucionesPorRevisar(): Promise<Reserva[]>
   /** El negocio transfirió la devolución por su banco, o decidió que no hay. */
   resolverDevolucion(reservaId: string, decision: 'transferida' | 'sin_devolucion'): Promise<Reserva>
