@@ -105,7 +105,7 @@ enlaces simbólicos de `.claude/skills` no se siguen).
   repositorio privado, Netlify gratis solo publica los cambios de UNA persona,
   y somos dos). Nada secreto va en el código: contraseñas y llaves, en variables de
   entorno de Netlify.
-- Sitio: por ahora en **https://retasaca-hmo.netlify.app** (una cuenta
+- Sitio: por ahora en **https://retasaca-hmo2.netlify.app** (una cuenta
   temporal de Netlify, con datos reales de Supabase) mientras regresan los
   créditos de la cuenta del negocio (`reta-saca.netlify.app`).
 - **Un `git push` ya no publica nada.** Netlify cobra créditos por cada

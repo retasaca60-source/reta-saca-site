@@ -60,7 +60,7 @@ beforeEach(async () => {
     cuentas: { crear: async () => 'x', borrar: async () => {} },
     // Encendido a propósito: con Mercado Pago conectado no debe servir de nada.
     pagosSimulados: true,
-    sitio: 'https://retasaca-hmo.netlify.app',
+    sitio: 'https://retasaca-hmo2.netlify.app',
     mercadoPago: {
       crearCobro: async (c) => {
         cobros.push(c)
@@ -77,7 +77,7 @@ describe('con Mercado Pago', () => {
     expect(url).toBe(`https://mercadopago.test/checkout/${cobro.intentoId}`)
     expect(cobro.monto).toBe(r.partes[0].monto)
     expect(cobro.venceEn).toBe(r.apartadaHasta)
-    expect(cobro.volverA).toBe(`https://retasaca-hmo.netlify.app/r/${r.tokenPrivado}`)
+    expect(cobro.volverA).toBe(`https://retasaca-hmo2.netlify.app/r/${r.tokenPrivado}`)
     expect(cobro.titulo).toContain(r.folio)
   })
 
