@@ -130,25 +130,27 @@ export function Ficha({ borrador, despachar, config }: Props) {
             </div>
 
             {partes > 1 && (
-              <div className="grupo">
-                <div className="campo-form">
-                  <label htmlFor="dividir-pago">
-                    ¿Entre cuántos dividen el pago?
-                  </label>
-
-                  <select
-                    id="dividir-pago"
-                    value={partes}
-                    onChange={(e) =>
-                      despachar({
-                        tipo: 'elegirPartes',
-                        partes: Number(e.target.value) as Partes,
-                      })
-                    }
-                  >
-                    <option value={2}>Entre 2 personas</option>
-                    <option value={4}>Entre 4 personas</option>
-                  </select>
+              // Las mismas pastillas que "¿Cómo pagan?" y no un <select>: el menú
+              // nativo de Windows rompía el diseño y la pregunta, metida en la
+              // columna de 88 px de los campos, se partía palabra por palabra.
+              // Cada opción dice cuánto le toca al organizador, que es lo que
+              // está decidiendo.
+              <div className="dividir">
+                <span className="dividir-titulo" id="dividir-titulo">
+                  ¿Entre cuántos dividen?
+                </span>
+                <div className="segmentado" role="group" aria-labelledby="dividir-titulo">
+                  {([2, 4] as Partes[]).map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      aria-pressed={partes === n}
+                      onClick={() => despachar({ tipo: 'elegirPartes', partes: n })}
+                    >
+                      Entre {n}
+                      {precio !== null && <span className="dividir-monto"> · {formatoDinero(repartir(precio, n)[0])}</span>}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}

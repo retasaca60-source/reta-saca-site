@@ -398,3 +398,8 @@
 .juego-precio b {
   font-size: 21px;
 }
+
+/* ── Entre cuántos dividen: segunda fila de pastillas, un escalón abajo ── */
+.dividir { display: grid; gap: 8px; margin-top: 12px; }
+.dividir-titulo { padding-left: 6px; color: var(--tinta-2); font-size: 13px; font-weight: 600; }
+.dividir-monto { font-weight: 500; opacity: 0.8; font-variant-numeric: tabular-nums; }
