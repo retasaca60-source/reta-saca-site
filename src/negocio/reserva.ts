@@ -128,10 +128,6 @@ export function puedeLiberarPorRetraso(r: Reserva, config: Configuracion, ahoraM
   )
 }
 
-/** Si la reserva sigue vigente para contarla como "activa" (límite por WhatsApp). */
-export function estaActiva(r: Reserva, ahoraMs: number): boolean {
-  return ocupaMesa(r, ahoraMs) && instante(r.fecha, fin(r)) > ahoraMs
-}
 
 /** Duraciones con que se puede extender una reserva: de 30 en 30, hasta 2 horas más. */
 export const EXTENSIONES: Duracion[] = [30, 60, 90, 120]

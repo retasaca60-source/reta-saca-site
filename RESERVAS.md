@@ -320,11 +320,11 @@ primero**, sin vender la misma mesa dos veces:
 
 ## 8. Límites contra abusos
 
-- **Máximo 2 reservas activas por número de WhatsApp.** "Activa" = de hoy en
-  adelante y no cancelada.
-- ¿Por qué? Como la mesa queda firme con la primera parte, alguien podría
-  apartar las 6 mesas de Ping Pong del sábado pagando $37 por cada una y no
-  llegar. Grupos más grandes escriben directo al negocio.
+- No hay un límite de reservas activas por número de WhatsApp.
+- Una persona puede realizar varias reservas con el mismo número,
+  siempre que exista disponibilidad.
+- Se mantienen las validaciones de horario, disponibilidad y vencimiento
+  del apartado de pago.
 
 ---
 
@@ -434,7 +434,7 @@ mentira que ocupa el lugar de Mercado Pago. Ver `CONTRATO-DE-DATOS.md`.
 | Disponibilidad por tramo completo (una reserva de 90 min ocupa la media hora siguiente) | Hecho |
 | Pago dividido: partes en pesos cerrados, apartado de 10 min, firme con el primer pago | Hecho (pago simulado) |
 | Link privado `/r/…` y link de cobro `/c/…` ("mi parte" y "lo que falta") | Hecho |
-| Cancelación con devolución por revisar, máximo 2 reservas por WhatsApp | Hecho |
+| Cancelación con devolución por revisar y reservas sin límite por WhatsApp, sujetas a disponibilidad | Hecho |
 | Botones de WhatsApp (compartir cobro, enviarme mi link, avisar al negocio) | Hecho ("Avisar al negocio" aparece cuando Hugo ponga el número) |
 | Panel: mesas ahora, sentar, cobrar en el local, extender, cambiar, cancelar, liberar | Hecho |
 | Panel: semana, caja del día | Hecho |
@@ -546,3 +546,6 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 30/09/2026 | Tolerancia de 30 minutos | Sustituye la tolerancia anterior de 20 minutos por solicitud del negocio; llegar tarde no recorre el horario. |
 | 30/09/2026 | Mostrar “tablero” y “tableros” para Cornhole en el flujo del cliente | Usar el nombre correcto del equipo, conservando los campos internos de datos. |
 | 30/09/2026 | Dos opciones principales de pago: total o mi parte | Al dividir, un selector permite indicar entre 2 o 4 personas para calcular el cobro. |
+| 30/09/2026 | Inicio compacto con las tres opciones de juego | Las tarjetas comparten el alto disponible; las pantallas muy bajas permiten desplazamiento. Popdarts se conserva mientras se decide su disponibilidad en el local. |
+| 30/09/2026 | Punto final en la confirmación de reserva | Ajuste de presentación solicitado. |
+| 30/09/2026 | Eliminar el máximo de reservas activas por WhatsApp | Se permite reservar varias veces con el mismo número; la disponibilidad sigue limitando las reservas. |

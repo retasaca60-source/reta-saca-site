@@ -216,7 +216,6 @@ export function Configuracion() {
               ['minutosDeCorte', 'Para hoy: minutos antes del inicio'],
               ['minutosDeApartado', 'Minutos que se aparta la mesa al pagar'],
               ['minutosDeTolerancia', 'Minutos de tolerancia al llegar'],
-              ['reservasActivasPorWhatsapp', 'Reservas activas por WhatsApp'],
             ] as const
           ).map(([llave, texto]) => (
             <label key={llave}>

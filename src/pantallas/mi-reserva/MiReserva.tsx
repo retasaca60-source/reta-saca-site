@@ -84,8 +84,8 @@ export default function MiReserva() {
       <h1 className="titulo-grande" style={{ marginTop: 20 }}>
         {recienPagada
   ? r.deporte === 'cornhole'
-    ? '¡Listo! Ya tienen tablero'
-    : '¡Listo! Ya tienen mesa'
+    ? '¡Listo! Ya tienen tablero.'
+    : '¡Listo! Ya tienen mesa.'
   : 'Tu reserva'}
       </h1>
       {recienPagada && <p className="nota">Guarda este link: aquí ves quién ya pagó, compartes el cobro y puedes cancelar.</p>}

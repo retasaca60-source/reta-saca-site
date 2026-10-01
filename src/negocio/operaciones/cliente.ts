@@ -8,7 +8,7 @@ import { ErrorDeDatos } from '../errores'
 import { iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDe } from '../precios'
-import { estaActiva, repartir, type Reserva } from '../reserva'
+import { repartir, type Reserva } from '../reserva'
 import { instante, momentoDe } from '../tiempo'
 import type { DeporteId, Duracion } from '../configuracion'
 import { abrirDevolucion, copia, type Contexto } from './contexto'
@@ -34,11 +34,6 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   if (![1, 2, 4].includes(partes)) throw new ErrorDeDatos('datos_invalidos', 'Solo se divide entre 2 o entre 4.')
   if (!iniciosPosibles(config, s.fecha, s.duracion, momentoDe(ahora)).includes(s.inicio)) {
     throw new ErrorDeDatos('fuera_de_horario', 'Ese horario ya no se puede reservar. Elige otro.')
-  }
-  const maximo = config.reglas.reservasActivasPorWhatsapp
-  const activas = reservas.filter((r) => r.organizador.whatsapp === whatsapp && estaActiva(r, ahora)).length
-  if (activas >= maximo) {
-    throw new ErrorDeDatos('limite_whatsapp', `Ese WhatsApp ya tiene ${activas} reservas activas (el máximo es ${maximo}). Para grupos más grandes, escríbenos.`)
   }
   if (mesasLibres(config, reservas, s.deporte, s.fecha, s.inicio, s.duracion, ahora) < 1) {
     throw new ErrorDeDatos('sin_lugar', 'Alguien acaba de tomar la última mesa de ese horario. Elige otro.')

@@ -62,7 +62,6 @@ export interface Configuracion {
     /** Después de cuántos minutos sin llegar se puede liberar la mesa. */
     minutosDeTolerancia: number
     /** Reservas activas por número de WhatsApp. */
-    reservasActivasPorWhatsapp: number
   }
   /** WhatsApp del negocio, 10 dígitos. Vacío = todavía no lo da Hugo. */
   whatsappNegocio: string
@@ -132,7 +131,6 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     pasoDeInicio: 30,
     minutosDeApartado: 10,
     minutosDeTolerancia: 30,
-    reservasActivasPorWhatsapp: 2,
   },
   whatsappNegocio: '',
 }

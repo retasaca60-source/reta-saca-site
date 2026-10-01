@@ -4,7 +4,6 @@
 export type CodigoDeError =
   | 'sin_lugar' // ya no hay mesa en ese horario
   | 'fuera_de_horario' // cerrado, fuera de la ventana de 7 días o pasado el corte
-  | 'limite_whatsapp' // ese WhatsApp ya tiene el máximo de reservas activas
   | 'datos_invalidos'
   | 'no_encontrada'
   | 'no_permitido' // p. ej. cancelar con devolución fuera de plazo, o recepción editando precios

@@ -98,10 +98,26 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       await s.pagoSimulado.confirmar(url.split('/').pop()!)
       expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.estado).toBe('confirmada')
     })
-    it('máximo 2 reservas activas por WhatsApp', async () => {
-      await reservarYPagar({ inicio: h(17) })
-      await reservarYPagar({ inicio: h(18) })
-      expect(await codigoDe(s.apartar(pedido({ inicio: h(20) })))).toBe('limite_whatsapp')
+     it('permite varias reservas con el mismo WhatsApp sin exceder la capacidad', async () => {
+      // Popdarts tiene 3 lugares: el teléfono puede repetirse,
+      // pero la cuarta reserva del mismo horario debe rechazarse.
+      const reservas = []
+
+      for (let i = 0; i < 3; i++) {
+        reservas.push(await reservarYPagar())
+      }
+
+      expect(new Set(reservas.map((r) => r.id)).size).toBe(3)
+
+      expect(
+        reservas.every(
+          (r) => r.organizador.whatsapp === '6621112233',
+        ),
+      ).toBe(true)
+
+      expect(
+        await codigoDe(s.apartar(pedido())),
+      ).toBe('sin_lugar')
     })
     it('no deja reservar fuera de horario, pasado el corte ni más allá de 7 días', async () => {
       expect(await codigoDe(s.apartar(pedido({ inicio: h(21, 30) })))).toBe('fuera_de_horario') // 60 min terminaría 10:30

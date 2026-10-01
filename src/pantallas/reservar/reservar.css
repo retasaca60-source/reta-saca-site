@@ -313,3 +313,88 @@
 .barra-precio b { font-size: 22px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; }
 .barra-precio span { color: var(--tinta-2); font-size: 13px; }
 .barra-reserva .deslizar { flex: 1; min-width: 0; }
+
+/* Las tres opciones comparten el alto disponible del inicio.
+   En pantallas muy bajas se permite desplazar para conservar la legibilidad. */
+.sitio:has(.juegos) {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100svh;
+  min-height: 560px;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+}
+
+.inicio-marca {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding-top: 8px;
+}
+
+.inicio-titulo {
+  flex-shrink: 0;
+  margin-top: 12px;
+}
+
+.inicio-titulo-2 {
+  width: 75%;
+  margin-top: 4px;
+}
+
+.inicio-malla {
+  bottom: -12px;
+  width: 32%;
+}
+
+.inicio-chispas {
+  display: none;
+}
+
+.juegos {
+  flex: 1;
+  min-height: 384px;
+  grid-template-rows: repeat(3, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.juegos > li {
+  min-height: 0;
+}
+
+.juego {
+  height: 100%;
+  border-radius: 20px;
+}
+
+.juego-palabra {
+  top: 18px;
+  left: 14px;
+  right: 14px;
+  font-size: clamp(36px, 14cqi, 60px);
+}
+
+.juego-mesas {
+  top: 10px;
+  right: 10px;
+}
+
+.juego-pie {
+  left: 14px;
+  right: 14px;
+  bottom: 12px;
+  gap: 8px;
+}
+
+.juego-nombre {
+  font-size: 22px;
+}
+
+.juego-precio {
+  font-size: 12px;
+}
+
+.juego-precio b {
+  font-size: 21px;
+}
