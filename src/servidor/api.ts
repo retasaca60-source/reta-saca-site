@@ -152,16 +152,29 @@ function medioDelLocal(d: Datos, campo = 'medio'): Exclude<MedioDePago, 'en_line
 // ─── Ayudas ──────────────────────────────────────────────────────────────
 
 /**
- * Las reservas que pueden chocar con cualquier operación: de ayer hasta el
- * final de la ventana de reserva (o 30 días, lo que sea más). Un apartado
- * vencido se entrega ya como cancelado, igual que en la versión simulada.
+ * Para una operación sobre una reserva, consulta su fecha concreta, aunque
+ * quede fuera de la ventana habitual. Sin fecha concreta, carga la ventana
+ * de trabajo del sitio. Así no se revisa disponibilidad con reservas ausentes.
  */
-async function contexto(entorno: Entorno, repo = entorno.repo): Promise<op.Contexto> {
+async function contexto(
+  entorno: Entorno,
+  repo = entorno.repo,
+  fechaObjetivo?: string,
+): Promise<op.Contexto> {
   const config = await repo.config()
   const ahora = entorno.ahora()
   const hoy = momentoDe(ahora).fecha
-  const hasta = sumarDias(hoy, Math.max(config.reglas.diasDeAnticipacion, 30))
-  const reservas = (await repo.reservasEntre(sumarDias(hoy, -1), hasta)).map((r) => op.vencerApartado(r, ahora) ?? r)
+
+  const desde = fechaObjetivo ?? sumarDias(hoy, -1)
+  const hasta = fechaObjetivo ?? sumarDias(
+    hoy,
+    Math.max(config.reglas.diasDeAnticipacion, 30),
+  )
+
+  const reservas = (await repo.reservasEntre(desde, hasta)).map(
+    (r) => op.vencerApartado(r, ahora) ?? r,
+  )
+
   return { config, reservas, ahora }
 }
 
@@ -199,16 +212,28 @@ async function dueno(entorno: Entorno): Promise<Usuario> {
   return u
 }
 
-/** Una operación del panel sobre una reserva existente: exige sesión, y lee, aplica y guarda en una transacción. */
-function enPanel(f: (d: Datos, ctx: op.Contexto, r: Reserva, quien: Usuario) => Reserva) {
+/** Lee, revisa y guarda dentro de la misma transacción y para la fecha afectada. */
+function enPanel(
+  f: (d: Datos, ctx: op.Contexto, r: Reserva, quien: Usuario) => Reserva,
+  fechaObjetivo?: (d: Datos) => string,
+) {
   return async (d: Datos, entorno: Entorno) => {
     const quien = await usuarioDe(entorno)
     const id = texto(d, 'reservaId')
+
     return entorno.repo.enTransaccion(async (repo) => {
-      const ctx = await contexto(entorno, repo)
-      const r = await reservaPor(repo, 'id', id, ctx.ahora)
+      const guardada = await repo.reservaPor('id', id)
+      if (!guardada) throw noEncontrada()
+
+      // Al mover se revisa el destino; al extender o asignar mesa, su fecha actual.
+      const dia = fechaObjetivo ? fechaObjetivo(d) : guardada.fecha
+
+      const ctx = await contexto(entorno, repo, dia)
+      const r = op.vencerApartado(guardada, ctx.ahora) ?? guardada
+
       const nueva = f(d, ctx, r, quien)
       await repo.guardar(nueva)
+
       return nueva
     })
   }
@@ -470,7 +495,15 @@ const ACCIONES: Record<string, Accion> = {
     op.marcarPago(ctx, r, textos(d, 'parteIds'), medioDelLocal(d), texto(d, 'nombre', true) || undefined, quien.nombre),
   ),
   extender: enPanel((d, ctx, r) => op.extender(ctx, r, duracion(d, 'minutos'))),
-  cambiarHorario: enPanel((d, ctx, r) => op.cambiarHorario(ctx, r, fecha(d, 'fecha'), numero(d, 'inicio'))),
+    cambiarHorario: enPanel(
+    (d, ctx, r) => op.cambiarHorario(
+      ctx,
+      r,
+      fecha(d, 'fecha'),
+      numero(d, 'inicio'),
+    ),
+    (d) => fecha(d, 'fecha'),
+  ),
   cancelarComoNegocio: enPanel((_d, ctx, r, quien) => op.cancelarComoNegocio(ctx, r, quien.nombre)),
   devolucionesPorRevisar: async (_d, e) => {
     await usuarioDe(e)

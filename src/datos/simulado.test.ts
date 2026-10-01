@@ -645,3 +645,62 @@ describe('datos guardados por otra versión', () => {
     expect((await otro.configuracion()).deportes.pingpong.mesas).toBe(6)
   })
 })
+describe('disponibilidad del panel fuera de la ventana habitual', () => {
+  it.each(['2026-09-01', '2026-12-01'])(
+    'revisa la ocupación al mover, asignar y extender en %s',
+    async (destino) => {
+      const { conexion } = conexionEnMemoria(
+        () => instante(VIERNES, h(19)),
+      )
+      const servicio = crearServicioReal(conexion)
+
+      await servicio.iniciarSesion('hugo', '')
+
+      const config = await servicio.configuracion()
+      config.deportes.pingpong.mesas = 1
+      await servicio.guardarConfiguracion(config)
+
+      const crear = (nombre: string) =>
+        servicio.anotarSinReserva({
+          deporte: 'pingpong',
+          duracion: 60,
+          nombre,
+          medio: 'efectivo',
+        })
+
+      const primera = await crear('Grupo uno')
+      await servicio.cambiarHorario(primera.id, destino, h(19))
+      await servicio.asignarMesa(primera.id, 'PP 1')
+
+      const segunda = await crear('Grupo dos')
+
+      // Con una sola mesa, no debe permitir dos grupos al mismo tiempo.
+      expect(
+        await codigoDe(
+          servicio.cambiarHorario(segunda.id, destino, h(19)),
+        ),
+      ).toBe('sin_lugar')
+
+      // El intento rechazado debe conservar la fecha original.
+      expect(
+        (await servicio.reservaPorTokenPrivado(segunda.tokenPrivado))?.fecha,
+      ).toBe(VIERNES)
+
+      // Tampoco debe extender hacia un horario que ya está ocupado.
+      await servicio.cambiarHorario(segunda.id, destino, h(20))
+
+      expect(
+        await codigoDe(servicio.extender(primera.id, 30)),
+      ).toBe('sin_lugar')
+
+      // Con capacidad para dos grupos, no pueden compartir la misma mesa.
+      config.deportes.pingpong.mesas = 2
+      await servicio.guardarConfiguracion(config)
+      await servicio.cambiarHorario(segunda.id, destino, h(19))
+
+      expect(
+        await codigoDe(servicio.asignarMesa(segunda.id, 'PP 1')),
+      ).toBe('no_permitido')
+    },
+  )
+})
