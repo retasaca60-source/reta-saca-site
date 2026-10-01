@@ -32,6 +32,13 @@ export interface Repositorio {
   /** Crea o reemplaza la reserva completa. Si el folio ya lo tiene otra, lanza FolioRepetido. */
   guardar(r: Reserva): Promise<void>
 
+  /**
+   * Suma uno al contador de `llave` en la ventana que empieza en `ventana` (ms)
+   * y devuelve cuántos lleva. Sumar y leer pasan juntos: dos llamadas al mismo
+   * tiempo no pueden leer el mismo número.
+   */
+  contarIntento(llave: string, ventana: number): Promise<number>
+
   crearIntento(i: IntentoDePago): Promise<void>
   intento(id: string): Promise<IntentoDePago | null>
   cerrarIntento(id: string, resultado: 'pagado' | 'cancelado'): Promise<void>
@@ -56,6 +63,7 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
   const reservas = new Map<string, Reserva>()
   const intentos = new Map<string, IntentoDePago>()
   const perfiles = new Map<string, Usuario>()
+  const contadores = new Map<string, number>()
   // Una cadena de promesas hace de candado: cada transacción espera a la anterior.
   let cola: Promise<unknown> = Promise.resolve()
 
@@ -77,6 +85,12 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
       reservas.set(r.id, clon(r))
     },
 
+    contarIntento: async (llave, ventana) => {
+      const k = `${llave}|${ventana}`
+      const n = (contadores.get(k) ?? 0) + 1
+      contadores.set(k, n)
+      return n
+    },
     crearIntento: async (i) => void intentos.set(i.id, clon(i)),
     intento: async (id) => clon(intentos.get(id) ?? null),
     cerrarIntento: async (id, resultado) => {

@@ -89,8 +89,21 @@ async function cuentaDe(peticion: Request): Promise<string | null> {
   return error || !data.user ? null : data.user.id
 }
 
+/**
+ * La dirección de quien llama, para el límite de frecuencia. Se toma la
+ * PRIMERA de x-forwarded-for: si la plataforma de Supabase la agrega al final
+ * en vez de reemplazarla, alguien podría inventar la primera y saltarse el
+ * límite, pero nunca se castiga a un cliente real por la dirección de otro.
+ * Tomar la última arriesga lo contrario (que sea la de un proxy interno y
+ * todos los clientes compartan contador), y eso dejaría el sitio sin reservas.
+ */
+function clienteDe(peticion: Request): string | null {
+  const ip = peticion.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  return ip && ip.length <= 64 ? ip : null
+}
+
 /** Lo que no cambia entre peticiones. */
-const entornoBase: Omit<Entorno, 'cuentaId' | 'sitio'> = {
+const entornoBase: Omit<Entorno, 'cuentaId' | 'sitio' | 'cliente'> = {
   repo,
   ahora: Date.now,
   pagosSimulados,
@@ -140,7 +153,7 @@ Deno.serve(async (peticion) => {
   if (peticion.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (peticion.method !== 'POST') return responder({ error: { codigo: 'datos_invalidos', mensaje: 'Método no permitido.' } }, 405)
   if (new URL(peticion.url).searchParams.get('aviso') === 'mercadopago') {
-    return avisoDeMercadoPago(peticion, { ...entornoBase, cuentaId: null, sitio: SITIOS[0] })
+    return avisoDeMercadoPago(peticion, { ...entornoBase, cuentaId: null, sitio: SITIOS[0], cliente: null })
   }
 
   let cuerpo: Peticion
@@ -151,6 +164,11 @@ Deno.serve(async (peticion) => {
     return responder({ error: { codigo: 'datos_invalidos', mensaje: 'Petición inválida.' } }, 400)
   }
 
-  const respuesta = await atender(cuerpo, { ...entornoBase, cuentaId: await cuentaDe(peticion), sitio: sitioDe(peticion) })
+  const respuesta = await atender(cuerpo, {
+    ...entornoBase,
+    cuentaId: await cuentaDe(peticion),
+    sitio: sitioDe(peticion),
+    cliente: clienteDe(peticion),
+  })
   return responder(respuesta)
 })

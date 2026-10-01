@@ -22,6 +22,9 @@ export function horariosDisponibles(ctx: Contexto, deporte: DeporteId, fecha: st
   }))
 }
 
+/** Cuántas mesas puede tener apartadas sin pagar un mismo WhatsApp a la vez. */
+export const APARTADOS_SIN_PAGAR_POR_WHATSAPP = 2
+
 /** Revalida todo y crea la reserva APARTADA con su precio y sus partes. */
 export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   const { config, reservas, ahora } = ctx
@@ -34,6 +37,19 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   if (![1, 2, 4].includes(partes)) throw new ErrorDeDatos('datos_invalidos', 'Solo se divide entre 2 o entre 4.')
   if (!iniciosPosibles(config, s.fecha, s.duracion, momentoDe(ahora)).includes(s.inicio)) {
     throw new ErrorDeDatos('fuera_de_horario', 'Ese horario ya no se puede reservar. Elige otro.')
+  }
+  // Cuenta solo lo apartado SIN pagar: quien paga puede reservar las mesas que
+  // quiera (así lo decidió el negocio el 30/09), pero nadie puede tener medio
+  // local apartado gratis. Es el freno contra el abuso torpe; contra un script
+  // que cambia de número está el límite por dirección del servidor.
+  const sinPagar = reservas.filter(
+    (r) => r.organizador.whatsapp === whatsapp && r.estado === 'apartada' && (r.apartadaHasta ?? 0) > ahora,
+  ).length
+  if (sinPagar >= APARTADOS_SIN_PAGAR_POR_WHATSAPP) {
+    throw new ErrorDeDatos(
+      'demasiados_intentos',
+      `Ya tienes ${sinPagar} mesas apartadas sin pagar. Paga una, o espera unos minutos a que se liberen.`,
+    )
   }
   if (mesasLibres(config, reservas, s.deporte, s.fecha, s.inicio, s.duracion, ahora) < 1) {
     throw new ErrorDeDatos('sin_lugar', 'Alguien acaba de tomar la última mesa de ese horario. Elige otro.')

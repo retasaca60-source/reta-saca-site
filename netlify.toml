@@ -8,6 +8,9 @@
   # Vite 8 pide Node 20.19 o más nuevo; se fija para que Netlify no use otro.
   NODE_VERSION = "24"
 
+# Las cabeceras de seguridad viven en public/_headers (se publica con Netlify
+# Drop y ahí este archivo no se lee).
+
 # Es una aplicación de una sola página: /r/<token>, /c/<token> y /panel no son
 # archivos. Sin esto, abrir un link de cobro directo desde WhatsApp da 404.
 [[redirects]]

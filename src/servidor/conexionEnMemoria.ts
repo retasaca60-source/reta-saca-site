@@ -36,6 +36,7 @@ export function conexionEnMemoria(reloj: () => number): { conexion: Conexion; re
           pagosSimulados: true,
           mercadoPago: null,
           sitio: 'http://localhost:5190',
+          cliente: null,
           cuentas: {
             crear: async (usuario) => {
               const id = crypto.randomUUID()

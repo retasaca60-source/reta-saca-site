@@ -75,6 +75,20 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       for (let i = 0; i < 3; i++) await reservarYPagar({ organizador: { nombre: 'X' + i, whatsapp: '662000000' + i } })
       expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Yola', whatsapp: '6629999999' } })))).toBe('sin_lugar')
     })
+    it('un mismo WhatsApp no puede tener más de 2 mesas apartadas sin pagar; las pagadas no cuentan', async () => {
+      const ana = { nombre: 'Ana', whatsapp: '6621112233' }
+      // Dos pagadas (no cuentan) y dos apartadas sin pagar: la quinta se frena.
+      await reservarYPagar({ deporte: 'pingpong', inicio: h(18), organizador: ana })
+      await reservarYPagar({ deporte: 'pingpong', inicio: h(19), organizador: ana })
+      const primera = await s.apartar(pedido({ deporte: 'cornhole', inicio: h(18), organizador: ana }))
+      await s.apartar(pedido({ deporte: 'cornhole', inicio: h(19), organizador: ana }))
+      expect(await codigoDe(s.apartar(pedido({ organizador: ana })))).toBe('demasiados_intentos')
+      // Otro número sí puede, y al pagar una, Ana vuelve a poder.
+      expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Beto', whatsapp: '6620000009' } })))).toBe('sin error')
+      const { url } = await s.iniciarPago(primera.tokenPrivado, [primera.partes[0].id], '')
+      await s.pagoSimulado.confirmar(url.split('/').pop()!)
+      expect(await codigoDe(s.apartar(pedido({ organizador: ana })))).toBe('sin error')
+    })
     it('una reserva apartada ocupa mesa 10 minutos y luego se libera sola', async () => {
       for (let i = 0; i < 3; i++) await s.apartar(pedido({ organizador: { nombre: 'X' + i, whatsapp: '662000000' + i } }))
       expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Yola', whatsapp: '6629999999' } })))).toBe('sin_lugar')

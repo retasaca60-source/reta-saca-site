@@ -51,6 +51,17 @@ export function repositorioPostgres(sql: Sql): Repositorio {
           order by datos -> 'cancelacion' ->> 'en' desc`
       ).map((f) => f.datos as Reserva),
 
+    contarIntento: async (llave, ventana) => {
+      // Las ventanas de más de un día no le sirven a nadie: se barren aquí
+      // mismo, así la tabla no crece sin fin y no hace falta otra tarea.
+      await q`delete from public.limites_de_frecuencia where ventana < now() - interval '1 day'`
+      const [fila] = await q`
+        insert into public.limites_de_frecuencia (llave, ventana, cuenta) values (${llave}, ${new Date(ventana)}, 1)
+        on conflict (llave, ventana) do update set cuenta = public.limites_de_frecuencia.cuenta + 1
+        returning cuenta`
+      return fila.cuenta as number
+    },
+
     reservaPor: async (campo, valor) => {
       // Se compara como texto: un "id" que no es uuid (lo mandó cualquiera) no
       // debe tronar la consulta, solo no encontrar nada.

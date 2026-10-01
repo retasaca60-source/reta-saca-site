@@ -120,6 +120,18 @@ nunca se desalinean.
 Medido contra el proyecto real, con la llave pública y sin sesión: leer o
 escribir cualquiera de las cuatro tablas responde `permission denied`.
 
+## Que nadie aparte todo el local
+
+Apartar no cuesta nada y ocupa una mesa 10 minutos. Para que un script no deje
+el local apartado: máximo 2 apartados **sin pagar** por WhatsApp (la regla, en
+`negocio/operaciones/cliente.ts`) y, por dirección IP, 20 apartados y 30 pagos
+iniciados cada 10 minutos (el servidor, con la tabla `limites_de_frecuencia`;
+en la base y no en memoria porque la función corre en varias copias). La
+dirección es la primera de `x-forwarded-for`: si se pudiera inventar, el límite
+se saltaría, pero nunca castiga a un cliente por la dirección de otro. Si la
+tabla falla, el límite deja pasar: un freno descompuesto no puede dejar al local
+sin reservas.
+
 ## Que no se venda una mesa dos veces
 
 Todo lo que ocupa mesa (apartar, anotar sin reserva, extender, cambiar
@@ -166,6 +178,7 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 |---|---|
 | `20260929034026_esquema.sql` | Las cuatro tablas, RLS, permisos, la política del panel y Realtime. |
 | `20260929164015_usuarios_del_panel.sql` | En `perfiles`, `correo` pasa a ser `usuario`, con la regla de nombres válidos. |
+| `20261001224621_limites_de_frecuencia.sql` | `limites_de_frecuencia`: cuántas veces apartó o inició un pago cada dirección en 10 minutos. Solo la función la toca. |
 
 ### El servidor (la función `api`)
 

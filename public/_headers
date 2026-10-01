@@ -1,0 +1,21 @@
+# Cabeceras de seguridad (CN-002 del reporte del 01/10/2026). Van aquí y no en
+# netlify.toml porque el sitio se publica arrastrando dist/ a Netlify Drop, y
+# ahí netlify.toml no se lee; este archivo se copia a dist/ y Netlify lo lee
+# siempre, también si algún día vuelve a publicar desde GitHub.
+#
+# - frame-ancestors / X-Frame-Options: nadie puede meter el sitio en un iframe.
+#   Sin esto, otra página podía cubrir el panel con algo inocente y hacer que
+#   recepción tocara "Cancelar" o "Quitar usuario" sin verlo.
+# - Content-Security-Policy: el navegador solo corre el código de este sitio y
+#   solo habla con Supabase. Si algún día se cuela un XSS, no puede mandar la
+#   sesión del panel a otro lado.
+# - Lo que se permite de fuera: Google Fonts y jsDelivr (una fuente del
+#   título), Supabase (https y la conexión en vivo wss) y un worker blob: que
+#   usa Supabase Realtime. 'unsafe-inline' en estilos es por los style={...} de
+#   React, que no ejecutan código.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://sypxbwljlbarvdvylfmc.supabase.co wss://sypxbwljlbarvdvylfmc.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()

@@ -325,6 +325,14 @@ primero**, sin vender la misma mesa dos veces:
   siempre que exista disponibilidad.
 - Se mantienen las validaciones de horario, disponibilidad y vencimiento
   del apartado de pago.
+- **Lo que sí se limita es apartar sin pagar.** Apartar ocupa una mesa 10
+  minutos gratis, así que sin freno un script podía dejar todo el local
+  apartado:
+  - Un mismo WhatsApp puede tener **2 mesas apartadas sin pagar** a la vez.
+    Las pagadas no cuentan: quien paga reserva las que quiera.
+  - Una misma conexión (dirección IP) puede apartar **20 veces cada 10
+    minutos** e iniciar **30 pagos**. Es holgado a propósito, porque muchos
+    celulares comparten la dirección de su compañía.
 
 ---
 
@@ -549,3 +557,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 30/09/2026 | Inicio compacto con las tres opciones de juego | Las tarjetas comparten el alto disponible; las pantallas muy bajas permiten desplazamiento. Popdarts se conserva mientras se decide su disponibilidad en el local. |
 | 30/09/2026 | Punto final en la confirmación de reserva | Ajuste de presentación solicitado. |
 | 30/09/2026 | Eliminar el máximo de reservas activas por WhatsApp | Se permite reservar varias veces con el mismo número; la disponibilidad sigue limitando las reservas. |
+| 01/10/2026 | Límite a lo apartado sin pagar (2 por WhatsApp; 20 cada 10 min por conexión) y cabeceras de seguridad en el sitio | Revisión de seguridad: sin freno, un script podía dejar todas las mesas apartadas, y el panel se podía meter en un iframe ajeno. |

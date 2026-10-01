@@ -73,6 +73,8 @@ export interface Entorno {
   mercadoPago: MercadoPago | null
   /** De dónde viene quien paga ("https://…"), para que Mercado Pago lo regrese ahí. */
   sitio: string
+  /** La dirección (IP) de quien llama, para el límite de frecuencia. null si no se sabe. */
+  cliente: string | null
 }
 
 /** La pantalla simulada solo existe mientras no haya Mercado Pago de verdad. */
@@ -253,6 +255,34 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
   })
 }
 
+/**
+ * Límite por dirección para lo que cualquiera puede hacer sin sesión y cuesta
+ * algo: apartar ocupa una mesa 10 minutos, iniciar un pago crea un cobro en
+ * Mercado Pago. Holgado a propósito: en México muchos celulares salen a
+ * internet por la misma dirección de la compañía, y un grupo reservando desde
+ * el wifi del local también. Lo que frena es el bucle de un script, no a un
+ * cliente. Sin dirección conocida no se limita (nunca castigar a ciegas).
+ */
+const LIMITES = { apartar: 20, iniciarPago: 30 } as const
+const VENTANA_DE_LIMITE = 10 * 60_000
+
+async function frenar(e: Entorno, accion: keyof typeof LIMITES): Promise<void> {
+  if (!e.cliente) return
+  const ventana = Math.floor(e.ahora() / VENTANA_DE_LIMITE) * VENTANA_DE_LIMITE
+  let n: number
+  try {
+    n = await e.repo.contarIntento(`${accion}:${e.cliente}`, ventana)
+  } catch (error) {
+    // Si el contador falla, se deja pasar: un freno descompuesto no puede
+    // dejar al local sin reservas. Queda en el registro para arreglarlo.
+    console.error('[limite] no se pudo contar', accion, error)
+    return
+  }
+  if (n > LIMITES[accion]) {
+    throw new ErrorDeDatos('demasiados_intentos', 'Hubo demasiados intentos desde tu conexión. Espera unos minutos e intenta de nuevo.')
+  }
+}
+
 // ─── Las acciones ────────────────────────────────────────────────────────
 
 type Accion = (d: Datos, entorno: Entorno) => Promise<unknown>
@@ -265,6 +295,7 @@ const ACCIONES: Record<string, Accion> = {
   disponibilidad: async (d, e) => op.horariosDisponibles(await contexto(e), deporte(d), fecha(d, 'fecha'), duracion(d)),
 
   apartar: async (d, e) => {
+    await frenar(e, 'apartar')
     const s = d.solicitud as Datos | undefined
     if (!s || typeof s !== 'object') throw invalido('solicitud')
     const org = s.organizador as Datos | undefined
@@ -287,6 +318,7 @@ const ACCIONES: Record<string, Accion> = {
     const parteIds = textos(d, 'parteIds')
     const nombre = texto(d, 'nombre', true)
     if (!e.mercadoPago && !conPagoSimulado(e)) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos. Paga en el local.')
+    await frenar(e, 'iniciarPago')
     const config = await e.repo.config()
     const { intento, reserva } = await e.repo.enTransaccion(async (repo) => {
       const ahora = e.ahora()

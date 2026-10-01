@@ -61,6 +61,7 @@ beforeEach(async () => {
     // Encendido a propósito: con Mercado Pago conectado no debe servir de nada.
     pagosSimulados: true,
     sitio: 'https://retasaca-hmo2.netlify.app',
+    cliente: null,
     mercadoPago: {
       crearCobro: async (c) => {
         cobros.push(c)
