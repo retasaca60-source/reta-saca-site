@@ -95,6 +95,37 @@
 .reloj-ir{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); margin-left:4px; }
 .panel .reloj-ir input{ min-height:36px; padding:0 8px; font-size:13px; }
 
+/* Simular reserva en línea (solo demostración): un <dialog> modal. */
+.simular{
+  width:min(760px, calc(100vw - 32px)); max-height:calc(100dvh - 32px);
+  border:0; border-radius:24px; padding:0; color:var(--ink); background:var(--surface);
+  box-shadow:0 30px 80px -20px rgba(16,24,40,.45);
+  font-family:'Hanken Grotesk', system-ui, sans-serif;
+}
+.simular::backdrop{ background:rgba(16,24,40,.45); }
+.simular-cuerpo{ display:flex; flex-direction:column; gap:18px; padding:24px 26px 22px; }
+.simular-cabeza{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.simular-cabeza h2{ margin:0 0 4px; font-size:22px; }
+.simular-cabeza .nota{ margin:0; }
+.simular-fila{ display:flex; gap:18px; flex-wrap:wrap; }
+.simular-campo{ display:flex; flex-direction:column; gap:8px; font-size:13px; color:var(--ink-soft); min-width:0; }
+.simular-campo > span{ font-weight:600; }
+.simular-campo input, .simular-campo select{ min-width:220px; }
+.simular-horas{ display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:8px; }
+.simular-hora{
+  display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+  font:inherit; color:var(--ink); text-align:left; cursor:pointer;
+  padding:10px 12px; min-height:56px; border-radius:14px; border:1px solid var(--line); background:var(--surface);
+}
+.simular-hora strong{ font-size:15px; }
+.simular-hora small{ font-size:12px; color:var(--ink-soft); }
+.simular-hora[aria-pressed='true']{ background:var(--oro); border-color:var(--oro); }
+.simular-hora[aria-pressed='true'] small{ color:var(--ink); }
+.simular-hora:disabled{ opacity:.45; cursor:not-allowed; }
+.simular-hecha{ margin:0; padding:10px 14px; border-radius:12px; background:var(--teal-soft); color:var(--teal); font-weight:600; font-size:14px; }
+.simular-pie{ display:flex; justify-content:flex-end; gap:10px; padding-top:6px; border-top:1px solid var(--line); }
+.simular-pie .panel-boton.grande{ margin-left:0; }
+
 .panel-persona{ display:flex; align-items:center; gap:10px; }
 .panel-persona strong{ display:block; font-size:15px; }
 .panel-persona small{ display:block; font-size:12px; color:var(--ink-faint); }
