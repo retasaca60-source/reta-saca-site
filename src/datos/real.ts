@@ -37,6 +37,18 @@ export type ServicioReal = ServicioDeDatos & { pagoSimulado: PagoSimulado }
 export function crearServicioReal(conexion: Conexion): ServicioReal {
   const llamar = <T>(accion: string, datos?: Record<string, unknown>) => conexion.llamar(accion, datos) as Promise<T>
 
+  // Avisar a las pantallas de ESTE navegador cuando una acción suya cambió
+  // algo. Realtime solo avisa con sesión del panel: sin esto, el cliente que
+  // cancelaba seguía viendo su reserva "confirmada" hasta recargar.
+  // verificarPagoEnLinea no avisa: lo llama la carga misma de la página y
+  // avisar ahí la volvería a cargar sin fin.
+  const locales = new Set<() => void>()
+  const cambia = async <T>(p: Promise<T>): Promise<T> => {
+    const r = await p
+    locales.forEach((f) => f())
+    return r
+  }
+
   return {
     modo: 'real',
 
@@ -49,7 +61,7 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     verificarPagoEnLinea: async (pagoId) => {
       await llamar<null>('verificarPagoEnLinea', { pagoId })
     },
-    cancelarComoCliente: (token) => llamar<Reserva>('cancelarComoCliente', { token }),
+    cancelarComoCliente: (token) => cambia(llamar<Reserva>('cancelarComoCliente', { token })),
 
     sesion: () => llamar<Usuario | null>('yo'),
     iniciarSesion: async (usuario, contrasena) => {
@@ -66,22 +78,29 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
 
     reservasEntre: (desde, hasta) => llamar<Reserva[]>('reservasEntre', { desde, hasta }),
     pagosDelDia: (fecha) => llamar<PagoDelDia[]>('pagosDelDia', { fecha }),
-    anotarSinReserva: (cliente) => llamar<Reserva>('anotarSinReserva', { cliente: { ...cliente } }),
-    asignarMesa: (reservaId, mesa) => llamar<Reserva>('asignarMesa', { reservaId, mesa }),
-    marcarPago: (reservaId, parteIds, medio, nombre) => llamar<Reserva>('marcarPago', { reservaId, parteIds, medio, nombre }),
-    extender: (reservaId, minutos) => llamar<Reserva>('extender', { reservaId, minutos }),
-    cambiarHorario: (reservaId, fecha, inicio) => llamar<Reserva>('cambiarHorario', { reservaId, fecha, inicio }),
-    cancelarComoNegocio: (reservaId) => llamar<Reserva>('cancelarComoNegocio', { reservaId }),
+    anotarSinReserva: (cliente) => cambia(llamar<Reserva>('anotarSinReserva', { cliente: { ...cliente } })),
+    asignarMesa: (reservaId, mesa) => cambia(llamar<Reserva>('asignarMesa', { reservaId, mesa })),
+    marcarPago: (reservaId, parteIds, medio, nombre) => cambia(llamar<Reserva>('marcarPago', { reservaId, parteIds, medio, nombre })),
+    extender: (reservaId, minutos) => cambia(llamar<Reserva>('extender', { reservaId, minutos })),
+    cambiarHorario: (reservaId, fecha, inicio) => cambia(llamar<Reserva>('cambiarHorario', { reservaId, fecha, inicio })),
+    cancelarComoNegocio: (reservaId) => cambia(llamar<Reserva>('cancelarComoNegocio', { reservaId })),
     devolucionesPorRevisar: () => llamar<Reserva[]>('devolucionesPorRevisar', {}),
-    resolverDevolucion: (reservaId, decision) => llamar<Reserva>('resolverDevolucion', { reservaId, decision }),
-    liberarPorRetraso: (reservaId) => llamar<Reserva>('liberarPorRetraso', { reservaId }),
+    resolverDevolucion: (reservaId, decision) => cambia(llamar<Reserva>('resolverDevolucion', { reservaId, decision })),
+    liberarPorRetraso: (reservaId) => cambia(llamar<Reserva>('liberarPorRetraso', { reservaId })),
     guardarConfiguracion: (config, aunqueHayaConflictos = false) =>
-      llamar<{ guardada: boolean; conflictos: Conflicto[] }>('guardarConfiguracion', { config, aunqueHayaConflictos }),
+      cambia(llamar<{ guardada: boolean; conflictos: Conflicto[] }>('guardarConfiguracion', { config, aunqueHayaConflictos })),
     usuarios: () => llamar<Usuario[]>('usuarios'),
-    agregarUsuario: (usuario, contrasena) => llamar<Usuario>('agregarUsuario', { usuario: { ...usuario }, contrasena }),
-    quitarUsuario: async (id) => void (await llamar('quitarUsuario', { id })),
+    agregarUsuario: (usuario, contrasena) => cambia(llamar<Usuario>('agregarUsuario', { usuario: { ...usuario }, contrasena })),
+    quitarUsuario: async (id) => void (await cambia(llamar('quitarUsuario', { id }))),
 
-    alCambiar: (aviso) => conexion.escuchar(aviso),
+    alCambiar: (aviso) => {
+      locales.add(aviso)
+      const dejar = conexion.escuchar(aviso)
+      return () => {
+        locales.delete(aviso)
+        dejar()
+      }
+    },
 
     pagoSimulado: {
       obtener: (id) => llamar<VistaDePagoSimulado | null>('pagoSimuladoObtener', { id }),

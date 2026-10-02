@@ -11,6 +11,25 @@ import { nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 
+// Qué partes fue a pagar este navegador, para reconocer su regreso de Mercado
+// Pago. Lo guardado lo pudo escribir otra versión: se revisa la forma.
+const llavePago = (token: string) => `reta-saca:pagando:${token}`
+function recordarPago(token: string, ids: string[]) {
+  try {
+    sessionStorage.setItem(llavePago(token), JSON.stringify(ids))
+  } catch {
+    // Sin almacenamiento: al volver solo no sale el "¡Pagado!".
+  }
+}
+function partesQueFueAPagar(token: string): string[] {
+  try {
+    const v: unknown = JSON.parse(sessionStorage.getItem(llavePago(token)) ?? '[]')
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
 export default function Cobro() {
   const { token = '' } = useParams()
   const [busqueda] = useSearchParams()
@@ -44,13 +63,19 @@ export default function Cobro() {
   // "Mi parte" = la primera pendiente que no sea la del organizador (si queda alguna).
   const miParte = pendientes.find((p) => !p.delOrganizador) ?? pendientes[0]
   const nombreValido = nombre.trim().length > 1
-  const recienPagado = busqueda.get('pago') === 'aprobado'
+  // "¡Pagado!" solo si las partes que ESTE navegador fue a pagar ya están
+  // pagadas en los datos; la URL sola (?pago=aprobado) la puede escribir
+  // cualquiera.
+  const pagando = partesQueFueAPagar(token)
+  const recienPagado =
+    busqueda.get('pago') === 'aprobado' && pagando.length > 0 && pagando.every((id) => v.partes.some((p) => p.id === id && p.pagada))
 
   const pagar = async (ids: string[]) => {
     setEnviando(true)
     setErrorPago(null)
     try {
       const { url } = await servicio.iniciarPago(token, ids, nombre)
+      recordarPago(token, ids)
       if (url.startsWith('/')) navegar(url)
       else window.location.assign(url)
     } catch (e) {

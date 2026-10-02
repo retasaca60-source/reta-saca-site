@@ -56,7 +56,9 @@ export default function MiReserva() {
   const cuando = `${fechaLarga(r.fecha)} a las ${formatoHora(r.inicio)}`
   const yaEmpezo = instante(r.fecha, r.inicio) <= ahora
   const enLinea = pagadoEnLinea(r)
-  const recienPagada = pago === 'aprobado' && r.estado === 'confirmada'
+  // La URL sola no basta (cualquiera puede escribir ?pago=aprobado): además
+  // la parte del organizador tiene que estar pagada en los datos.
+  const recienPagada = pago === 'aprobado' && r.estado === 'confirmada' && Boolean(miParte?.pago)
 
   const ejecutar = async (nombre: string, f: () => Promise<unknown>) => {
     setAccion(nombre)

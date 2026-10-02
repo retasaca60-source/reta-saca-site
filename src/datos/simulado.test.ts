@@ -333,6 +333,15 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
   })
 
   describe('cancelar', () => {
+    it('al cancelar, la página del cliente se entera sin recargar', async () => {
+      const r = await reservarYPagar({ inicio: h(19) })
+      let avisos = 0
+      const dejar = s.alCambiar(() => avisos++)
+      await s.cancelarComoCliente(r.tokenPrivado)
+      dejar()
+      expect(avisos).toBeGreaterThan(0)
+    })
+
     it('lo pagado en línea queda por revisar, falte lo que falte; nada se marca devuelto', async () => {
       const a = await reservarYPagar({ inicio: h(19) })
       reloj = instante(VIERNES, h(18, 30))
@@ -399,6 +408,24 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
         nombre: 'Pedro',
         marcadoPor: 'Recepción',
       })
+    })
+
+    it('si alguna de las partes ya se pagó por otro lado, no cobra ninguna y avisa', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+      // Un amigo paga la parte 2 en línea mientras recepción cobra la 2 y la 3.
+      await s.marcarPago(r.id, [r.partes[1].id], 'efectivo', 'Amigo')
+      expect(await codigoDe(s.marcarPago(r.id, [r.partes[1].id, r.partes[2].id], 'efectivo', 'Grupo'))).toBe('datos_invalidos')
+      const despues = (await s.reservasEntre(VIERNES, VIERNES)).find((x) => x.id === r.id)!
+      expect(despues.partes[2].pago).toBeNull()
+    })
+
+    it('una acción avisa a las pantallas para que vuelvan a cargar', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 2 })
+      let avisos = 0
+      const dejar = s.alCambiar(() => avisos++)
+      await s.marcarPago(r.id, [r.partes[1].id], 'efectivo', 'Pedro')
+      dejar()
+      expect(avisos).toBeGreaterThan(0)
     })
 
     it('no asigna una mesa que ya tiene otro grupo a esa hora', async () => {

@@ -13,6 +13,7 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { Cabecera } from '../vista/Cabecera'
+import { LimiteDeErrores } from './LimiteDeErrores'
 import '../estilos/sitio.css'
 
 const Reservar = lazy(() => import('../pantallas/reservar/Reservar'))
@@ -25,6 +26,7 @@ const Panel = lazy(() => import('../panel/Panel'))
 export default function App() {
   return (
     <BrowserRouter>
+      <LimiteDeErrores>
       <Suspense fallback={null}>
         <Routes>
           <Route element={<SitioCliente />}>
@@ -38,6 +40,7 @@ export default function App() {
           <Route path="panel/*" element={<Panel />} />
         </Routes>
       </Suspense>
+      </LimiteDeErrores>
     </BrowserRouter>
   )
 }

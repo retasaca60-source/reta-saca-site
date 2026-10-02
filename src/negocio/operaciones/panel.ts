@@ -145,6 +145,12 @@ export function marcarPago(
   const nueva = copia(r)
   const partes = nueva.partes.filter((p) => parteIds.includes(p.id) && !p.pago)
   if (!partes.length) throw new ErrorDeDatos('datos_invalidos', 'Esas partes ya estaban pagadas.')
+  // Todas o ninguna: si alguna se pagó mientras recepción cobraba (un amigo en
+  // línea, otra caja), antes se registraban solo las demás sin avisar, y lo
+  // cobrado en mano no cuadraba con lo registrado.
+  if (partes.length !== parteIds.length) {
+    throw new ErrorDeDatos('datos_invalidos', 'Alguna de esas partes se acaba de pagar por otro lado. Revisa lo que falta antes de cobrar.')
+  }
   const en = new Date(ctx.ahora).toISOString()
   for (const p of partes) p.pago = { medio, nombre: nombre?.trim() || r.organizador.nombre, en, marcadoPor: quien }
   if (nueva.estado === 'apartada') {

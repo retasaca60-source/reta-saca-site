@@ -294,7 +294,7 @@ primero**, sin vender la misma mesa dos veces:
 
 ### Si llegan tarde
 
-- Hay **30 minutos de tolerancia**. Si a los 20 minutos no ha llegado nadie,
+- Hay **30 minutos de tolerancia**. Si a los 30 minutos no ha llegado nadie,
   recepción puede **liberar la mesa**, sin devolución.
 - Llegar tarde **no recorre** la reserva: si era de 7:00 a 8:00 y llegan 7:15,
   juegan hasta las 8:00.
@@ -419,49 +419,52 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 | Qué | Dónde | Notas |
 |---|---|---|
 | Código | GitHub `retasaca60-source/reta-saca-site` | Público (ver por qué en README). |
-| Sitio | Netlify, equipo `retasaca`, proyecto `reta-saca` → `reta-saca.netlify.app` | Se publica solo con cada `git push` a `main`. Está en **privado**: solo lo ve quien entra con la cuenta del equipo. |
-| Dominio | `retasaca.com`, comprado por Hugo en GoDaddy (22/09/2026, vence 22/09/2029) | Hoy apunta a **otro** sitio de Netlify que hizo Hugo (`retasaca.netlify.app`, sin guion) con la demostración vieja. **Se deja así** por ahora; cuando toque, se liga a nuestro proyecto `reta-saca`. |
-| Base de datos | Supabase (cuenta del negocio) | Todavía sin usar. |
-| Pagos | Mercado Pago (cuenta del negocio) | **Todavía no existe**: la crea Hugo. |
+| Sitio | **Hoy:** Netlify, cuenta temporal (equipo "SI PUES"), proyecto `retasaca-hmo2` → `retasaca-hmo2.netlify.app`. **Después:** el proyecto `reta-saca` del negocio, cuando regresen sus créditos. | **No se publica solo**: un `git push` no publica nada. Se compila con datos reales y se sube `dist/` a mano (Netlify Drop). Es público. |
+| Demostración | Netlify, cuenta temporal, proyecto `retasaca-demo` → `retasaca-demo.netlify.app` | Solo para pruebas: datos en el navegador, reloj de prueba y "Simular reserva en línea". Se borra cuando ya no haga falta. |
+| Dominio | `retasaca.com`, comprado por Hugo en GoDaddy (22/09/2026, vence 22/09/2029) | Hoy apunta a **otro** sitio de Netlify que hizo Hugo (`retasaca.netlify.app`, sin guion) con la demostración vieja. Se liga a nuestro sitio al abrir al público. |
+| Base de datos | Supabase, proyecto de la cuenta del negocio | **En uso**: reservas, pagos, configuración y usuarios del panel (ver `BASE-DE-DATOS.md`). |
+| Pagos | Mercado Pago | **Conectado con una llave de prueba** (cobra de mentira). Para cobrar de verdad, Hugo crea su cuenta y se cambia la llave `MP_ACCESS_TOKEN`. |
 
 ---
 
 ## Qué ya está hecho y qué falta
 
-### Hecho: todo funciona con datos simulados (27/09/2026)
+### Hecho (al 01/10/2026)
 
-El sitio y el panel siguen **todas** las reglas de este documento, pero con
-datos **simulados**: se guardan en el navegador y el pago es una pantalla de
-mentira que ocupa el lugar de Mercado Pago. Ver `CONTRATO-DE-DATOS.md`.
+El sitio y el panel siguen **todas** las reglas de este documento **con datos
+reales en Supabase**: el servidor decide precio, lugar, hora y permisos. El
+cobro en línea va por Mercado Pago con una llave de prueba. La versión
+simulada (datos en el navegador) sigue existiendo para la demostración y las
+pruebas. Ver `BASE-DE-DATOS.md` y `CONTRATO-DE-DATOS.md`.
 
 | Tema | Estado |
 |---|---|
 | Horario por bloques, inicios cada 30 min, terminar antes del cierre | Hecho |
-| Ventana de 7 días, corte de 30 min, días cerrados | Hecho (la hora sale del aparato hasta tener servidor) |
+| Ventana de 7 días, corte de 30 min, días cerrados | Hecho (la hora la decide el servidor) |
 | Precio por mesa, promo 5:00 / 5:30, Popdarts sin dividir | Hecho |
 | Disponibilidad por tramo completo (una reserva de 90 min ocupa la media hora siguiente) | Hecho |
-| Pago dividido: partes en pesos cerrados, apartado de 10 min, firme con el primer pago | Hecho (pago simulado) |
+| Pago dividido: partes en pesos cerrados, apartado de 10 min, firme con el primer pago | Hecho (Mercado Pago con llave de prueba) |
 | Link privado `/r/…` y link de cobro `/c/…` ("mi parte" y "lo que falta") | Hecho |
 | Cancelación con devolución por revisar y reservas sin límite por WhatsApp, sujetas a disponibilidad | Hecho |
 | Botones de WhatsApp (compartir cobro, enviarme mi link, avisar al negocio) | Hecho ("Avisar al negocio" aparece cuando Hugo ponga el número) |
 | Panel: mesas ahora, sentar, cobrar en el local, extender, cambiar, cancelar, liberar | Hecho |
 | Panel: semana, caja del día | Hecho |
+| Panel: plano de mesas con el dibujo de cada juego, aviso de tiempo cumplido, reservas del día por hora | Hecho |
+| Usuarios del panel con usuario y contraseña (Supabase Auth) | Hecho |
 | Panel del dueño: mesas, fuera de servicio, precios, promo, horario, días cerrados, reglas, usuarios; aviso de conflictos | Hecho |
 | Aviso de privacidad | Borrador en `/privacidad`, faltan los datos del titular |
 
 ### Falta
 
-1. **Base de datos real (Supabase)**: que las reservas vivan en el servidor y
-   todos vean lo mismo; que el servidor decida precio, lugar, hora y
-   permisos. Guía completa: `CONTRATO-DE-DATOS.md`.
-2. **Mercado Pago real**: cobros y aviso de pago (webhook). Las devoluciones
-   no pasan por Mercado Pago: el negocio transfiere.
-   Espera la cuenta del negocio.
-3. **Usuarios reales del panel** (Supabase Auth). Hoy se entra con botones de
-   demostración.
-4. **Aviso de privacidad completo** (espera los datos del titular).
-5. **Diseño final del panel.**
-6. Ligar **`retasaca.com`** y abrir el sitio al público.
+1. **Mercado Pago de producción**: cambiar la llave de prueba por la de la
+   cuenta del negocio. Espera que Hugo cree su cuenta. Las devoluciones no
+   pasan por Mercado Pago: el negocio transfiere.
+2. **Registro de movimientos de dinero** (cada cobro y cada devolución con su
+   fecha y su número de pago), antes de cobrar con dinero real. Ver la
+   revisión de seguridad del 01/10/2026, prioridad 2.
+3. **Aviso de privacidad completo** (espera los datos del titular).
+4. **La cuenta de dueño de Hugo** y quitar la cuenta `prueba`.
+5. Ligar **`retasaca.com`** y abrir el sitio al público.
 
 ## Pendientes de Hugo
 

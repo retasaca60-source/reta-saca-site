@@ -3,15 +3,16 @@
 // Abajo, fija, la barra con cuánto pagas y el deslizador que aparta la mesa
 // (10 min) y manda a pagar la parte de quien reserva.
 
-import { useState, type Dispatch } from 'react'
+import { useRef, useState, type Dispatch } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ErrorDeDatos, servicio } from '../../datos'
+import { ErrorDeDatos, servicio, type SolicitudDeReserva } from '../../datos'
 import { mensajeDeError } from '../../mecanismos/datos/usarDatos'
 import { datosCompletos, type Accion, type Borrador } from '../../mecanismos/reserva/estado'
 import { mesasEnServicio, precioDeLista, type Configuracion, type Duracion, type Partes } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
 import { precioDe } from '../../negocio/precios'
-import { repartir } from '../../negocio/reserva'
+import { ahoraEnSonora } from '../../negocio/tiempo'
+import { repartir, type Reserva } from '../../negocio/reserva'
 import { Deslizar } from '../../vista/Deslizar'
 import { FOTO_DE } from '../../vista/fotos'
 import { IconoAtras } from '../../vista/Iconos'
@@ -43,13 +44,34 @@ export function Ficha({ borrador, despachar, config }: Props) {
 
   const volver = () => cambiarDePantalla(() => despachar({ tipo: 'irAPaso', paso: 1, config }))
 
+  // Lo apartado en un intento anterior que no llegó a abrir el pago. Antes, si
+  // apartar funcionaba y fallaba abrir el pago, reintentar apartaba OTRA mesa:
+  // gastaba lugares y, con el límite de 2 apartados sin pagar por WhatsApp,
+  // podía dejar al cliente sin poder reservar 10 minutos.
+  const apartada = useRef<{ clave: string; reserva: Reserva } | null>(null)
+  const reservaParaPagar = async (s: SolicitudDeReserva): Promise<Reserva> => {
+    const clave = JSON.stringify(s)
+    const previa = apartada.current
+    if (previa && previa.clave === clave && (previa.reserva.apartadaHasta ?? 0) > ahoraEnSonora().ms) return previa.reserva
+    if (previa) {
+      // Cambió algo (otra hora, otro nombre): se suelta la mesa de antes.
+      apartada.current = null
+      servicio.cancelarComoCliente(previa.reserva.tokenPrivado).catch(() => {})
+    }
+    const reserva = await servicio.apartar(s)
+    apartada.current = { clave, reserva }
+    return reserva
+  }
+
   const pagar = async () => {
     if (inicio === null || !datosCompletos(borrador) || enviando) return
     setEnviando(true)
     setError(null)
     try {
-      const reserva = await servicio.apartar({ deporte, fecha, inicio, duracion, partes, organizador: { nombre, whatsapp } })
+      const reserva = await reservaParaPagar({ deporte, fecha, inicio, duracion, partes, organizador: { nombre, whatsapp } })
       const { url } = await servicio.iniciarPago(reserva.tokenPrivado, [reserva.partes[0].id], nombre)
+      // Ya va a pagar: lo apartado deja de ser "pendiente de esta ficha".
+      apartada.current = null
       // Mercado Pago real vive en otro dominio; la simulación, en este sitio.
       if (url.startsWith('/')) navegar(url)
       else window.location.assign(url)

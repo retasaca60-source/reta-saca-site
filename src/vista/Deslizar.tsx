@@ -75,6 +75,16 @@ export function Deslizar({ etiqueta, listo, ocupado, icono, onConfirmar }: Props
     mover(valor)
   }
 
+  // Cuando el navegador se queda con el gesto (decide hacer scroll, entra
+  // una llamada), eso no es "soltar": antes, si iba pasado el umbral, se
+  // tomaba como confirmación y abría el pago sin que la persona lo quisiera.
+  const cancelarGesto = () => {
+    if (!arrastre.current) return
+    arrastre.current = null
+    setArrastrando(false)
+    mover(0)
+  }
+
   const soltar = () => {
     const a = arrastre.current
     if (!a) return
@@ -117,7 +127,7 @@ export function Deslizar({ etiqueta, listo, ocupado, icono, onConfirmar }: Props
         onPointerDown={empezar}
         onPointerMove={seguir}
         onPointerUp={soltar}
-        onPointerCancel={soltar}
+        onPointerCancel={cancelarGesto}
         onAnimationEnd={() => setEmpujon(false)}
         onClick={(e) => {
           if (e.detail === 0 && activo) onConfirmar()
