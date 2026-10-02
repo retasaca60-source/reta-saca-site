@@ -16,6 +16,7 @@ import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, formatoDuracion,
 import { DibujoMesa } from './DibujoMesa'
 import { FilaReserva } from './FilaReserva'
 import { IconoAnterior, IconoSiguiente } from './iconos'
+import { ListaDelDia } from './ListaDelDia'
 import { RegistrarEnMostrador } from './RegistrarEnMostrador'
 
 type Pestana = 'mesas' | 'reservas' | 'mostrador'
@@ -45,7 +46,6 @@ export function Hoy() {
   const esHoy = fecha === ahora.fecha
   const delDia = semana.filter((r) => r.fecha === fecha)
   const activas = delDia.filter((r) => r.estado !== 'cancelada')
-  const canceladas = delDia.filter((r) => r.estado === 'cancelada')
   // El plano y la caja son de "ahora": otro día solo tiene la lista.
   const vista: Pestana = esHoy ? pestana : 'reservas'
 
@@ -121,22 +121,7 @@ export function Hoy() {
         />
       )}
 
-      {vista === 'reservas' && (
-        <section className="hoy-lista">
-          {activas.length === 0 && <p className="nota">No hay reservas este día.</p>}
-          {activas.map((r) => (
-            <FilaReserva key={r.id} r={r} config={config} />
-          ))}
-          {canceladas.length > 0 && (
-            <details className="panel-canceladas">
-              <summary>Canceladas · {canceladas.length}</summary>
-              {canceladas.map((r) => (
-                <FilaReserva key={r.id} r={r} config={config} />
-              ))}
-            </details>
-          )}
-        </section>
-      )}
+      {vista === 'reservas' && <ListaDelDia reservas={delDia} config={config} esHoy={esHoy} />}
 
       {vista === 'mostrador' && (
         <section className="hoy-mostrador">
