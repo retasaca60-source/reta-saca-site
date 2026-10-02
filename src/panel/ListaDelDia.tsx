@@ -95,7 +95,7 @@ function llegada(r: Reserva, config: Configuracion, esHoy: boolean): { tono: str
   const ahora = ahoraEnSonora()
   // Si su horario ya terminó, ya no "va tarde": no vino.
   if (esHoy && fin(r) <= ahora.minutos) return { tono: 'mal', texto: 'No llegó' }
-  if (esHoy && puedeLiberarPorRetraso(r, config, Date.now())) return { tono: 'mal', texto: 'Va tarde' }
+  if (esHoy && puedeLiberarPorRetraso(r, config, ahora.ms)) return { tono: 'mal', texto: 'Va tarde' }
   if (esHoy && r.inicio <= ahora.minutos && fin(r) > ahora.minutos) return { tono: 'aviso', texto: 'Ya es su hora' }
   return { tono: 'neutra', texto: 'Por llegar' }
 }

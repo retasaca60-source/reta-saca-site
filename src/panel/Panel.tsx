@@ -12,6 +12,7 @@ import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { Caja } from './Caja'
 import { Configuracion } from './Configuracion'
 import { Hoy } from './Hoy'
+import { RelojDePrueba } from './RelojDePrueba'
 import { IconoAjustes, IconoCaja, IconoMesas, IconoSalir, IconoSemana } from './iconos'
 import { Semana } from './Semana'
 import './panel.css'
@@ -69,6 +70,7 @@ function Marco({ usuario }: { usuario: Usuario }) {
 
       <div className="panel-principal">
         <header className="panel-barra">
+          {demo && <RelojDePrueba />}
           {demo && (
             <button
               type="button"

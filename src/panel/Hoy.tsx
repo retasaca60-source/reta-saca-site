@@ -23,7 +23,10 @@ import { RegistrarEnMostrador } from './RegistrarEnMostrador'
 type Pestana = 'mesas' | 'reservas' | 'mostrador'
 
 export function Hoy() {
-  const [fecha, setFecha] = useState(ahoraEnSonora().fecha)
+  // Cuántos días adelante o atrás de hoy se está viendo, y no una fecha fija:
+  // si la hora cambia de día (o se mueve el reloj de prueba), "Hoy" la sigue.
+  const [desfase, setDesfase] = useState(0)
+  const fecha = sumarDias(ahoraEnSonora().fecha, desfase)
   const lunes = sumarDias(fecha, -((diaDeLaSemana(fecha) + 6) % 7))
   const { datos, error } = usarDatos(
     () => Promise.all([servicio.configuracion(), servicio.reservasEntre(lunes, sumarDias(lunes, 6))]),
@@ -50,8 +53,8 @@ export function Hoy() {
   // El plano y la caja son de "ahora": otro día solo tiene la lista.
   const vista: Pestana = esHoy ? pestana : 'reservas'
 
-  const irADia = (f: string) => {
-    setFecha(f)
+  const irADia = (dias: number) => {
+    setDesfase(dias)
     setElegida(null)
   }
 
@@ -66,13 +69,13 @@ export function Hoy() {
           </p>
         </div>
         <div className="hoy-dias" role="group" aria-label="Cambiar de día">
-          <button type="button" className="panel-boton icono" aria-label="Día anterior" onClick={() => irADia(sumarDias(fecha, -1))}>
+          <button type="button" className="panel-boton icono" aria-label="Día anterior" onClick={() => irADia(desfase - 1)}>
             <IconoAnterior />
           </button>
-          <button type="button" className="panel-boton" disabled={esHoy} onClick={() => irADia(ahora.fecha)}>
+          <button type="button" className="panel-boton" disabled={esHoy} onClick={() => irADia(0)}>
             Hoy
           </button>
-          <button type="button" className="panel-boton icono" aria-label="Día siguiente" onClick={() => irADia(sumarDias(fecha, 1))}>
+          <button type="button" className="panel-boton icono" aria-label="Día siguiente" onClick={() => irADia(desfase + 1)}>
             <IconoSiguiente />
           </button>
         </div>
@@ -205,10 +208,12 @@ function Plano({
 
         {porSentar.length > 0 && (
           <p className="plano-aviso">
+            {/* Que sea su hora no quiere decir que ya llegaron: el aviso dice lo
+                que se sabe y qué hacer cuando lleguen. */}
             <strong>
-              {porSentar.length === 1 ? '1 grupo llegó y falta sentarlo' : `${porSentar.length} grupos por sentar`}:
+              {porSentar.length === 1 ? 'Ya es su hora y no tiene mesa' : `${porSentar.length} grupos con su hora en curso y sin mesa`}:
             </strong>{' '}
-            {porSentar.map((r) => `${r.organizador.nombre} (${formatoHora(r.inicio)})`).join(', ')}. Toca una mesa libre para sentarlos.
+            {porSentar.map((r) => `${r.organizador.nombre} (${formatoHora(r.inicio)})`).join(', ')}. Cuando lleguen, toca una mesa libre para sentarlos.
           </p>
         )}
 
@@ -366,7 +371,7 @@ function DatosDeMesa({
         <>
           {porSentar.length > 0 ? (
             <div className="lado-sentar">
-              <p className="nota">Llegaron y falta sentarlos:</p>
+              <p className="nota">Ya es su hora y no tienen mesa:</p>
               {porSentar.map((g) => (
                 <div key={g.id} className="lado-grupo">
                   <span>

@@ -9,7 +9,7 @@ import { direccion, enlaceWhatsApp } from '../mecanismos/whatsapp/enlaces'
 import type { Configuracion, Duracion } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
 import { fin, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
-import { etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
+import { ahoraEnSonora, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
 type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar'
 
@@ -92,7 +92,7 @@ export function FilaReserva({
           <button type="button" className={'panel-boton' + (abierto === 'cambiar' ? ' activo' : '')} onClick={() => alternar('cambiar')}>
             Cambiar horario
           </button>
-          {puedeLiberarPorRetraso(r, config, Date.now()) && (
+          {puedeLiberarPorRetraso(r, config, ahoraEnSonora().ms) && (
             <button type="button" className="panel-boton" disabled={ocupado} onClick={() => confirm(`¿Liberar la mesa de ${r.organizador.nombre}? No llegaron en ${config.reglas.minutosDeTolerancia} minutos. No hay devolución.`) && hacer(() => servicio.liberarPorRetraso(r.id))}>
               Liberar (no llegaron)
             </button>
@@ -155,7 +155,7 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   if (r.devolucion?.estado === 'sin_devolucion') e.push(['neutra', 'Sin devolución'])
   if (r.origen === 'mostrador') e.push(['neutra', 'Sin reserva'])
   if (r.llegaronEn && r.estado !== 'cancelada') e.push(['bien', r.mesa ? `En ${r.mesa}` : 'Llegaron'])
-  else if (puedeLiberarPorRetraso(r, config, Date.now())) e.push(['mal', 'Retraso'])
+  else if (puedeLiberarPorRetraso(r, config, ahoraEnSonora().ms)) e.push(['mal', 'Retraso'])
   if (r.partesElegidas > 1) e.push(['neutra', `Entre ${r.partesElegidas}`])
   if (r.conPromo) e.push(['neutra', 'Promo'])
   return (

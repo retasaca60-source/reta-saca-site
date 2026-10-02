@@ -9,7 +9,7 @@ import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../../mecanismos/whatsapp/enlaces'
 import { formatoDinero } from '../../negocio/formato'
 import { pagado, pagadoEnLinea, pendiente, total, type Reserva } from '../../negocio/reserva'
-import { fechaLarga, formatoHora, instante, momentoDe, nombreDelDia } from '../../negocio/tiempo'
+import { ahoraEnSonora, fechaLarga, formatoHora, instante, momentoDe, nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 import './mi-reserva.css'
@@ -48,7 +48,7 @@ export default function MiReserva() {
   }
 
   const d = config.deportes[r.deporte]
-  const ahora = Date.now()
+  const ahora = ahoraEnSonora().ms
   const falta = pendiente(r)
   const miParte = r.partes.find((p) => p.delOrganizador && p.concepto === 'reserva')
   const linkCobro = direccion(`/c/${r.tokenCobro}`)

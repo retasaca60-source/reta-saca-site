@@ -79,6 +79,22 @@
   display:flex; align-items:center; justify-content:flex-end; gap:16px;
   padding:18px 40px 0;
 }
+/* El reloj de prueba (solo demostración): a la izquierda de la barra. Ámbar
+   cuando la hora está movida, para que nadie lo confunda con la real. */
+.reloj-prueba{
+  margin-right:auto; display:flex; align-items:center; gap:6px; flex-wrap:wrap;
+  padding:6px 8px 6px 14px; border-radius:16px; background:var(--surface); box-shadow:var(--shadow);
+}
+.reloj-prueba.movido{ background:var(--warn-soft); box-shadow:0 0 0 2px var(--oro); }
+.reloj-hora{ display:flex; flex-direction:column; margin-right:8px; min-width:150px; }
+.reloj-hora small{ font-size:12px; color:var(--ink-faint); }
+.reloj-hora strong{ font-size:14px; }
+.reloj-hora strong::first-letter{ text-transform:uppercase; }
+.reloj-movido{ color:var(--warn) !important; font-weight:700; }
+.reloj-prueba .panel-boton{ min-height:36px; padding:0 10px; font-size:13px; }
+.reloj-ir{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-soft); margin-left:4px; }
+.panel .reloj-ir input{ min-height:36px; padding:0 8px; font-size:13px; }
+
 .panel-persona{ display:flex; align-items:center; gap:10px; }
 .panel-persona strong{ display:block; font-size:15px; }
 .panel-persona small{ display:block; font-size:12px; color:var(--ink-faint); }

@@ -29,8 +29,17 @@ export function momentoDe(ms: number): Momento {
   return { fecha: s.toISOString().slice(0, 10), minutos: s.getUTCHours() * 60 + s.getUTCMinutes(), ms }
 }
 
+// De dónde sale "ahora". Normalmente, el reloj del aparato; la demostración lo
+// cambia por su reloj de prueba (datos/index.ts). La versión real no lo toca:
+// lo que importa ahí lo decide la hora del servidor.
+let reloj: () => number = Date.now
+
+export function usarReloj(f: () => number): void {
+  reloj = f
+}
+
 export function ahoraEnSonora(): Momento {
-  return momentoDe(Date.now())
+  return momentoDe(reloj())
 }
 
 /** El instante (ms UTC) de una fecha y minuto de Sonora. */
