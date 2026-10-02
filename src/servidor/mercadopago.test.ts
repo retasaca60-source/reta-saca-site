@@ -251,3 +251,62 @@ it('un pago tardío no recupera una mesa que ya fue asignada a otro grupo', asyn
 
   expect((await leer(r)).mesa).toBe(otraMesa)
 })
+it.each(['inicio', 'terminada', 'dia_cerrado', 'bloque_reducido'])(
+  'no recupera un apartado vencido con horario inválido: %s',
+  async (caso) => {
+    const { r, cobro } = await apartarYCobrar()
+    reloj = instante(VIERNES, h(15, 11))
+
+    const config = await e.repo.config()
+
+    if (caso === 'inicio') {
+      reloj = instante(VIERNES, h(19))
+    }
+
+    if (caso === 'terminada') {
+      reloj = instante(VIERNES, h(20))
+    }
+
+    if (caso === 'dia_cerrado') {
+      config.diasCerrados.push(VIERNES)
+    }
+
+    if (caso === 'bloque_reducido') {
+      config.horario[5] = [
+        { desde: h(17), hasta: h(19, 30) },
+      ]
+    }
+
+    await e.repo.guardarConfig(config)
+
+    await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+
+    const despues = await leer(r)
+
+    expect(despues.estado).toBe('cancelada')
+    expect(despues.partes[0].pago).toBeNull()
+    expect(despues.devolucion).toMatchObject({
+      estado: 'por_revisar',
+      monto: cobro.monto,
+      extra: cobro.monto,
+    })
+    expect(despues.devolucion!.nota).toContain(
+      'el horario de la reserva ya no estaba disponible',
+    )
+  },
+)
+
+it('recupera un apartado vencido antes del inicio aunque falten menos de 30 minutos', async () => {
+  const { r, cobro } = await apartarYCobrar()
+  reloj = instante(VIERNES, h(18, 50))
+
+  await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+
+  const despues = await leer(r)
+
+  expect(despues.estado).toBe('confirmada')
+  expect(despues.partes[0].pago).toMatchObject({
+    medio: 'en_linea',
+  })
+  expect(despues.devolucion).toBeUndefined()
+})

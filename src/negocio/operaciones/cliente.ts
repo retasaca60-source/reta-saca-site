@@ -5,7 +5,7 @@
 
 import { mesasLibres } from '../disponibilidad'
 import { ErrorDeDatos } from '../errores'
-import { iniciosPosibles } from '../horario'
+import { cabeEnUnBloque, estaCerrado, iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDe } from '../precios'
 import { repartir, type Reserva } from '../reserva'
@@ -108,6 +108,24 @@ export function confirmarPagoEnLinea(ctx: Contexto, r: Reserva, parteIds: string
     if (!rescatable) {
       throw new ErrorDeDatos('apartado_vencido', 'Se venció el tiempo para pagar y la mesa ya no está disponible. No se hizo ningún cobro.')
     }
+    // Tener cupo no basta: el turno debe seguir abierto y no haber empezado.
+    // No se aplica el corte de reservas nuevas a un pago ya iniciado.
+    if (
+      instante(nueva.fecha, nueva.inicio) <= ctx.ahora ||
+      estaCerrado(ctx.config, nueva.fecha) ||
+      !cabeEnUnBloque(
+        ctx.config,
+        nueva.fecha,
+        nueva.inicio,
+        nueva.duracion,
+      )
+    ) {
+      throw new ErrorDeDatos(
+        'fuera_de_horario',
+        'El horario de esta reserva ya no está disponible. Contacta a recepción para revisar el pago.',
+      )
+    }
+
     nueva.cancelacion = null
 
     // Al vencer el apartado se liberó la mesa concreta. Recuperar el cupo

@@ -278,9 +278,11 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
       // La nota no copia el mensaje del error: ese le habla a quien paga ("no
       // se hizo ningún cobro") y aquí el cobro sí se hizo.
       const motivo =
-        error.codigo === 'apartado_vencido'
-          ? 'el apartado ya se había vencido y la mesa estaba ocupada'
-          : 'esas partes ya estaban pagadas o la reserva estaba cancelada'
+        error.codigo === 'fuera_de_horario'
+          ? 'el horario de la reserva ya no estaba disponible'
+          : error.codigo === 'apartado_vencido'
+            ? 'el apartado ya se había vencido y la mesa estaba ocupada'
+            : 'esas partes ya estaban pagadas o la reserva estaba cancelada'
       await repo.guardar(op.pagoSinLugar(r, intento.monto, `${intento.nombre} pagó ${formatoDinero(intento.monto)} en línea, pero ${motivo}.`))
     }
     await repo.cerrarIntento(intento.id, 'pagado')
