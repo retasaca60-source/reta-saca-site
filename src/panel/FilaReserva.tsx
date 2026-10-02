@@ -13,7 +13,18 @@ import { etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from
 
 type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar'
 
-export function FilaReserva({ r, config, conFecha = false }: { r: Reserva; config: Configuracion; conFecha?: boolean }) {
+export function FilaReserva({
+  r,
+  config,
+  conFecha = false,
+  soloAcciones = false,
+}: {
+  r: Reserva
+  config: Configuracion
+  conFecha?: boolean
+  /** En la columna de una mesa: los datos ya se ven arriba, solo van los botones. */
+  soloAcciones?: boolean
+}) {
   const [abierto, setAbierto] = useState<Panelito>(null)
   const [error, setError] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
@@ -40,8 +51,8 @@ export function FilaReserva({ r, config, conFecha = false }: { r: Reserva; confi
   }
 
   return (
-    <article className={'fila-reserva' + (cancelada ? ' cancelada' : '')}>
-      <div className="fila-principal">
+    <article className={'fila-reserva' + (cancelada ? ' cancelada' : '') + (soloAcciones ? ' solo-acciones' : '')}>
+      {!soloAcciones && <div className="fila-principal">
         <div className="fila-hora">
           {conFecha && <small>{etiquetaFecha(r.fecha)}</small>}
           <strong>{formatoHora(r.inicio)}</strong>
@@ -61,7 +72,7 @@ export function FilaReserva({ r, config, conFecha = false }: { r: Reserva; confi
           <strong>{formatoDinero(total(r))}</strong>
           <small>{falta > 0 && !cancelada ? `faltan ${formatoDinero(falta)}` : `pagado ${formatoDinero(pagado(r))}`}</small>
         </div>
-      </div>
+      </div>}
 
       {!cancelada && (
         <div className="fila-acciones">

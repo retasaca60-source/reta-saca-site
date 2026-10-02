@@ -19,10 +19,19 @@ const MEDIOS: { medio: Medio; nombre: string }[] = [
   { medio: 'tarjeta', nombre: 'Tarjeta' },
 ]
 
-export function RegistrarEnMostrador({ config, reservas }: { config: Configuracion; reservas: Reserva[] }) {
-  const [deporte, setDeporte] = useState<DeporteId>('pingpong')
+export function RegistrarEnMostrador({
+  config,
+  reservas,
+  inicial,
+}: {
+  config: Configuracion
+  reservas: Reserva[]
+  /** Desde una mesa libre del plano: la caja abre con ese deporte y esa mesa. */
+  inicial?: { deporte: DeporteId; mesa: string }
+}) {
+  const [deporte, setDeporte] = useState<DeporteId>(inicial?.deporte ?? 'pingpong')
   const [duracion, setDuracion] = useState<Duracion>(60)
-  const [mesa, setMesa] = useState('')
+  const [mesa, setMesa] = useState(inicial?.mesa ?? '')
   const [nombre, setNombre] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [medio, setMedio] = useState<Medio>('efectivo')
