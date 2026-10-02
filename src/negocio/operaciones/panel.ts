@@ -9,7 +9,7 @@ import { ErrorDeDatos } from '../errores'
 import { bloqueEn, cabeEnUnBloque, estaCerrado } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDe, precioDeExtension, precioSiExiste } from '../precios'
-import { fin, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
+import { fin, ocupaMesa, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
 import { formatoHora, momentoDe } from '../tiempo'
 import { abrirDevolucion, copia, type Contexto } from './contexto'
 import type { ClienteSinReserva, PagoDelDia } from './tipos'
@@ -101,10 +101,22 @@ export function asignarMesa(ctx: Contexto, r: Reserva, mesa: string | null): Res
   return nueva
 }
 
-/** El otro grupo sentado en esa mesa entre `desde` y `hasta`, si hay. */
-function quienTieneLaMesa(ctx: Contexto, r: Reserva, mesa: string, desde: number, hasta: number): Reserva | undefined {
+/** Una mesa asignada también está ocupada durante un apartado vigente. */
+function quienTieneLaMesa(
+  ctx: Contexto,
+  r: Reserva,
+  mesa: string,
+  desde: number,
+  hasta: number,
+): Reserva | undefined {
   return ctx.reservas.find(
-    (x) => x.id !== r.id && x.estado === 'confirmada' && x.mesa === mesa && x.fecha === r.fecha && x.inicio < hasta && fin(x) > desde,
+    (x) =>
+      x.id !== r.id &&
+      ocupaMesa(x, ctx.ahora) &&
+      x.mesa === mesa &&
+      x.fecha === r.fecha &&
+      x.inicio < hasta &&
+      fin(x) > desde,
   )
 }
 
@@ -118,6 +130,18 @@ export function marcarPago(
   quien: string,
 ): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada.')
+    // Una asignación guardada por una versión anterior podría estar duplicada.
+  // Se rechaza antes de registrar el cobro para que recepción cambie la mesa.
+  if (r.estado === 'apartada' && r.mesa) {
+    const otra = quienTieneLaMesa(ctx, r, r.mesa, r.inicio, fin(r))
+
+    if (otra) {
+      throw new ErrorDeDatos(
+        'no_permitido',
+        `${r.mesa} ya la tiene ${otra.organizador.nombre} a esa hora. Cambia la mesa antes de registrar el pago.`,
+      )
+    }
+  }
   const nueva = copia(r)
   const partes = nueva.partes.filter((p) => parteIds.includes(p.id) && !p.pago)
   if (!partes.length) throw new ErrorDeDatos('datos_invalidos', 'Esas partes ya estaban pagadas.')
