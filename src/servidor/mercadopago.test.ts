@@ -197,3 +197,57 @@ it.each([false, true])(
     }
   },
 )
+it('un pago tardío no recupera una mesa que ya fue asignada a otro grupo', async () => {
+  const recepcion = USUARIOS_DEMO.find(
+    (u) => u.rol === 'recepcion',
+  )!.id
+
+  const config = await e.repo.config()
+  const mesa = `${config.deportes.popdarts.clave} 1`
+  const { r, cobro } = await apartarYCobrar()
+
+  await llamar(
+    'asignarMesa',
+    { reservaId: r.id, mesa },
+    recepcion,
+  )
+
+  // Vence el primer apartado y otro grupo recibe esa mesa.
+  reloj = instante(VIERNES, h(15, 11))
+
+  const otro = await apartarYCobrar('6620000001', 'Otro grupo')
+
+  await registrarPagoEnLinea(
+    pagarEnMercadoPago(otro.cobro),
+    e,
+  )
+
+  await llamar(
+    'asignarMesa',
+    { reservaId: otro.r.id, mesa },
+    recepcion,
+  )
+
+  // Llega el pago del primer grupo: hay cupo, pero su mesa ya tiene dueño.
+  await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+
+  const recuperada = await leer(r)
+
+  expect(recuperada.estado).toBe('confirmada')
+  expect(recuperada.partes[0].pago).toMatchObject({
+    medio: 'en_linea',
+  })
+  expect(recuperada.mesa).toBeNull()
+  expect((await leer(otro.r)).mesa).toBe(mesa)
+
+  // Recepción puede asignar otra mesa disponible.
+  const otraMesa = `${config.deportes.popdarts.clave} 2`
+
+  await llamar(
+    'asignarMesa',
+    { reservaId: r.id, mesa: otraMesa },
+    recepcion,
+  )
+
+  expect((await leer(r)).mesa).toBe(otraMesa)
+})

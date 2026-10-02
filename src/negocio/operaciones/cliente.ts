@@ -109,8 +109,13 @@ export function confirmarPagoEnLinea(ctx: Contexto, r: Reserva, parteIds: string
       throw new ErrorDeDatos('apartado_vencido', 'Se venció el tiempo para pagar y la mesa ya no está disponible. No se hizo ningún cobro.')
     }
     nueva.cancelacion = null
+
+    // Al vencer el apartado se liberó la mesa concreta. Recuperar el cupo
+    // no recupera esa asignación: recepción debe elegir una mesa disponible.
+    nueva.mesa = null
   }
-    const partes = nueva.partes.filter((p) => parteIds.includes(p.id))
+
+  const partes = nueva.partes.filter((p) => parteIds.includes(p.id))
 
   if (!partes.length || partes.length !== parteIds.length) {
     throw new ErrorDeDatos(
