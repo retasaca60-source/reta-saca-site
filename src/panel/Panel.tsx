@@ -17,6 +17,7 @@ import { SimularReserva } from './SimularReserva'
 import { IconoAjustes, IconoCaja, IconoMesas, IconoSalir, IconoSemana } from './iconos'
 import { Semana } from './Semana'
 import './panel.css'
+import { BotonTema } from './BotonTema'
 
 export default function Panel() {
   const { datos: usuario, cargando } = usarDatos(() => servicio.sesion(), [])
@@ -71,6 +72,7 @@ function Marco({ usuario }: { usuario: Usuario }) {
 
       <div className="panel-principal">
         <header className="panel-barra">
+          <BotonTema />
           {demo && <RelojDePrueba />}
           {demo && <SimularReserva />}
           {demo && (
