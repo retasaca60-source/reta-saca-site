@@ -13,6 +13,7 @@ import { ORDEN_DEPORTES, type Configuracion, type DeporteId } from '../negocio/c
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
 import { fin, ocupaMesa, pagado, pendiente, total, type Reserva } from '../negocio/reserva'
 import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, formatoDuracion, formatoHora, sumarDias } from '../negocio/tiempo'
+import { DibujoMesa } from './DibujoMesa'
 import { FilaReserva } from './FilaReserva'
 import { IconoAnterior, IconoSiguiente } from './iconos'
 import { RegistrarEnMostrador } from './RegistrarEnMostrador'
@@ -234,11 +235,8 @@ function Plano({
               aria-pressed={elegida === m.etiqueta}
               onClick={() => setElegida(elegida === m.etiqueta ? null : m.etiqueta)}
             >
-              <span className="mesa-lugares" aria-hidden>
-                <i />
-                <i />
-              </span>
               <span className="mesa-tabla">
+                <DibujoMesa deporte={deporte} enJuego={m.estado === 'en-juego'} />
                 <strong>{m.etiqueta}</strong>
                 <small>
                   {m.estado === 'fuera'
@@ -249,17 +247,13 @@ function Plano({
                 </small>
                 {m.estado === 'en-juego' && <span className="mesa-cinta">En juego</span>}
               </span>
-              <span className="mesa-lugares" aria-hidden>
-                <i />
-                <i />
-              </span>
             </button>
           ))}
         </div>
 
         <p className="plano-leyenda">
-          <span className="leyenda libre">Libre</span>
-          <span className="leyenda en-juego">En juego</span>
+          <span className="leyenda libre">Libre: el juego solo</span>
+          <span className="leyenda en-juego">En juego: con lo de los jugadores</span>
           <span className="leyenda fuera">Fuera de servicio</span>
         </p>
       </div>
