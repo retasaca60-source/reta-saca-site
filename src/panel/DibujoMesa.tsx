@@ -92,20 +92,34 @@ function Popdarts({ enJuego }: { enJuego: boolean }) {
       <circle cx="100" cy="58" r="8" fill="#ffc53d" />
       {enJuego && (
         <g>
-          {/* Dardos de ventosa pegados, con su cola de color: grandes y con
-              borde blanco para que se lean sobre los anillos. */}
-          <g transform="translate(84 46) rotate(-35) scale(1.5)">
-            <rect x="-2" y="0" width="4" height="20" rx="2" fill="#262a31" stroke="#fff" strokeWidth="1" />
-            <path d="M-7 20h14l-7 11z" fill="#0e8f6e" stroke="#fff" strokeWidth="1" />
-            <circle cx="0" cy="0" r="4.5" fill="#ff8a1e" stroke="#fff" strokeWidth="1" />
-          </g>
-          <g transform="translate(112 64) rotate(35) scale(1.5)">
-            <rect x="-2" y="0" width="4" height="20" rx="2" fill="#262a31" stroke="#fff" strokeWidth="1" />
-            <path d="M-7 20h14l-7 11z" fill="#262a31" stroke="#fff" strokeWidth="1" />
-            <circle cx="0" cy="0" r="4.5" fill="#ff8a1e" stroke="#fff" strokeWidth="1" />
-          </g>
+          {/* Dos dardos clavados, inclinados hacia afuera como quedan al
+              lanzarlos: uno de cada equipo. */}
+          <Dardo x={90} y={52} angulo={45} color="#0e8f6e" claro="#6fd3b3" />
+          <Dardo x={113} y={66} angulo={135} color="#262a31" claro="#9aa1ac" />
         </g>
       )}
+    </g>
+  )
+}
+
+/**
+ * Un dardo de ventosa visto de tres cuartos. Se dibuja con la punta en (0,0) y
+ * la cola hacia -x; `angulo` lo gira para que la cola apunte hacia afuera.
+ */
+function Dardo({ x, y, angulo, color, claro }: { x: number; y: number; angulo: number; color: string; claro: string }) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${angulo}) scale(1.35)`}>
+      {/* Sombra donde se pegó. */}
+      <ellipse cx="1" cy="2.5" rx="5" ry="2.5" fill="#000" opacity=".22" />
+      {/* Aletas en V y su lomo. */}
+      <path d="M-24 0 L-35 -8.5 L-31 -1.2 Z" fill={claro} stroke={color} strokeWidth=".9" strokeLinejoin="round" />
+      <path d="M-24 0 L-35 8.5 L-31 1.2 Z" fill={color} stroke={color} strokeWidth=".9" strokeLinejoin="round" />
+      {/* Varilla y cuerpo. */}
+      <rect x="-27" y="-1" width="15" height="2" rx="1" fill="#3a3f48" />
+      <rect x="-14" y="-2.4" width="11" height="4.8" rx="2.4" fill={color} />
+      <rect x="-12.5" y="-1.6" width="8" height="1.2" rx=".6" fill="#fff" opacity=".35" />
+      {/* La ventosa naranja, pegada a la diana. */}
+      <ellipse cx="-1.5" cy="0" rx="2.6" ry="3.6" fill="#ff8a1e" stroke="#c45f00" strokeWidth=".7" />
     </g>
   )
 }
