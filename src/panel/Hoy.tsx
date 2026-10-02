@@ -16,6 +16,7 @@ import { fin, ocupaMesa, pagado, pendiente, total, type Reserva } from '../negoc
 import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, formatoDuracion, formatoHora, sumarDias } from '../negocio/tiempo'
 import { DibujoMesa } from './DibujoMesa'
 import { FilaReserva } from './FilaReserva'
+import { escucharLevantadas, levantadas, marcarLevantada } from '../mecanismos/panel/mesasLevantadas'
 import { IconoAnterior, IconoSiguiente } from './iconos'
 import { ListaDelDia } from './ListaDelDia'
 import { RegistrarEnMostrador } from './RegistrarEnMostrador'
@@ -143,13 +144,22 @@ const nombreCorto = (fecha: string) => {
 
 // ─── El plano ────────────────────────────────────────────────────────────
 
-type EstadoMesa = 'libre' | 'en-juego' | 'fuera'
+/**
+ * 'tiempo': el grupo sentado ahí ya cumplió su hora. Es SOLO un aviso para que
+ * el empleado vaya a levantar la mesa: para las reglas la mesa ya está libre
+ * (se puede reservar y sentar a otro), por eso cuenta como libre en todo lo
+ * demás.
+ */
+type EstadoMesa = 'libre' | 'en-juego' | 'tiempo' | 'fuera'
 
 interface Mesa {
   etiqueta: string
   numero: number
   estado: EstadoMesa
+  /** Quién juega ahora. */
   quien?: Reserva
+  /** Con 'tiempo': el grupo al que se le acabó la hora en esta mesa. */
+  termino?: Reserva
 }
 
 function Plano({
@@ -176,17 +186,31 @@ function Plano({
   registrarAqui: (mesa: string) => void
 }) {
   const ahora = ahoraEnSonora()
+  const [yaSeLevantaron, setYaSeLevantaron] = useState(levantadas)
+  useEffect(() => escucharLevantadas(() => setYaSeLevantaron(levantadas())), [])
   const enJuego = (id: DeporteId) =>
     reservas.filter((r) => r.deporte === id && ocupaMesa(r, ahora.ms) && r.inicio <= ahora.minutos && fin(r) > ahora.minutos)
-  const d = config.deportes[deporte]
+  /** Grupos sentados a los que ya se les acabó la hora y nadie ha levantado. */
+  const terminaron = (id: DeporteId) =>
+    reservas.filter((r) => r.deporte === id && r.estado === 'confirmada' && r.mesa && fin(r) <= ahora.minutos && !yaSeLevantaron.has(r.id))
+  const mesasDe = (id: DeporteId): Mesa[] => {
+    const dd = config.deportes[id]
+    const jugandoAhi = enJuego(id)
+    const fuera = terminaron(id)
+    return Array.from({ length: dd.mesas }, (_, i) => {
+      const numero = i + 1
+      const etiqueta = `${dd.clave} ${numero}`
+      const quien = jugandoAhi.find((r) => r.mesa === etiqueta)
+      // Si ya sentaron a otro grupo, el aviso del anterior sobra.
+      const termino = quien ? undefined : fuera.filter((r) => r.mesa === etiqueta).sort((a, b) => fin(b) - fin(a))[0]
+      const estado: EstadoMesa = dd.fueraDeServicio.includes(numero) ? 'fuera' : quien ? 'en-juego' : termino ? 'tiempo' : 'libre'
+      return { etiqueta, numero, quien, termino, estado }
+    })
+  }
   const jugando = enJuego(deporte)
   const porSentar = jugando.filter((r) => !r.mesa)
-  const mesas: Mesa[] = Array.from({ length: d.mesas }, (_, i) => {
-    const numero = i + 1
-    const etiqueta = `${d.clave} ${numero}`
-    const quien = jugando.find((r) => r.mesa === etiqueta)
-    return { etiqueta, numero, quien, estado: d.fueraDeServicio.includes(numero) ? 'fuera' : quien ? 'en-juego' : 'libre' }
-  })
+  const mesas = mesasDe(deporte)
+  const conTiempo = mesas.filter((m) => m.estado === 'tiempo')
   const mesa = mesas.find((m) => m.etiqueta === elegida) ?? null
 
   return (
@@ -195,8 +219,10 @@ function Plano({
         <div className="plano-filtros" role="group" aria-label="Deporte">
           {ORDEN_DEPORTES.map((id) => {
             const ocupadas = enJuego(id).filter((r) => r.mesa).length
+            const avisos = mesasDe(id).filter((m) => m.estado === 'tiempo').length
             return (
               <button key={id} type="button" className="pastilla" aria-pressed={deporte === id} onClick={() => setDeporte(id)}>
+                {avisos > 0 && <span className="pastilla-alerta" aria-label={`${avisos} con tiempo cumplido`} />}
                 {config.deportes[id].nombre}
                 <span className="pastilla-cuenta">
                   {ocupadas}/{config.deportes[id].mesas}
@@ -217,6 +243,13 @@ function Plano({
           </p>
         )}
 
+        {conTiempo.length > 0 && (
+          <p className="plano-aviso rojo">
+            <strong>Se acabó el tiempo en {conTiempo.map((m) => m.etiqueta).join(', ')}.</strong> Avísales y, cuando se levanten, toca la mesa para
+            quitar el aviso. Ya está libre para reservar.
+          </p>
+        )}
+
         <div className="plano-mesas">
           {mesas.map((m) => (
             <button
@@ -227,16 +260,19 @@ function Plano({
               onClick={() => setElegida(elegida === m.etiqueta ? null : m.etiqueta)}
             >
               <span className="mesa-tabla">
-                <DibujoMesa deporte={deporte} enJuego={m.estado === 'en-juego'} />
+                <DibujoMesa deporte={deporte} enJuego={m.estado === 'en-juego' || m.estado === 'tiempo'} />
                 <strong>{m.etiqueta}</strong>
                 <small>
                   {m.estado === 'fuera'
                     ? 'Fuera de servicio'
                     : m.quien
                       ? `${m.quien.organizador.nombre} · hasta ${formatoHora(fin(m.quien))}`
-                      : 'Libre'}
+                      : m.termino
+                        ? `${m.termino.organizador.nombre} · terminó ${formatoHora(fin(m.termino))}`
+                        : 'Libre'}
                 </small>
                 {m.estado === 'en-juego' && <span className="mesa-cinta">En juego</span>}
+                {m.estado === 'tiempo' && <span className="mesa-cinta roja">Tiempo cumplido</span>}
               </span>
             </button>
           ))}
@@ -245,6 +281,7 @@ function Plano({
         <p className="plano-leyenda">
           <span className="leyenda libre">Libre: el juego solo</span>
           <span className="leyenda en-juego">En juego: con lo de los jugadores</span>
+          <span className="leyenda tiempo">Tiempo cumplido: hay que levantarla</span>
           <span className="leyenda fuera">Fuera de servicio</span>
         </p>
       </div>
@@ -255,7 +292,8 @@ function Plano({
           config={config}
           deporte={deporte}
           porSentar={porSentar}
-          libres={mesas.filter((m) => m.estado === 'libre').length}
+          libres={mesas.filter((m) => m.estado === 'libre' || m.estado === 'tiempo').length}
+          conTiempo={conTiempo.length}
           jugando={jugando.filter((r) => r.mesa).length}
           registrarAqui={registrarAqui}
         />
@@ -273,6 +311,7 @@ function DatosDeMesa({
   porSentar,
   libres,
   jugando,
+  conTiempo,
   registrarAqui,
 }: {
   mesa: Mesa | null
@@ -281,6 +320,7 @@ function DatosDeMesa({
   porSentar: Reserva[]
   libres: number
   jugando: number
+  conTiempo: number
   registrarAqui: (mesa: string) => void
 }) {
   const [ocupado, setOcupado] = useState<string | null>(null)
@@ -305,6 +345,10 @@ function DatosDeMesa({
             <dt>Por sentar</dt>
             <dd>{porSentar.length}</dd>
           </div>
+          <div>
+            <dt>Tiempo cumplido</dt>
+            <dd className={conTiempo > 0 ? 'rojo' : ''}>{conTiempo}</dd>
+          </div>
         </dl>
         <p className="nota">Toca una mesa para ver quién juega o para sentar a alguien.</p>
       </section>
@@ -328,8 +372,12 @@ function DatosDeMesa({
     <section className="lado-tarjeta">
       <div className="lado-cabeza">
         <h2>{mesa.etiqueta}</h2>
-        <span className={`estado ${mesa.estado}`}>{mesa.estado === 'en-juego' ? 'En juego' : mesa.estado === 'fuera' ? 'Fuera de servicio' : 'Libre'}</span>
+        <span className={`estado ${mesa.estado}`}>
+          {mesa.estado === 'en-juego' ? 'En juego' : mesa.estado === 'tiempo' ? 'Tiempo cumplido' : mesa.estado === 'fuera' ? 'Fuera de servicio' : 'Libre'}
+        </span>
       </div>
+
+      {mesa.termino && <TiempoCumplido r={mesa.termino} config={config} />}
 
       {r && (
         <>
@@ -367,7 +415,7 @@ function DatosDeMesa({
         </>
       )}
 
-      {mesa.estado === 'libre' && (
+      {(mesa.estado === 'libre' || mesa.estado === 'tiempo') && (
         <>
           {porSentar.length > 0 ? (
             <div className="lado-sentar">
@@ -398,6 +446,32 @@ function DatosDeMesa({
       {mesa.estado === 'fuera' && <p className="nota">Se vuelve a poner en servicio en Ajustes.</p>}
       {error && <p className="panel-error">{error}</p>}
     </section>
+  )
+}
+
+/**
+ * La mesa de un grupo al que se le acabó la hora: cuánto se pasaron, si deben
+ * algo, y el botón para quitar el aviso cuando se levanten. Extender sigue a
+ * mano por si quieren más tiempo y hay lugar.
+ */
+function TiempoCumplido({ r, config }: { r: Reserva; config: Configuracion }) {
+  const ahora = ahoraEnSonora()
+  const falta = pendiente(r)
+  return (
+    <div className="lado-tiempo">
+      <p className="lado-nombre">
+        {r.organizador.nombre}
+        <small>
+          {r.folio} · terminó a las {formatoHora(fin(r))}, hace {formatoDuracion(Math.max(0, ahora.minutos - fin(r)))}
+        </small>
+      </p>
+      {falta > 0 && <p className="lado-debe">Falta cobrar {formatoDinero(falta)} antes de que se vayan.</p>}
+      <button type="button" className="panel-boton peligro-lleno grande ancho" onClick={() => marcarLevantada(r.id)}>
+        Ya se levantaron · quitar aviso
+      </button>
+      <FilaReserva key={r.id} r={r} config={config} soloAcciones />
+      <p className="nota">La mesa ya cuenta como libre para reservar; esto solo quita el aviso rojo.</p>
+    </div>
   )
 }
 

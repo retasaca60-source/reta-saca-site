@@ -141,6 +141,8 @@
 .panel-boton.primario{ background:var(--oro); border-color:var(--oro); color:var(--ink); }
 .panel-boton.primario:hover{ background:#ffb800; border-color:#ffb800; }
 .panel-boton.peligro{ color:var(--accent); }
+.panel-boton.peligro-lleno{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.panel-boton.peligro-lleno:hover{ background:#b42318; border-color:#b42318; }
 .panel-boton.activo{ border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
 .panel-boton.discreto{ border-color:transparent; background:transparent; color:var(--ink-soft); }
 .panel-boton.grande{ min-height:48px; padding:0 20px; font-size:15px; margin-left:auto; }
@@ -215,12 +217,14 @@
 }
 .pastilla:hover{ border-color:var(--ink-faint); color:var(--ink); }
 .pastilla[aria-pressed='true']{ background:var(--oro); border-color:var(--oro); color:var(--ink); }
+.pastilla-alerta{ width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 2px var(--surface); }
 .pastilla-cuenta{ font-size:13px; font-weight:600; opacity:.7; font-variant-numeric:tabular-nums; }
 
 .plano-aviso{
   margin:0 0 18px; padding:12px 16px; border-radius:14px;
   background:var(--warn-soft); color:var(--warn); font-size:14px; line-height:1.45;
 }
+.plano-aviso.rojo{ background:var(--accent-soft); color:var(--accent); }
 
 .plano-mesas{
   display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));
@@ -254,6 +258,17 @@
   position:absolute; top:16px; right:-32px; width:120px; transform:rotate(38deg);
   background:var(--oro); color:var(--ink); font-size:12px; font-weight:700; padding:3px 0;
 }
+/* Tiempo cumplido: la mesa en rojo hasta que el empleado quita el aviso. El
+   borde late despacio para llamar la atención (quieto si el sistema pide
+   reducir el movimiento). */
+.mesa.tiempo .mesa-tabla{ box-shadow:0 0 0 3px var(--accent), 0 18px 36px -16px rgba(217,45,32,.45); background:#fff7f6; animation:latido-rojo 2.4s ease-in-out infinite; }
+.mesa.tiempo[aria-pressed='true'] .mesa-tabla{ box-shadow:0 0 0 4px var(--accent), 0 18px 36px -16px rgba(217,45,32,.6); }
+.mesa.tiempo .mesa-tabla small{ color:var(--accent); font-weight:600; }
+/* Una etiqueta y no la cinta diagonal: "Tiempo cumplido" no cabía en la esquina. */
+.mesa-cinta.roja{ background:var(--accent); color:#fff; width:auto; top:12px; right:12px; transform:none; padding:4px 10px; border-radius:999px; }
+@keyframes latido-rojo{ 50%{ box-shadow:0 0 0 6px rgba(217,45,32,.35), 0 18px 36px -16px rgba(217,45,32,.45); } }
+@media (prefers-reduced-motion:reduce){ .mesa.tiempo .mesa-tabla{ animation:none; } }
+
 /* Fuera de servicio: el dibujo en gris, sobre rayas. */
 .mesa.fuera .mesa-tabla{ background:repeating-linear-gradient(-45deg, #f3f4f6 0 8px, #fbfbfc 8px 16px); box-shadow:none; }
 .mesa.fuera .dibujo-mesa{ filter:grayscale(1); opacity:.45; }
@@ -263,6 +278,7 @@
 .leyenda{ display:inline-flex; align-items:center; gap:8px; }
 .leyenda::before{ content:''; width:12px; height:12px; border-radius:50%; background:var(--teal); }
 .leyenda.en-juego::before{ background:var(--oro); }
+.leyenda.tiempo::before{ background:var(--accent); }
 .leyenda.fuera::before{ border-radius:3px; background:repeating-linear-gradient(-45deg, #d6d9de 0 3px, #f6f7f8 3px 6px); }
 
 /* La columna derecha. */
@@ -274,6 +290,7 @@
 .estado.libre{ background:var(--teal-soft); color:var(--teal); }
 .estado.en-juego{ background:var(--oro-suave); color:var(--oro-tinta); }
 .estado.fuera{ background:var(--busy); color:var(--ink-soft); }
+.estado.tiempo{ background:var(--accent-soft); color:var(--accent); }
 .lado-nombre{ margin:0 0 6px; font-size:17px; font-weight:700; display:flex; flex-direction:column; gap:2px; }
 .lado-nombre small{ font-size:13px; font-weight:500; color:var(--ink-faint); }
 
@@ -284,7 +301,11 @@
 .datos dd{ margin:0; font-weight:600; font-size:15px; font-variant-numeric:tabular-nums; text-align:right; }
 .datos dd.falta{ color:var(--warn); }
 .datos dd.bien{ color:var(--teal); }
+.datos dd.rojo{ color:var(--accent); }
 
+.lado-tiempo{ display:flex; flex-direction:column; gap:12px; margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid var(--line); }
+.lado-tiempo .nota{ margin:0; }
+.lado-debe{ margin:0; padding:10px 12px; border-radius:12px; background:var(--warn-soft); color:var(--warn); font-weight:600; font-size:14px; }
 .lado-sentar{ display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
 .lado-sentar .nota{ margin:0; }
 .lado-grupo{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:14px; background:var(--surface-2); }
