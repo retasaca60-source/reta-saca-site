@@ -54,6 +54,15 @@ export function sumarDias(fecha: string, dias: number): string {
   return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10)
 }
 
+/**
+ * ¿Es un día que existe? El formato solo no basta: "2026-10-32" pasaba, se
+ * guardaba y luego cada función de calendario lo leía como otro día distinto
+ * (Date lo convierte en el 1 de noviembre).
+ */
+export function esFechaValida(fecha: unknown): fecha is string {
+  return typeof fecha === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fecha) && sumarDias(fecha, 0) === fecha
+}
+
 /** 0 = domingo … 6 = sábado. */
 export function diaDeLaSemana(fecha: string): number {
   const [a, m, d] = fecha.split('-').map(Number)

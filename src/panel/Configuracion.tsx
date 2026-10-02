@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react'
 import { servicio, type Conflicto, type Rol } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion as Config, type Duracion } from '../negocio/configuracion'
+import { RANGOS_DE_REGLAS } from '../negocio/operaciones'
 import { DIAS_LARGOS, etiquetaFecha, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0]
@@ -63,9 +64,11 @@ export function Configuracion() {
           <h3>Con estos cambios, algunas reservas se quedan sin mesa o fuera de horario</h3>
           <ul>
             {conflictos.map((x) => (
-              <li key={`${x.deporte}${x.fecha}${x.inicio}`}>
-                {c.deportes[x.deporte].nombre} · {etiquetaFecha(x.fecha)} {formatoHora(x.inicio)}: {x.reservas} {x.reservas === 1 ? 'reserva' : 'reservas'} y{' '}
-                {x.mesas === 0 ? 'el local estaría cerrado' : `solo ${x.mesas} mesas`}
+              <li key={`${x.deporte}${x.fecha}${x.inicio}${x.mesa ?? ''}`}>
+                {c.deportes[x.deporte].nombre} · {etiquetaFecha(x.fecha)} {formatoHora(x.inicio)}:{' '}
+                {x.mesa
+                  ? `${x.nombre} está en ${x.mesa}, que dejaría de estar disponible. Cámbialos de mesa.`
+                  : `${x.reservas} ${x.reservas === 1 ? 'reserva' : 'reservas'} y ${x.mesas === 0 ? 'el local estaría cerrado' : `solo ${x.mesas} mesas`}`}
               </li>
             ))}
           </ul>
@@ -220,7 +223,7 @@ export function Configuracion() {
           ).map(([llave, texto]) => (
             <label key={llave}>
               {texto}
-              <input className="corto" type="number" min={0} value={c.reglas[llave]} onChange={(e) => cambiar((x) => void (x.reglas[llave] = numero(e.target.value)))} />
+              <input className="corto" type="number" min={RANGOS_DE_REGLAS[llave].min} max={RANGOS_DE_REGLAS[llave].max} value={c.reglas[llave]} onChange={(e) => cambiar((x) => void (x.reglas[llave] = numero(e.target.value)))} />
             </label>
           ))}
           <label>

@@ -106,7 +106,6 @@ export function Semana() {
         key={elegido}
         reservas={reservas.filter((r) => r.fecha === elegido)}
         config={config}
-        esHoy={elegido === hoy}
       />
     </div>
   )

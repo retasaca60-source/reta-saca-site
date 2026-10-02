@@ -370,7 +370,8 @@
 
 /* ── Reservas del día: por hora, como línea de tiempo ─────────────────── */
 
-.dia{ max-width:1120px; }
+/* No se llama .dia: esa clase es el botón de 64 px de los días del sitio. */
+.lista-dia{ max-width:1120px; }
 .dia-filtros{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
 .dia-horas{ list-style:none; margin:0; padding:0; }
 .dia-hora{ display:grid; grid-template-columns:110px minmax(0,1fr); gap:18px; position:relative; padding-bottom:22px; }

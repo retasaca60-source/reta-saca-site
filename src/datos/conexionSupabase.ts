@@ -66,10 +66,19 @@ export function conexionSupabase(url: string, llavePublica: string): Conexion {
         throw new ErrorDeDatos('datos_invalidos', 'No hay conexión. Revisa tu internet e intenta otra vez.')
       }
       const cuerpo = await respuesta.json().catch(() => null)
-      if (!cuerpo || typeof cuerpo !== 'object') {
-        throw new ErrorDeDatos('datos_invalidos', 'El servidor no respondió bien. Intenta otra vez en un momento.')
+      // Un error nuestro trae { error: { codigo, mensaje } } con un mensaje
+      // para la persona. Cualquier otra cosa (un error de la plataforma con
+      // { message }, una página, un código distinto de 2xx sin "resultado") NO
+      // es una respuesta: antes se devolvía `undefined` como si lo fuera, y la
+      // pantalla se quedaba cargando o tronaba después sin decir por qué.
+      const error = cuerpo && typeof cuerpo === 'object' ? cuerpo.error : null
+      if (error && typeof error === 'object' && typeof error.mensaje === 'string') {
+        throw new ErrorDeDatos(typeof error.codigo === 'string' ? error.codigo : 'datos_invalidos', error.mensaje)
       }
-      if (cuerpo.error) throw new ErrorDeDatos(cuerpo.error.codigo, cuerpo.error.mensaje)
+      if (!respuesta.ok || !cuerpo || typeof cuerpo !== 'object' || !('resultado' in cuerpo)) {
+        console.error('[api]', accion, respuesta.status, cuerpo)
+        throw new ErrorDeDatos('datos_invalidos', `El servidor no respondió bien (${respuesta.status}). Intenta otra vez en un momento.`)
+      }
       return cuerpo.resultado
     },
 

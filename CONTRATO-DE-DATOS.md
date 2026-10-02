@@ -120,8 +120,9 @@ el cliente o para recepción, en español.
 |---|---|---|
 | `sesion()`, `iniciarSesion(usuario, contraseña)`, `cerrarSesion()` | todos | Usuario y contraseña (Supabase Auth por dentro, ver `BASE-DE-DATOS.md`). Cada persona su usuario. |
 | `reservasEntre(desde, hasta)` | ambos | Todas las reservas de esas fechas, de cualquier estado, ordenadas por fecha y hora. |
-| `pagosDelDia(fecha)` | ambos | Pagos **hechos** ese día (en línea y en el local), para el cierre de caja. |
-| `anotarSinReserva(cliente)` | ambos | La caja del mostrador: registra **y cobra** (efectivo o tarjeta, en `cliente.medio`) a un grupo que empieza **ahora**. Revisa horario, lugar y mesa. Guarda quién cobró. |
+| `pagosDelDia(fecha)` | ambos | Pagos **hechos** ese día (en línea y en el local), para el cierre de caja. Se buscan por la fecha del **pago**, no de la reserva: un cobro de hoy de una reserva movida a otro mes sigue saliendo hoy. |
+| `cotizarSinReserva(deporte, duracion)` | ambos | Lo que cuesta un grupo que empieza **ahora**, con la hora y la tarifa del servidor. Es lo que la caja enseña antes de cobrar. |
+| `anotarSinReserva(cliente)` | ambos | La caja del mostrador: registra **y cobra** (efectivo o tarjeta, en `cliente.medio`) a un grupo que empieza **ahora**. Revisa horario, lugar y mesa. Guarda quién cobró. Con `cliente.precioEsperado` (el total que se vio y se cobró en mano), si el servidor calcula otro **no registra nada**. |
 | `asignarMesa(id, mesa \| null)` | ambos | Mesa concreta ("CH 3"): que exista, funcione y no la tenga otro grupo a esa hora. Marca que llegaron. |
 | `marcarPago(id, parteIds, medio, nombre?)` | ambos | Efectivo o tarjeta. Guarda quién lo marcó. |
 | `extender(id, minutos)` | ambos | Revisa cierre y lugar; agrega una parte "extension" por cobrar. |
@@ -130,9 +131,9 @@ el cliente o para recepción, en español.
 | `devolucionesPorRevisar()` | ambos | Canceladas con devolución pendiente, de cualquier fecha. |
 | `resolverDevolucion(id, 'transferida' \| 'sin_devolucion')` | ambos | El negocio ya transfirió (los pagos en línea quedan `devuelto`) o decidió no devolver. Guarda quién y cuándo. |
 | `liberarPorRetraso(id)` | ambos | Solo pasados los 20 min sin llegar. Sin devolución. |
-| `guardarConfiguracion(config, aunqueHayaConflictos?)` | dueño | Si con la nueva configuración alguna reserva futura se queda sin mesa o fuera de horario, **no guarda** y devuelve los conflictos, salvo que venga `aunqueHayaConflictos`. Nunca cancela nada. |
+| `guardarConfiguracion(config, aunqueHayaConflictos?)` | dueño | Revisa la configuración completa (rangos de las reglas, precios que suben con el tiempo, horarios sin encimarse, fechas que existen). Si con ella alguna reserva que no ha terminado —de cualquier fecha futura, apartados vigentes incluidos— se queda sin mesa, fuera de horario o en una mesa que deja de existir, **no guarda** y devuelve los conflictos, salvo que venga `aunqueHayaConflictos`. Nunca cancela nada. |
 | `usuarios()`, `agregarUsuario(u, contraseña)`, `quitarUsuario()` | dueño | Acceso al panel: el dueño crea la cuenta con usuario y contraseña, sin correos. Nadie se puede quitar a sí mismo. |
-| `alCambiar(aviso)` | — | Llama a `aviso()` cuando cambian los datos. Con Supabase: Realtime sobre `reservas`/`partes`. |
+| `alCambiar(aviso)` | — | Llama a `aviso()` cuando cambian los datos. Con Supabase: Realtime sobre `reservas` (solo con sesión del panel), tras cada acción de este navegador, al volver a la pestaña y cada 30 segundos con la página a la vista (lo que Realtime no cubre: el cliente, la configuración y el paso del tiempo). |
 
 ## Modelo de datos
 

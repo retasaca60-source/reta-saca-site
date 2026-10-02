@@ -13,6 +13,7 @@ import type { Reserva } from '../negocio/reserva'
 import {
   ErrorDeDatos,
   type Conflicto,
+  type CotizacionSinReserva,
   type HorarioDisponible,
   type VistaDePagoSimulado,
   type PagoDelDia,
@@ -78,6 +79,7 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
 
     reservasEntre: (desde, hasta) => llamar<Reserva[]>('reservasEntre', { desde, hasta }),
     pagosDelDia: (fecha) => llamar<PagoDelDia[]>('pagosDelDia', { fecha }),
+    cotizarSinReserva: (deporte, duracion) => llamar<CotizacionSinReserva>('cotizarSinReserva', { deporte, duracion }),
     anotarSinReserva: (cliente) => cambia(llamar<Reserva>('anotarSinReserva', { cliente: { ...cliente } })),
     asignarMesa: (reservaId, mesa) => cambia(llamar<Reserva>('asignarMesa', { reservaId, mesa })),
     marcarPago: (reservaId, parteIds, medio, nombre) => cambia(llamar<Reserva>('marcarPago', { reservaId, parteIds, medio, nombre })),

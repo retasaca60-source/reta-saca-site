@@ -113,6 +113,23 @@ export function FilaReserva({
         </div>
       )}
 
+      {cancelada && r.organizador.whatsapp && (
+        <div className="fila-acciones">
+          <a
+            className="panel-boton"
+            href={enlaceWhatsApp(
+              `Hola ${r.organizador.nombre}, tu reserva en Reta Saca (${r.folio}) del ${etiquetaFecha(r.fecha)} a las ${formatoHora(r.inicio)} quedó cancelada.` +
+                (r.devolucion?.estado === 'por_revisar' ? ' Para lo que pagaste en línea, mándanos tu CLABE por este medio y lo revisamos.' : ''),
+              r.organizador.whatsapp,
+            )}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Avisar por WhatsApp
+          </a>
+        </div>
+      )}
+
       {abierto === 'sentar' && <Sentar r={r} config={config} ocupado={ocupado} hacer={hacer} />}
       {abierto === 'cobrar' && <Cobrar r={r} ocupado={ocupado} hacer={hacer} />}
       {abierto === 'extender' && (
@@ -232,11 +249,12 @@ function Cobrar({ r, ocupado, hacer }: { r: Reserva; ocupado: boolean; hacer: Ha
 function Cambiar({ r, ocupado, hacer }: { r: Reserva; ocupado: boolean; hacer: Hacer }) {
   const [fecha, setFecha] = useState(r.fecha)
   const [hora, setHora] = useState(horaDe24(r.inicio))
+  const igual = fecha === r.fecha && hora === horaDe24(r.inicio)
   return (
     <div className="fila-detalle">
-      <input type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
+      <input type="date" min={ahoraEnSonora().fecha} value={fecha} onChange={(e) => setFecha(e.target.value)} />
       <input type="time" step={1800} value={hora} onChange={(e) => setHora(e.target.value)} />
-      <button type="button" className="panel-boton primario" disabled={ocupado || !hora} onClick={() => hacer(() => servicio.cambiarHorario(r.id, fecha, minutosDe(hora)))}>
+      <button type="button" className="panel-boton primario" disabled={ocupado || !hora || !fecha || igual} onClick={() => hacer(() => servicio.cambiarHorario(r.id, fecha, minutosDe(hora)))}>
         Mover
       </button>
       <span className="nota">Misma duración. Si pierde la promo, la diferencia queda por cobrar.</span>

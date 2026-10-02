@@ -10,7 +10,15 @@
 // navegador).
 
 import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
-import type { ClienteSinReserva, Conflicto, HorarioDisponible, PagoDelDia, SolicitudDeReserva, VistaDeCobro } from '../negocio/operaciones/tipos'
+import type {
+  ClienteSinReserva,
+  Conflicto,
+  CotizacionSinReserva,
+  HorarioDisponible,
+  PagoDelDia,
+  SolicitudDeReserva,
+  VistaDeCobro,
+} from '../negocio/operaciones/tipos'
 import type { MedioDePago, Reserva } from '../negocio/reserva'
 
 // Las formas de datos y el error vienen del negocio; se reexportan para que
@@ -19,6 +27,7 @@ export { ErrorDeDatos, type CodigoDeError } from '../negocio/errores'
 export type {
   ClienteSinReserva,
   Conflicto,
+  CotizacionSinReserva,
   HorarioDisponible,
   PagoDelDia,
   SolicitudDeReserva,
@@ -100,7 +109,9 @@ export interface ServicioDeDatos {
   reservasEntre(desde: string, hasta: string): Promise<Reserva[]>
   /** Pagos HECHOS ese día (en línea y en el local), no los de las reservas de ese día. Para el cierre de caja. */
   pagosDelDia(fecha: string): Promise<PagoDelDia[]>
-  /** Registra Y COBRA en el mostrador a un grupo sin reserva (empieza ahora). */
+  /** Cuánto cuesta un grupo sin reserva que empieza AHORA, con la hora de los datos (en la real, la del servidor). */
+  cotizarSinReserva(deporte: DeporteId, duracion: Duracion): Promise<CotizacionSinReserva>
+  /** Registra Y COBRA en el mostrador a un grupo sin reserva (empieza ahora). Con `precioEsperado` distinto al de los datos, no registra. */
   anotarSinReserva(cliente: ClienteSinReserva): Promise<Reserva>
   /** Asigna mesa y marca que llegaron. `null` quita la mesa. */
   asignarMesa(reservaId: string, mesa: string | null): Promise<Reserva>

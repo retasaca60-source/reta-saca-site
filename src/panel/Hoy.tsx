@@ -126,7 +126,7 @@ export function Hoy() {
         />
       )}
 
-      {vista === 'reservas' && <ListaDelDia reservas={delDia} config={config} esHoy={esHoy} />}
+      {vista === 'reservas' && <ListaDelDia reservas={delDia} config={config} />}
 
       {vista === 'mostrador' && (
         <section className="hoy-mostrador">

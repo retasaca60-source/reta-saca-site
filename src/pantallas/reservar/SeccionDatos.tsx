@@ -51,7 +51,7 @@ export function SeccionDatos({ borrador, despachar, config }: Props) {
       <p className="error-campo" id="ff-wa-error">
         {errorWhatsapp}
       </p>
-      <p className="nota-chica">Aquí te mandamos el link de tu reserva.</p>
+      <p className="nota-chica">Con él te ubicamos en el local. Al terminar, un botón te manda tu link a tu propio WhatsApp.</p>
 
       <h2 className="titulo-seccion">Antes de pagar</h2>
       <div className="grupo">
@@ -68,7 +68,12 @@ export function SeccionDatos({ borrador, despachar, config }: Props) {
         <label className="casilla">
           <input type="checkbox" checked={aceptaReglas} onChange={(e) => despachar({ tipo: 'aceptarReglas', acepta: e.target.checked })} />
           <span>
-            Acepto las reglas y el <Link to="/privacidad">aviso de privacidad</Link>.
+            {/* En otra pestaña: el borrador vive en esta pantalla y al navegar se perdía todo lo capturado. */}
+            Acepto las reglas y el{' '}
+            <Link to="/privacidad" target="_blank" rel="noopener">
+              aviso de privacidad
+            </Link>
+            .
           </span>
         </label>
       </div>

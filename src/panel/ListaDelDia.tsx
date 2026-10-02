@@ -13,7 +13,7 @@ import { FilaReserva } from './FilaReserva'
 
 type Filtro = 'todas' | 'sitio' | 'mostrador'
 
-export function ListaDelDia({ reservas, config, esHoy }: { reservas: Reserva[]; config: Configuracion; esHoy: boolean }) {
+export function ListaDelDia({ reservas, config }: { reservas: Reserva[]; config: Configuracion }) {
   const [filtro, setFiltro] = useState<Filtro>('todas')
   const [abierta, setAbierta] = useState<string | null>(null)
 
@@ -31,7 +31,7 @@ export function ListaDelDia({ reservas, config, esHoy }: { reservas: Reserva[]; 
   }
 
   return (
-    <section className="dia">
+    <section className="lista-dia">
       <div className="dia-filtros" role="group" aria-label="Quién">
         <button type="button" className="pastilla" aria-pressed={filtro === 'todas'} onClick={() => setFiltro('todas')}>
           Todas <span className="pastilla-cuenta">{vigentes.length}</span>
@@ -65,7 +65,6 @@ export function ListaDelDia({ reservas, config, esHoy }: { reservas: Reserva[]; 
                   key={r.id}
                   r={r}
                   config={config}
-                  esHoy={esHoy}
                   abierta={abierta === r.id}
                   alternar={() => setAbierta(abierta === r.id ? null : r.id)}
                 />
@@ -88,33 +87,34 @@ export function ListaDelDia({ reservas, config, esHoy }: { reservas: Reserva[]; 
 }
 
 /** Si ya llegaron, si vienen, si van tarde: lo que recepción necesita saber de cada grupo. */
-function llegada(r: Reserva, config: Configuracion, esHoy: boolean): { tono: string; texto: string } {
+function llegada(r: Reserva, config: Configuracion): { tono: string; texto: string } {
   if (r.estado === 'apartada') return { tono: 'aviso', texto: 'Pagando en línea…' }
   if (r.mesa) return { tono: 'bien', texto: `Llegó · en ${r.mesa}` }
   if (r.llegaronEn) return { tono: 'bien', texto: 'Llegó · falta mesa' }
   const ahora = ahoraEnSonora()
+  // Se compara con la fecha de la reserva, no con "¿la lista es de hoy?":
+  // antes, al revisar ayer, quien nunca llegó salía como "Por llegar".
+  if (r.fecha > ahora.fecha) return { tono: 'neutra', texto: 'Por llegar' }
   // Si su horario ya terminó, ya no "va tarde": no vino.
-  if (esHoy && fin(r) <= ahora.minutos) return { tono: 'mal', texto: 'No llegó' }
-  if (esHoy && puedeLiberarPorRetraso(r, config, ahora.ms)) return { tono: 'mal', texto: 'Va tarde' }
-  if (esHoy && r.inicio <= ahora.minutos && fin(r) > ahora.minutos) return { tono: 'aviso', texto: 'Ya es su hora' }
+  if (r.fecha < ahora.fecha || fin(r) <= ahora.minutos) return { tono: 'mal', texto: 'No llegó' }
+  if (puedeLiberarPorRetraso(r, config, ahora.ms)) return { tono: 'mal', texto: 'Va tarde' }
+  if (r.inicio <= ahora.minutos) return { tono: 'aviso', texto: 'Ya es su hora' }
   return { tono: 'neutra', texto: 'Por llegar' }
 }
 
 function Fila({
   r,
   config,
-  esHoy,
   abierta,
   alternar,
 }: {
   r: Reserva
   config: Configuracion
-  esHoy: boolean
   abierta: boolean
   alternar: () => void
 }) {
   const d = config.deportes[r.deporte]
-  const l = llegada(r, config, esHoy)
+  const l = llegada(r, config)
   const falta = pendiente(r)
   return (
     <article className={'dia-fila' + (abierta ? ' abierta' : '')}>

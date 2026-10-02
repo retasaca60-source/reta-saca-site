@@ -50,6 +50,21 @@ export interface ClienteSinReserva {
   mesa?: string
   /** Cómo pagó en el mostrador. El comprobante es el ticket de la terminal. */
   medio: Exclude<MedioDePago, 'en_linea'>
+  /**
+   * El total que recepción vio en pantalla y cobró en mano. Si el servidor
+   * calcula otro (cambió la tarifa, terminó la promo, el reloj de la laptop
+   * va desfasado), no registra nada y pide revisar: lo cobrado y lo guardado
+   * tienen que ser lo mismo.
+   */
+  precioEsperado?: number
+}
+
+/** Lo que cuesta AHORA un grupo sin reserva, según la hora del servidor. */
+export interface CotizacionSinReserva {
+  precio: number
+  conPromo: boolean
+  /** Minuto (Sonora) en que empezarían: la hora del servidor, no la del aparato. */
+  inicio: number
 }
 
 /** Un pago hecho en un día, para el cierre de caja. */
@@ -67,11 +82,18 @@ export interface PagoDelDia {
   devuelto: boolean
 }
 
-/** Un horario donde, con la configuración nueva, habría más reservas que mesas. */
+/**
+ * Un horario donde, con la configuración nueva, habría más reservas que
+ * mesas; o, si trae `mesa`, un grupo sentado en una mesa que dejaría de existir
+ * o de funcionar.
+ */
 export interface Conflicto {
   deporte: DeporteId
   fecha: string
   inicio: number
   reservas: number
   mesas: number
+  mesa?: string
+  /** Del grupo de esa mesa. */
+  nombre?: string
 }

@@ -1,7 +1,7 @@
 // Qué días y a qué horas se puede reservar (RESERVAS.md, sección 2).
 
 import type { Configuracion, Duracion } from './configuracion'
-import { diaDeLaSemana, sumarDias, type Momento } from './tiempo'
+import { diaDeLaSemana, esFechaValida, sumarDias, type Momento } from './tiempo'
 
 export interface DiaReservable {
   fecha: string
@@ -32,7 +32,9 @@ export function dentroDeLaVentana(config: Configuracion, fecha: string, ahora: M
  * - para hoy, solo las que empiezan al menos `minutosDeCorte` después de ahora.
  */
 export function iniciosPosibles(config: Configuracion, fecha: string, duracion: Duracion, ahora: Momento): number[] {
-  if (estaCerrado(config, fecha) || !dentroDeLaVentana(config, fecha, ahora)) return []
+  // Una fecha que no existe ("2026-09-31") cae dentro de la ventana al
+  // compararla como texto: se descarta antes.
+  if (!esFechaValida(fecha) || estaCerrado(config, fecha) || !dentroDeLaVentana(config, fecha, ahora)) return []
   const paso = config.reglas.pasoDeInicio
   const desdeHoy = fecha === ahora.fecha ? ahora.minutos + config.reglas.minutosDeCorte : -Infinity
   const inicios: number[] = []

@@ -117,7 +117,9 @@ const entornoBase: Omit<Entorno, 'cuentaId' | 'sitio' | 'cliente'> = {
     },
     borrar: async (id) => {
       const { error } = await admin.auth.admin.deleteUser(id)
-      if (error) throw error
+      // Si ya no existe, el resultado es el que se buscaba: que no haya cuenta.
+      // Así un perfil que se quedó sin su cuenta todavía se puede quitar.
+      if (error && error.status !== 404) throw error
     },
   },
 }

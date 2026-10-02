@@ -5,12 +5,11 @@
 
 import { useState } from 'react'
 import { servicio } from '../datos'
-import { mensajeDeError } from '../mecanismos/datos/usarDatos'
+import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
 import { bloqueEn, estaCerrado } from '../negocio/horario'
-import { precioSinReserva } from '../negocio/operaciones'
-import { fin, ocupaMesa, type MedioDePago, type Reserva } from '../negocio/reserva'
+import { fin, ocupaMesa, total, type MedioDePago, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, diaDeLaSemana, formatoHora } from '../negocio/tiempo'
 
 type Medio = Exclude<MedioDePago, 'en_linea'>
@@ -42,7 +41,13 @@ export function RegistrarEnMostrador({
 
   const d = config.deportes[deporte]
   const ahora = ahoraEnSonora()
-  const termina = ahora.minutos + duracion
+  // El total lo da el servidor con SU hora y SU tarifa: antes se calculaba
+  // aquí con el reloj de la laptop, y si iba desfasado (o terminaba la promo)
+  // la pantalla decía un precio y se guardaba otro.
+  const cotizacion = usarDatos(() => servicio.cotizarSinReserva(deporte, duracion), [deporte, duracion])
+  const precio = cotizacion.datos?.precio
+  const conPromo = cotizacion.datos?.conPromo ?? false
+  const termina = (cotizacion.datos?.inicio ?? ahora.minutos) + duracion
   // Mesas que se ven libres en todo el tiempo que van a jugar. La revisión
   // que vale la hace la operación al cobrar; esto es para elegir rápido.
   const ocupadas = reservas
@@ -51,9 +56,8 @@ export function RegistrarEnMostrador({
   const libres = Array.from({ length: d.mesas }, (_, i) => `${d.clave} ${i + 1}`).filter(
     (m, i) => !d.fueraDeServicio.includes(i + 1) && !ocupadas.includes(m),
   )
-  const { precio, conPromo } = precioSinReserva(config, deporte, ahora.minutos, duracion)
   const recibido = Number(pagaCon) || 0
-  const cambio = recibido - precio
+  const cambio = recibido - (precio ?? 0)
   // Mismas razones que da la operación, pero antes de intentar cobrar.
   const bloque = bloqueEn(config, ahora.fecha, ahora.minutos)
   // Si está cerrado, se dice cuándo abre: antes solo decía "cerrado" en letra
@@ -68,7 +72,7 @@ export function RegistrarEnMostrador({
     : termina > bloque.hasta
       ? `No alcanza: se cierra a las ${formatoHora(bloque.hasta)}. Elige menos tiempo.`
       : null
-  const listo = !impedimento && nombre.trim().length > 1 && !ocupado && (medio !== 'efectivo' || !pagaCon || cambio >= 0)
+  const listo = precio !== undefined && !impedimento && nombre.trim().length > 1 && !ocupado && (medio !== 'efectivo' || !pagaCon || cambio >= 0)
 
   const elegirDeporte = (nuevo: DeporteId) => {
     setDeporte(nuevo)
@@ -77,16 +81,20 @@ export function RegistrarEnMostrador({
   }
 
   const cobrar = async () => {
+    if (precio === undefined) return
     setOcupado(true)
     setError(null)
     setHecho(null)
     try {
-      const r = await servicio.anotarSinReserva({ deporte, duracion, nombre, whatsapp, mesa: mesa || undefined, medio })
+      // Con el precio que se vio: si el servidor calcula otro, no registra nada.
+      const r = await servicio.anotarSinReserva({ deporte, duracion, nombre, whatsapp, mesa: mesa || undefined, medio, precioEsperado: precio })
+      // Lo que se muestra sale de lo GUARDADO, no de lo que se calculó antes.
+      const cobrado = total(r)
       setHecho(
-        `${r.organizador.nombre}: ${d.nombre} ${formatoDinero(precio)} cobrado en ${medio}` +
+        `${r.organizador.nombre}: ${d.nombre} ${formatoDinero(cobrado)} cobrado en ${medio}` +
           (r.mesa ? `, sentados en ${r.mesa}` : ', falta sentarlos') +
           ` hasta las ${formatoHora(fin(r))}.` +
-          (medio === 'efectivo' && recibido > precio ? ` Cambio: ${formatoDinero(cambio)}.` : ''),
+          (medio === 'efectivo' && recibido > cobrado ? ` Cambio: ${formatoDinero(recibido - cobrado)}.` : ''),
       )
       setNombre('')
       setWhatsapp('')
@@ -94,6 +102,8 @@ export function RegistrarEnMostrador({
       setPagaCon('')
     } catch (e) {
       setError(mensajeDeError(e))
+      // Si el precio cambió, que la pantalla traiga el nuevo antes de reintentar.
+      cotizacion.recargar()
     } finally {
       setOcupado(false)
     }
@@ -145,7 +155,8 @@ export function RegistrarEnMostrador({
           <small>
             Total{conPromo && ' · promo'} · hasta las {formatoHora(termina)}
           </small>
-          <strong>{formatoDinero(precio)}</strong>
+          <strong>{precio === undefined ? '…' : formatoDinero(precio)}</strong>
+          {cotizacion.error && <small className="panel-error">{cotizacion.error}</small>}
         </div>
         <div className="segmentado" role="group" aria-label="Cómo paga">
           {MEDIOS.map((x) => (
@@ -157,14 +168,14 @@ export function RegistrarEnMostrador({
         {medio === 'efectivo' && (
           <label className="caja-efectivo">
             Paga con
-            <input type="number" min={0} inputMode="numeric" placeholder={String(precio)} value={pagaCon} onChange={(e) => setPagaCon(e.target.value)} />
+            <input type="number" min={0} inputMode="numeric" placeholder={precio === undefined ? '' : String(precio)} value={pagaCon} onChange={(e) => setPagaCon(e.target.value)} />
             {pagaCon && <span className={cambio < 0 ? 'panel-error' : 'nota bien'}>{cambio < 0 ? `Faltan ${formatoDinero(-cambio)}` : `Cambio ${formatoDinero(cambio)}`}</span>}
           </label>
         )}
         <div className="caja-cobrar">
           {impedimento && <p className="panel-error">{impedimento}</p>}
           <button type="button" className="panel-boton primario grande" disabled={!listo} onClick={cobrar}>
-            {ocupado ? 'Cobrando…' : `Cobrar ${formatoDinero(precio)} y registrar`}
+            {ocupado ? 'Cobrando…' : precio === undefined ? 'Calculando total…' : `Cobrar ${formatoDinero(precio)} y registrar`}
           </button>
         </div>
       </div>

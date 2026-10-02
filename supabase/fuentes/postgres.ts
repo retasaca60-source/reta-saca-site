@@ -62,6 +62,21 @@ export function repositorioPostgres(sql: Sql): Repositorio {
       return fila.cuenta as number
     },
 
+    // Sin índice propio: se recorre el jsonb de cada reserva. Para el tamaño
+    // del local (miles, no millones) basta, y la caja se pide unas veces al día.
+    // Se comparan como instantes, no como texto: el orden del texto depende
+    // de la intercalación de la base.
+    reservasConPagosEntre: async (desde, hasta) =>
+      (
+        await q`
+          select datos from public.reservas
+          where exists (
+            select 1 from jsonb_array_elements(datos -> 'partes') p
+            where (p -> 'pago' ->> 'en')::timestamptz >= ${desde}::timestamptz
+              and (p -> 'pago' ->> 'en')::timestamptz < ${hasta}::timestamptz
+          )`
+      ).map((f) => f.datos as Reserva),
+
     reservaPor: async (campo, valor) => {
       // Se compara como texto: un "id" que no es uuid (lo mandó cualquiera) no
       // debe tronar la consulta, solo no encontrar nada.

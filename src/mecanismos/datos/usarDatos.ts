@@ -38,6 +38,14 @@ export function usarDatos<T>(cargar: () => Promise<T>, dependencias: readonly un
   }, [cargarAhora])
 
   useEffect(() => {
+    // Otra selección (otro día, otro deporte): mientras carga no se enseña lo
+    // de la anterior. Antes se quedaban las horas del día anterior habilitadas
+    // y la caja de una fecha nueva con los importes de la otra; y si la
+    // consulta fallaba, lo viejo seguía ahí como si fuera lo nuevo. Las
+    // recargas de la MISMA selección (alguien cobró, pasó el tiempo) sí
+    // conservan lo que hay mientras llega lo nuevo, para que no parpadee.
+    setDatos(undefined)
+    setError(null)
     recargar()
     return servicio.alCambiar(recargar)
   }, [recargar])

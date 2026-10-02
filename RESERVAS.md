@@ -172,8 +172,10 @@ tarde).
    o “Pagar mi parte”. Al elegir su parte, indica si divide entre 2 o 4
    personas. En Popdarts se paga completo.
 4. **Escribe su nombre y su WhatsApp** (10 dígitos). Antes de pagar ve el
-   resumen y **las reglas**: cancelación hasta 2 horas antes, 30 minutos de
-   tolerancia, que lo que no se pague lo cubre él, y el aviso de privacidad.
+   resumen y **las reglas**: cuánto tiempo queda apartada la mesa mientras
+   paga, 30 minutos de tolerancia, que lo que no se pague lo cubre él, y el
+   aviso de privacidad. Las devoluciones no son automáticas: las decide el
+   negocio (sección 7).
 5. **Paga con Mercado Pago:** todo, o solo su parte. Mientras paga, la mesa
    queda apartada 10 minutos.
 6. **Confirmación:** ve su reserva y tres botones:

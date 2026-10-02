@@ -10,9 +10,10 @@ import { bloqueEn, cabeEnUnBloque, estaCerrado } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDe, precioDeExtension, precioSiExiste } from '../precios'
 import { fin, ocupaMesa, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
-import { formatoHora, momentoDe } from '../tiempo'
+import { formatoDinero } from '../formato'
+import { esFechaValida, formatoHora, instante, momentoDe } from '../tiempo'
 import { abrirDevolucion, copia, type Contexto } from './contexto'
-import type { ClienteSinReserva, PagoDelDia } from './tipos'
+import type { ClienteSinReserva, CotizacionSinReserva, PagoDelDia } from './tipos'
 
 /**
  * Precio para un grupo que llega sin reserva: cuenta la media hora en que
@@ -23,6 +24,14 @@ import type { ClienteSinReserva, PagoDelDia } from './tipos'
 export function precioSinReserva(config: Contexto['config'], deporte: ClienteSinReserva['deporte'], minutoDeLlegada: number, duracion: Duracion) {
   const paso = config.reglas.pasoDeInicio
   return precioDe(config, deporte, Math.floor(minutoDeLlegada / paso) * paso, duracion)
+}
+
+/** Lo que cuesta empezar AHORA (hora de quien calcula: el servidor en la versión real). */
+export function cotizarSinReserva(ctx: Contexto, deporte: ClienteSinReserva['deporte'], duracion: Duracion): CotizacionSinReserva {
+  const d = ctx.config.deportes[deporte]
+  if (!d.duraciones.includes(duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
+  const m = momentoDe(ctx.ahora)
+  return { ...precioSinReserva(ctx.config, deporte, m.minutos, duracion), inicio: m.minutos }
 }
 
 /**
@@ -45,6 +54,12 @@ export function anotarSinReserva(ctx: Contexto, c: ClienteSinReserva, quien: str
     throw new ErrorDeDatos('sin_lugar', `No hay ${d.nombre} libre durante todo ese tiempo.`)
   }
   const { precio, conPromo } = precioSinReserva(config, c.deporte, m.minutos, c.duracion)
+  if (c.precioEsperado !== undefined && c.precioEsperado !== precio) {
+    throw new ErrorDeDatos(
+      'datos_invalidos',
+      `El total ahora es ${formatoDinero(precio)}, no ${formatoDinero(c.precioEsperado)}: cambió la tarifa o la promo. No se registró nada; revisa el total y cobra otra vez.`,
+    )
+  }
   const nombre = c.nombre.trim()
   const r: Reserva = {
     id: nuevoId(),
@@ -89,6 +104,9 @@ export function asignarMesa(ctx: Contexto, r: Reserva, mesa: string | null): Res
     nueva.mesa = null
     return nueva
   }
+  // La pantalla esconde el botón en una cancelada, pero una petición atrasada
+  // (otra laptop, una pestaña vieja) llegaba igual y la sentaba.
+  if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada: no se le puede asignar mesa.')
   const d = ctx.config.deportes[r.deporte]
   const n = Number(mesa.replace(d.clave, '').trim())
   if (!Number.isInteger(n) || n < 1 || n > d.mesas) throw new ErrorDeDatos('datos_invalidos', `${mesa} no existe.`)
@@ -170,6 +188,9 @@ export function marcarPago(
 export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva {
   if (r.estado !== 'confirmada') throw new ErrorDeDatos('no_permitido', 'Solo se extienden reservas confirmadas.')
   const duracion = r.duracion + minutos
+  // cabeEnUnBloque solo mira el horario de la semana: un día cerrado a mano
+  // (un festivo) seguía dejando extender.
+  if (estaCerrado(ctx.config, r.fecha)) throw new ErrorDeDatos('fuera_de_horario', 'Ese día está marcado como cerrado.')
   if (!cabeEnUnBloque(ctx.config, r.fecha, r.inicio, duracion)) throw new ErrorDeDatos('fuera_de_horario', 'No alcanza antes del cierre.')
   if (mesasLibres(ctx.config, ctx.reservas, r.deporte, r.fecha, r.inicio, duracion, ctx.ahora, r.id) < 1) {
     throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre para ese tiempo extra.')
@@ -181,8 +202,13 @@ export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva 
       `${r.mesa} la tiene ${siguiente.organizador.nombre} desde las ${formatoHora(siguiente.inicio)}. Para extender, primero cámbialos a otra mesa libre.`,
     )
   }
+  const monto = precioDeExtension(ctx.config, r.deporte, r.duracion, minutos)
+  // Con precios incoherentes (90 min más barato que 60) la resta salía
+  // negativa y la "parte" bajaba lo que se debía. Ajustes ya no lo permite;
+  // esto cuida una configuración vieja.
+  if (!(monto > 0)) throw new ErrorDeDatos('no_permitido', 'Los precios de ese deporte no permiten cobrar esa extensión. Revisa los precios en Ajustes.')
   const nueva = copia(r)
-  nueva.partes.push({ id: nuevoId(), monto: precioDeExtension(ctx.config, r.deporte, r.duracion, minutos), delOrganizador: true, concepto: 'extension', pago: null })
+  nueva.partes.push({ id: nuevoId(), monto, delOrganizador: true, concepto: 'extension', pago: null })
   nueva.duracion = duracion
   return nueva
 }
@@ -196,8 +222,22 @@ export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva 
  */
 export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio: number): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada.')
-  if (estaCerrado(ctx.config, fecha) || !cabeEnUnBloque(ctx.config, fecha, inicio, r.duracion)) {
+  if (!esFechaValida(fecha) || !Number.isInteger(inicio)) throw new ErrorDeDatos('datos_invalidos', 'Esa fecha u hora no es válida.')
+  // "Mover" al mismo horario no es mover: antes cobraba la diferencia si la
+  // tarifa había subido mientras tanto, y borraba la mesa y la llegada.
+  if (fecha === r.fecha && inicio === r.inicio) throw new ErrorDeDatos('datos_invalidos', 'La reserva ya está en ese horario.')
+  const paso = ctx.config.reglas.pasoDeInicio
+  // Se puede mover al turno que está corriendo (llegaron 5:07 a un turno de las
+  // 5:00), no a uno que ya terminó de empezar.
+  if (instante(fecha, inicio + paso) <= ctx.ahora) throw new ErrorDeDatos('fuera_de_horario', 'Ese horario ya pasó.')
+  const bloque = bloqueEn(ctx.config, fecha, inicio)
+  if (estaCerrado(ctx.config, fecha) || !bloque || !cabeEnUnBloque(ctx.config, fecha, inicio, r.duracion)) {
     throw new ErrorDeDatos('fuera_de_horario', 'Ese horario está fuera del horario del local.')
+  }
+  // Los mismos inicios que ve el cliente: de `paso` en `paso` desde que abre.
+  // El step del formulario no lo garantiza (se puede escribir 6:07).
+  if ((inicio - bloque.desde) % paso !== 0) {
+    throw new ErrorDeDatos('fuera_de_horario', `Las reservas empiezan cada ${paso} minutos desde las ${formatoHora(bloque.desde)}.`)
   }
   if (mesasLibres(ctx.config, ctx.reservas, r.deporte, fecha, inicio, r.duracion, ctx.ahora, r.id) < 1) {
     throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre en ese horario.')

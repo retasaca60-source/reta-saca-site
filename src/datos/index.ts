@@ -42,7 +42,36 @@ if (simulado) {
   }
 }
 
+/**
+ * Cada 30 segundos, con la página a la vista, las pantallas vuelven a cargar.
+ * Realtime solo avisa al panel y solo de reservas: el cliente con su reserva
+ * abierta no se enteraba de lo que hacía recepción, nadie se enteraba de un
+ * cambio de configuración, y un apartado vencido seguía en "Pagando…" hasta
+ * la siguiente consulta, porque el paso del tiempo no avisa a nadie. Un solo
+ * reloj para todas las pantallas, y nada mientras la pestaña está oculta (al
+ * volver ya se recarga, ver conexionSupabase.ts).
+ */
+const CADA_CUANTO_SE_REPASA = 30_000
+
+function conRepaso(s: ServicioDeDatos): void {
+  if (typeof window === 'undefined') return
+  const oyentes = new Set<() => void>()
+  setInterval(() => {
+    if (document.visibilityState === 'visible') oyentes.forEach((f) => f())
+  }, CADA_CUANTO_SE_REPASA)
+  const alCambiar = s.alCambiar
+  s.alCambiar = (aviso) => {
+    oyentes.add(aviso)
+    const dejar = alCambiar(aviso)
+    return () => {
+      oyentes.delete(aviso)
+      dejar()
+    }
+  }
+}
+
 export const servicio: ServicioDeDatos = real ?? simulado!
+conRepaso(servicio)
 
 /** Lo que solo existe en la demostración (restablecer, entrar sin contraseña). */
 export const servicioSimulado: ServicioSimulado | null = simulado

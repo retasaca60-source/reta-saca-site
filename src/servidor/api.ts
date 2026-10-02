@@ -17,7 +17,7 @@ import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
 import type { ClienteSinReserva, SolicitudDeReserva } from '../negocio/operaciones'
 import type { MedioDePago, Reserva } from '../negocio/reserva'
-import { momentoDe, sumarDias } from '../negocio/tiempo'
+import { esFechaValida, instante, momentoDe, sumarDias } from '../negocio/tiempo'
 import { FolioRepetido, type Repositorio } from './repositorio'
 
 /** Alta y baja de cuentas del panel (Supabase Auth). */
@@ -96,7 +96,9 @@ export async function atender(p: Peticion, entorno: Entorno): Promise<Respuesta>
   const accion = ACCIONES[p.accion]
   if (!accion) return { error: { codigo: 'datos_invalidos', mensaje: 'Esa acción no existe.' } }
   try {
-    return { resultado: await accion(p.datos ?? {}, entorno) }
+    // Siempre con "resultado", aunque sea null: el navegador lo exige para
+    // distinguir una respuesta de un error de la plataforma.
+    return { resultado: (await accion(p.datos ?? {}, entorno)) ?? null }
   } catch (e) {
     if (e instanceof ErrorDeDatos) return { error: { codigo: e.codigo, mensaje: e.message } }
     console.error('[api]', p.accion, e)
@@ -130,7 +132,7 @@ function textos(d: Datos, campo: string): string[] {
 }
 function fecha(d: Datos, campo: string): string {
   const v = texto(d, campo)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) throw invalido(campo)
+  if (!esFechaValida(v)) throw invalido(campo)
   return v
 }
 function deporte(d: Datos, campo = 'deporte'): DeporteId {
@@ -470,9 +472,17 @@ const ACCIONES: Record<string, Accion> = {
   pagosDelDia: async (d, e) => {
     await usuarioDe(e)
     const dia = fecha(d, 'fecha')
-    // Un pago de hoy puede ser de una reserva de hasta 7 días adelante (pagó
-    // al reservar) o de días pasados (pagó lo que faltaba después).
-    return op.pagosDelDia(await e.repo.reservasEntre(sumarDias(dia, -7), sumarDias(dia, 8)), dia)
+    // Se buscan por la fecha del PAGO, no de la reserva. Antes se tomaban las
+    // reservas de 7 días antes a 8 después: un cobro de hoy de una reserva que
+    // luego se movió a diciembre desaparecía del cierre de caja.
+    const desde = new Date(instante(dia, 0)).toISOString()
+    const hasta = new Date(instante(sumarDias(dia, 1), 0)).toISOString()
+    return op.pagosDelDia(await e.repo.reservasConPagosEntre(desde, hasta), dia)
+  },
+
+  cotizarSinReserva: async (d, e) => {
+    await usuarioDe(e)
+    return op.cotizarSinReserva({ config: await e.repo.config(), reservas: [], ahora: e.ahora() }, deporte(d), duracion(d))
   },
 
   anotarSinReserva: async (d, e) => {
@@ -486,6 +496,7 @@ const ACCIONES: Record<string, Accion> = {
       whatsapp: texto(c, 'whatsapp', true) || undefined,
       mesa: texto(c, 'mesa', true) || undefined,
       medio: medioDelLocal(c),
+      precioEsperado: c.precioEsperado === undefined ? undefined : numero(c, 'precioEsperado'),
     }
     return e.repo.enTransaccion(async (repo) => guardarNueva(repo, op.anotarSinReserva(await contexto(e, repo), cliente, quien.nombre)))
   },
@@ -522,8 +533,11 @@ const ACCIONES: Record<string, Accion> = {
     if (!config || typeof config !== 'object') throw invalido('config')
     op.validarConfiguracion(config)
     return e.repo.enTransaccion(async (repo) => {
-      const ctx = await contexto(e, repo)
-      const conflictos = op.conflictosCon(config, ctx.reservas, ctx.ahora)
+      // TODAS las reservas que faltan, no la ventana de 30 días: desde el panel
+      // se puede mover una a diciembre, y quitar mesas no avisaba de ella.
+      const ahora = e.ahora()
+      const reservas = (await repo.reservasEntre(momentoDe(ahora).fecha, '9999-12-31')).map((r) => op.vencerApartado(r, ahora) ?? r)
+      const conflictos = op.conflictosCon(config, reservas, ahora)
       if (conflictos.length && d.aunqueHayaConflictos !== true) return { guardada: false, conflictos }
       await repo.guardarConfig(config)
       return { guardada: true, conflictos }
@@ -554,7 +568,14 @@ const ACCIONES: Record<string, Accion> = {
     if ((await e.repo.perfiles()).some((x) => x.usuario === usuario)) throw new ErrorDeDatos('datos_invalidos', 'Ese usuario ya existe.')
     const id = await e.cuentas.crear(usuario, contrasena)
     const nuevo: Usuario = { id, nombre, usuario, rol }
-    await e.repo.guardarPerfil(nuevo)
+    try {
+      await e.repo.guardarPerfil(nuevo)
+    } catch (error) {
+      // Cuenta sin perfil: no entra al panel, pero ocupa el usuario y el alta
+      // ya no se podía repetir. Se deshace para que el dueño lo intente otra vez.
+      await e.cuentas.borrar(id).catch((otro) => console.error('[usuarios] no se pudo deshacer la cuenta', id, otro))
+      throw error
+    }
     return nuevo
   },
 
@@ -562,8 +583,11 @@ const ACCIONES: Record<string, Accion> = {
     const yo = await dueno(e)
     const id = texto(d, 'id')
     if (id === yo.id) throw new ErrorDeDatos('no_permitido', 'No te puedes quitar el acceso a ti mismo.')
-    await e.repo.borrarPerfil(id)
+    // Primero la cuenta: si falla, no cambió nada y se puede reintentar. Al
+    // revés, un fallo dejaba la cuenta sin perfil. En la base, borrar la
+    // cuenta borra también su perfil (on delete cascade); esto cubre el resto.
     await e.cuentas.borrar(id)
+    await e.repo.borrarPerfil(id)
     return null
   },
 }

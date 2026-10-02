@@ -7,7 +7,7 @@
 // Va en un <dialog>: se pinta por encima de todo (capa superior del
 // navegador), así no la tapa ningún panel ni depende de z-index.
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { pagoSimulado, servicio, type HorarioDisponible } from '../datos'
 import { mensajeDeError } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion, type Partes } from '../negocio/configuracion'
@@ -59,17 +59,44 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [hecha, setHecha] = useState<string | null>(null)
 
-  useEffect(() => {
-    servicio.configuracion().then(setConfig, (e) => setError(mensajeDeError(e)))
+  const [errorConfig, setErrorConfig] = useState<string | null>(null)
+  const cargarConfig = useCallback(() => {
+    setErrorConfig(null)
+    servicio.configuracion().then(setConfig, (e) => setErrorConfig(mensajeDeError(e)))
   }, [])
+  useEffect(cargarConfig, [cargarConfig])
 
-  // Los horarios se piden de nuevo con cada cambio, como en el sitio.
-  useEffect(() => {
+  // Los horarios se piden de nuevo con cada cambio, como en el sitio. Si se
+  // cambia rápido de deporte o de día, solo cuenta la ÚLTIMA respuesta pedida:
+  // antes una respuesta atrasada podía pintar horarios de otra selección.
+  const turno = useRef(0)
+  const pedirHorarios = useCallback(() => {
+    const mio = ++turno.current
     setHorarios(null)
     setInicio(null)
-    servicio.disponibilidad(deporte, fecha, duracion).then(setHorarios, (e) => setError(mensajeDeError(e)))
+    servicio.disponibilidad(deporte, fecha, duracion).then(
+      (h) => mio === turno.current && setHorarios(h),
+      (e) => mio === turno.current && setError(mensajeDeError(e)),
+    )
   }, [deporte, fecha, duracion])
+  useEffect(pedirHorarios, [pedirHorarios])
 
+  // Antes, si la configuración no cargaba, se quedaba en "Cargando…" para siempre.
+  if (errorConfig) {
+    return (
+      <div className="simular-cuerpo">
+        <p className="panel-error">{errorConfig}</p>
+        <footer className="simular-pie">
+          <button type="button" className="panel-boton" onClick={cerrar}>
+            Cerrar
+          </button>
+          <button type="button" className="panel-boton primario" onClick={cargarConfig}>
+            Reintentar
+          </button>
+        </footer>
+      </div>
+    )
+  }
   if (!config) return <p className="nota">Cargando…</p>
   const d = config.deportes[deporte]
   const dias = Array.from({ length: config.reglas.diasDeAnticipacion + 1 }, (_, i) => sumarDias(hoy, i))
@@ -98,8 +125,7 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
       // Lista para la siguiente: otro nombre y otro número.
       setNombre(alAzar(NOMBRES))
       setWhatsapp(whatsappDeEjemplo())
-      setInicio(null)
-      setHorarios(await servicio.disponibilidad(deporte, fecha, duracion))
+      pedirHorarios()
     } catch (e) {
       setError(mensajeDeError(e))
     } finally {

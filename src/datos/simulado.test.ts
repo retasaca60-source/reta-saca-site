@@ -598,7 +598,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       await s.iniciarSesion('hugo', '')
 
       const config = await s.configuracion()
-      config.deportes.popdarts.precios[60] = 200
+      config.deportes.popdarts.precios[60] = 150
 
       await s.guardarConfiguracion(config)
 
@@ -673,7 +673,7 @@ describe('datos guardados por otra versión', () => {
   })
 })
 describe('disponibilidad del panel fuera de la ventana habitual', () => {
-  it.each(['2026-09-01', '2026-12-01'])(
+  it.each(['2026-11-02', '2026-12-01'])(
     'revisa la ocupación al mover, asignar y extender en %s',
     async (destino) => {
       const { conexion } = conexionEnMemoria(

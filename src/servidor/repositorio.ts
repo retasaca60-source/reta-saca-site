@@ -27,6 +27,12 @@ export interface Repositorio {
   /** Reservas con fecha entre dos días "AAAA-MM-DD" (incluidos), de todos los estados. */
   reservasEntre(desde: string, hasta: string): Promise<Reserva[]>
   reservaPor(campo: 'id' | 'tokenPrivado' | 'tokenCobro', valor: string): Promise<Reserva | null>
+  /**
+   * Reservas (de cualquier fecha) con algún pago hecho entre dos instantes ISO:
+   * `desde` incluido, `hasta` no. Para la caja: un pago de hoy puede ser de una
+   * reserva que se movió a diciembre.
+   */
+  reservasConPagosEntre(desde: string, hasta: string): Promise<Reserva[]>
   /** Canceladas con devolución por revisar, de cualquier fecha; las más recientes primero. */
   devolucionesPorRevisar(): Promise<Reserva[]>
   /** Crea o reemplaza la reserva completa. Si el folio ya lo tiene otra, lanza FolioRepetido. */
@@ -75,6 +81,8 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
 
     reservasEntre: async (desde, hasta) => [...reservas.values()].filter((r) => r.fecha >= desde && r.fecha <= hasta).map(clon),
     reservaPor: async (campo, valor) => clon([...reservas.values()].find((r) => r[campo] === valor) ?? null),
+    reservasConPagosEntre: async (desde, hasta) =>
+      [...reservas.values()].filter((r) => r.partes.some((p) => p.pago && p.pago.en >= desde && p.pago.en < hasta)).map(clon),
     devolucionesPorRevisar: async () =>
       [...reservas.values()]
         .filter((r) => r.devolucion?.estado === 'por_revisar')
@@ -103,8 +111,34 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
     guardarPerfil: async (u) => void perfiles.set(u.id, clon(u)),
     borrarPerfil: async (id) => void perfiles.delete(id),
 
+    // Como Postgres: si algo falla a la mitad, no queda nada de lo que se
+    // escribió. Antes lo guardado antes del error se quedaba, y una prueba
+    // podía pasar aquí y fallar en la base de verdad.
     enTransaccion: (f) => {
-      const turno = cola.then(() => f(repo))
+      const turno = cola.then(async () => {
+        const antes = {
+          config: clon(config),
+          reservas: clon([...reservas]),
+          intentos: clon([...intentos]),
+          perfiles: clon([...perfiles]),
+          contadores: [...contadores],
+        }
+        try {
+          return await f(repo)
+        } catch (e) {
+          config = antes.config
+          for (const [mapa, filas] of [
+            [reservas, antes.reservas],
+            [intentos, antes.intentos],
+            [perfiles, antes.perfiles],
+            [contadores, antes.contadores],
+          ] as [Map<string, unknown>, [string, unknown][]][]) {
+            mapa.clear()
+            for (const [k, v] of filas) mapa.set(k, v)
+          }
+          throw e
+        }
+      })
       cola = turno.catch(() => undefined)
       return turno
     },

@@ -16,7 +16,7 @@ import { CONFIGURACION_INICIAL, ORDEN_DEPORTES, type Configuracion } from '../ne
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
 import type { Reserva } from '../negocio/reserva'
-import { momentoDe } from '../negocio/tiempo'
+import { esFechaValida, momentoDe } from '../negocio/tiempo'
 import { ErrorDeDatos, type IntentoDePago, type PagoSimulado, type ServicioDeDatos, type Usuario } from './contrato'
 import { MINIMO_CONTRASENA, normalizarUsuario, usuarioValido } from './usuarios'
 import { sembrar, USUARIOS_DEMO } from './ejemplos'
@@ -34,8 +34,14 @@ export interface Almacen {
 const LLAVE = 'reta-saca:simulado'
 
 export function almacenDelNavegador(): Almacen {
+  // Si el navegador no deja guardar (modo privado, almacenamiento lleno o
+  // bloqueado), la demostración sigue en memoria mientras la página esté
+  // abierta. Antes el comentario lo prometía pero no se hacía: se entraba al
+  // panel y la siguiente consulta ya no encontraba la sesión.
+  let enMemoria: string | null = null
   return {
     leer: () => {
+      if (enMemoria !== null) return enMemoria
       try {
         return localStorage.getItem(LLAVE)
       } catch {
@@ -45,8 +51,9 @@ export function almacenDelNavegador(): Almacen {
     escribir: (t) => {
       try {
         localStorage.setItem(LLAVE, t)
+        enMemoria = null
       } catch {
-        // Modo privado o almacenamiento lleno: la demostración sigue en memoria.
+        enMemoria = t
       }
     },
     escuchar: (aviso) => {
@@ -81,27 +88,62 @@ interface Estado {
 function esEstadoValido(x: unknown): x is Estado {
   const e = x as Estado
   if (!e || e.version !== 1 || !e.config || !Array.isArray(e.reservas) || !Array.isArray(e.intentos) || !Array.isArray(e.usuarios)) return false
-  const c = e.config
-  if (!c.deportes || !c.horario || !Array.isArray(c.diasCerrados) || !c.promo || !c.reglas || typeof c.whatsappNegocio !== 'string') return false
-  for (const id of ORDEN_DEPORTES) {
-    const d = c.deportes[id]
-    if (!d || typeof d.mesas !== 'number' || !Array.isArray(d.fueraDeServicio) || !Array.isArray(d.duraciones) || typeof d.precios !== 'object') return false
+  // La configuración se revisa con la MISMA regla que usa el servidor al
+  // guardarla. Antes se revisaban unos cuantos campos: sin promo.inicios la
+  // consulta de horarios tronaba al llamar .includes.
+  try {
+    op.validarConfiguracion(e.config)
+  } catch {
+    return false
   }
   // Antes los usuarios del panel entraban con correo: lo guardado por esa versión
   // no trae `usuario` y no dejaría entrar a nadie.
-  if (!e.usuarios.every((u) => u && typeof u.usuario === 'string' && typeof u.id === 'string')) return false
-  return e.reservas.every(
-    (r) =>
-      r &&
-      typeof r.id === 'string' &&
-      ORDEN_DEPORTES.includes(r.deporte) &&
-      /^\d{4}-\d{2}-\d{2}$/.test(r.fecha) &&
-      typeof r.inicio === 'number' &&
-      typeof r.duracion === 'number' &&
-      Array.isArray(r.partes) &&
-      r.partes.every((p) => typeof p.id === 'string' && typeof p.monto === 'number') &&
-      r.organizador &&
-      typeof r.organizador.nombre === 'string',
+  if (!e.usuarios.every((u) => u && typeof u.usuario === 'string' && typeof u.id === 'string' && typeof u.nombre === 'string')) return false
+  if (!e.intentos.every((i) => i && typeof i.id === 'string' && typeof i.reservaId === 'string' && Array.isArray(i.parteIds) && typeof i.volverA === 'string')) {
+    return false
+  }
+  if (e.sesion !== null && typeof e.sesion !== 'string') return false
+  return e.reservas.every(esReservaValida)
+}
+
+const ESTADOS: readonly unknown[] = ['apartada', 'confirmada', 'cancelada']
+const ORIGENES: readonly unknown[] = ['sitio', 'mostrador']
+
+/** Cada campo que leen las pantallas y las reglas, con su tipo. */
+function esReservaValida(r: Reserva): boolean {
+  return (
+    !!r &&
+    typeof r.id === 'string' &&
+    typeof r.folio === 'string' &&
+    typeof r.tokenPrivado === 'string' &&
+    typeof r.tokenCobro === 'string' &&
+    ORDEN_DEPORTES.includes(r.deporte) &&
+    esFechaValida(r.fecha) &&
+    typeof r.inicio === 'number' &&
+    typeof r.duracion === 'number' &&
+    typeof r.precio === 'number' &&
+    typeof r.conPromo === 'boolean' &&
+    [1, 2, 4].includes(r.partesElegidas) &&
+    ESTADOS.includes(r.estado) &&
+    ORIGENES.includes(r.origen) &&
+    (r.apartadaHasta === null || typeof r.apartadaHasta === 'number') &&
+    (r.mesa === null || typeof r.mesa === 'string') &&
+    (r.llegaronEn === null || typeof r.llegaronEn === 'string') &&
+    (r.cancelacion === null || (typeof r.cancelacion === 'object' && typeof r.cancelacion.en === 'string')) &&
+    (r.devolucion == null || (typeof r.devolucion === 'object' && typeof r.devolucion.monto === 'number')) &&
+    typeof r.creadaEn === 'string' &&
+    Array.isArray(r.partes) &&
+    r.partes.every(
+      (p) =>
+        p &&
+        typeof p.id === 'string' &&
+        typeof p.monto === 'number' &&
+        typeof p.delOrganizador === 'boolean' &&
+        (p.pago === null || (typeof p.pago === 'object' && typeof p.pago.en === 'string' && typeof p.pago.nombre === 'string')),
+    ) &&
+    !!r.organizador &&
+    typeof r.organizador.nombre === 'string' &&
+    typeof r.organizador.whatsapp === 'string'
   )
 }
 
@@ -273,6 +315,11 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         return op.pagosDelDia(e.reservas, fecha)
       }),
 
+    cotizarSinReserva: (deporte, duracion) =>
+      consultar((e) => {
+        usuarioActual(e)
+        return op.cotizarSinReserva(contexto(e), deporte, duracion)
+      }),
     anotarSinReserva: (c) =>
       cambiar((e) => {
         const quien = usuarioActual(e)
