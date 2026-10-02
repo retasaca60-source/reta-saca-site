@@ -349,6 +349,50 @@
   .dia-flecha{ display:none; }
 }
 
+/* ── Semana: tira de días y resumen del elegido ────────────────────────── */
+
+.semana{ max-width:1120px; }
+.semana-tira{
+  display:grid; grid-auto-flow:column; grid-auto-columns:minmax(118px, 1fr); gap:12px;
+  overflow-x:auto; padding:4px 4px 10px; margin:0 -4px 22px;
+}
+.semana-dia{
+  display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+  font:inherit; color:inherit; text-align:left; cursor:pointer;
+  padding:14px 14px 16px; border-radius:18px; border:0;
+  background:var(--surface); box-shadow:var(--shadow);
+  transition:box-shadow .2s ease, background-color .2s ease;
+}
+.semana-dia:hover{ box-shadow:0 1px 2px rgba(16,24,40,.05), 0 18px 36px -16px rgba(16,24,40,.3); }
+.semana-dia[aria-pressed='true']{ background:var(--oro); box-shadow:0 14px 28px -16px rgba(255,170,0,.9); }
+.semana-dia:focus-visible{ outline:2px solid var(--ink); outline-offset:2px; }
+.semana-dia-nombre{ font-size:13px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; }
+.semana-dia-numero{ font-size:30px; font-weight:700; line-height:1; letter-spacing:-.02em; }
+/* Qué tan lleno está el día comparado con el más lleno de la tira. */
+.semana-dia-carga{ display:block; width:100%; height:6px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin:8px 0 4px; }
+.semana-dia-carga span{ display:block; height:100%; border-radius:999px; background:var(--oro); }
+.semana-dia[aria-pressed='true'] .semana-dia-carga{ background:rgba(255,255,255,.55); }
+.semana-dia[aria-pressed='true'] .semana-dia-carga span{ background:var(--ink); }
+.semana-dia[aria-pressed='true'] .semana-dia-nombre{ color:var(--ink); }
+.semana-dia-cuenta{ font-size:13px; font-weight:600; }
+.semana-dia-suma{ font-size:13px; color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.semana-dia[aria-pressed='true'] .semana-dia-suma{ color:var(--ink); }
+.semana-dia.vacio .semana-dia-numero, .semana-dia.vacio .semana-dia-cuenta{ color:var(--ink-faint); }
+
+.semana-resumen{ background:var(--surface); border-radius:20px; box-shadow:var(--shadow); padding:18px 22px; margin-bottom:24px; }
+.semana-resumen h2{ margin:0 0 12px; font-size:19px; font-weight:700; }
+.semana-resumen h2::first-letter{ text-transform:uppercase; }
+.semana-resumen dl{ margin:0; display:flex; flex-wrap:wrap; gap:10px 32px; }
+.semana-resumen dl div{ display:flex; flex-direction:column; gap:2px; }
+.semana-resumen dt{ font-size:13px; color:var(--ink-faint); }
+.semana-resumen dd{ margin:0; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+.semana-resumen dd.falta{ color:var(--warn); }
+
+/* En la gráfica de "Hoy", los días que se pueden abrir son botones. */
+.semana-barras button{ display:flex; flex-direction:column; align-items:center; gap:6px; font:inherit; background:none; border:0; padding:4px 2px; border-radius:10px; cursor:pointer; }
+.semana-barras button:hover{ background:var(--surface-2); }
+.semana-barras button:focus-visible{ outline:2px solid var(--ink); }
+
 /* ── Caja del mostrador ────────────────────────────────────────────────── */
 
 .caja-mostrador{ display:flex; flex-direction:column; gap:16px; }

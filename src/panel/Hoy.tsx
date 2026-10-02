@@ -7,6 +7,7 @@
 // por eso el plano va primero y la lista y la caja quedan a una pestaña.
 
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { servicio } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion, type DeporteId } from '../negocio/configuracion'
@@ -397,6 +398,7 @@ function DatosDeMesa({
 
 /** Cuántas reservas hay cada día de esta semana: lo que el dueño mira de reojo. */
 function ReservasDeLaSemana({ semana, lunes, hoy }: { semana: Reserva[]; lunes: string; hoy: string }) {
+  const navegar = useNavigate()
   const dias = Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i))
   const cuenta = dias.map((f) => semana.filter((r) => r.fecha === f && r.estado !== 'cancelada').length)
   const mayor = Math.max(1, ...cuenta)
@@ -409,15 +411,30 @@ function ReservasDeLaSemana({ semana, lunes, hoy }: { semana: Reserva[]; lunes: 
         <small>{totalSemana === 1 ? 'reserva' : 'reservas'} de lunes a domingo</small>
       </p>
       <ol className="semana-barras" aria-label="Reservas por día">
-        {dias.map((f, i) => (
-          <li key={f} className={f === hoy ? 'hoy' : ''} title={`${cuenta[i]} el ${fechaLarga(f)}`}>
-            <span className="barra" aria-hidden>
-              <span style={{ height: `${(cuenta[i] / mayor) * 100}%` }} />
-            </span>
-            <span className="barra-cuenta">{cuenta[i]}</span>
-            <span className="barra-dia">{DIAS_CORTOS[diaDeLaSemana(f)].slice(0, 2)}</span>
-          </li>
-        ))}
+        {dias.map((f, i) => {
+          const contenido = (
+            <>
+              <span className="barra" aria-hidden>
+                <span style={{ height: `${(cuenta[i] / mayor) * 100}%` }} />
+              </span>
+              <span className="barra-cuenta">{cuenta[i]}</span>
+              <span className="barra-dia">{DIAS_CORTOS[diaDeLaSemana(f)].slice(0, 2)}</span>
+            </>
+          )
+          // De hoy en adelante, tocar el día lleva a su lista en Semana; los
+          // días que ya pasaron no están ahí.
+          return (
+            <li key={f} className={f === hoy ? 'hoy' : ''} title={`${cuenta[i]} el ${fechaLarga(f)}`}>
+              {f >= hoy ? (
+                <button type="button" aria-label={`${cuenta[i]} reservas el ${fechaLarga(f)}: ver la lista`} onClick={() => navegar(f === hoy ? '/panel/semana' : `/panel/semana?dia=${f}`)}>
+                  {contenido}
+                </button>
+              ) : (
+                contenido
+              )}
+            </li>
+          )
+        })}
       </ol>
     </section>
   )
