@@ -262,8 +262,13 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
       console.error('[mercadopago] el pago no coincide con su intento', pago.id, intento.id)
       return
     }
-    const ctx = await contexto(e, repo)
-    const r = await reservaPor(repo, 'id', intento.reservaId, ctx.ahora)
+    const guardada = await repo.reservaPor('id', intento.reservaId)
+    if (!guardada) throw noEncontrada()
+
+    // La reserva pudo moverse fuera de la ventana habitual: se revisa el
+    // cupo de su fecha actual para no confirmar sobre mesas ya ocupadas.
+    const ctx = await contexto(e, repo, guardada.fecha)
+    const r = op.vencerApartado(guardada, ctx.ahora) ?? guardada
     try {
       await repo.guardar(op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
     } catch (error) {

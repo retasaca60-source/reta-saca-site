@@ -136,3 +136,64 @@ describe('con Mercado Pago', () => {
     expect(pendientes.map((x) => x.folio)).toEqual([r.folio])
   })
 })
+it.each([false, true])(
+  'un pago tardío revisa la fecha lejana de la reserva (lleno: %s)',
+  async (lleno) => {
+    const destino = '2026-12-02'
+    const recepcion = USUARIOS_DEMO.find(
+      (u) => u.rol === 'recepcion',
+    )!.id
+
+    const { r, cobro } = await apartarYCobrar()
+
+    await llamar(
+      'cambiarHorario',
+      { reservaId: r.id, fecha: destino, inicio: h(19) },
+      recepcion,
+    )
+
+    reloj = instante(VIERNES, h(15, 11))
+
+    if (lleno) {
+      // Las tres mesas se ocupan en el destino después de vencer el apartado.
+      for (let i = 0; i < 3; i++) {
+        const otro = await apartarYCobrar(
+          `662000000${i}`,
+          `Otro ${i}`,
+        )
+
+        await registrarPagoEnLinea(
+          pagarEnMercadoPago(otro.cobro),
+          e,
+        )
+
+        await llamar(
+          'cambiarHorario',
+          { reservaId: otro.r.id, fecha: destino, inicio: h(19) },
+          recepcion,
+        )
+      }
+    }
+
+    await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+
+    const despues = await leer(r)
+    expect(despues.fecha).toBe(destino)
+
+    if (lleno) {
+      expect(despues.estado).toBe('cancelada')
+      expect(despues.partes[0].pago).toBeNull()
+      expect(despues.devolucion).toMatchObject({
+        estado: 'por_revisar',
+        monto: cobro.monto,
+        extra: cobro.monto,
+      })
+    } else {
+      expect(despues.estado).toBe('confirmada')
+      expect(despues.partes[0].pago).toMatchObject({
+        medio: 'en_linea',
+      })
+      expect(despues.devolucion).toBeUndefined()
+    }
+  },
+)
