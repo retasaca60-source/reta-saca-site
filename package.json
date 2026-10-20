@@ -11,6 +11,7 @@
     "servidor:empaquetar": "esbuild supabase/fuentes/api.ts --bundle --format=esm --platform=neutral --target=es2022 --external:npm:* --banner:js=\"// GENERADO por npm run servidor:empaquetar desde supabase/fuentes y src/. No se edita a mano.\" --outfile=supabase/functions/api/index.js"
   },
   "dependencies": {
+    "@sentry/react": "^11.8.0",
     "@supabase/supabase-js": "2.117.2",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

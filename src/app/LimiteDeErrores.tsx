@@ -4,6 +4,7 @@
 // No enseña el error: eso va a la consola, para quien lo revise.
 
 import { Component, type ReactNode } from 'react'
+import { reportarError } from '../mecanismos/vigilancia/vigilancia'
 
 interface Estado {
   fallo: boolean
@@ -18,6 +19,7 @@ export class LimiteDeErrores extends Component<{ children: ReactNode }, Estado> 
 
   componentDidCatch(error: unknown) {
     console.error('[pantalla]', error)
+    reportarError(error, 'pantalla')
   }
 
   render() {

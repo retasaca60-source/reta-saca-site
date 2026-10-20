@@ -12,12 +12,13 @@
 # - Lo que se permite de fuera: Google Fonts y jsDelivr (una fuente del
 #   título), Supabase (https y la conexión en vivo wss) y un worker blob: que
 #   usa Supabase Realtime. 'unsafe-inline' en estilos es por los style={...} de
-#   React, que no ejecutan código.
+#   React, que no ejecutan código. Y Sentry (*.sentry.io), a donde llegan los
+#   errores: sin él en connect-src, Sentry carga pero no puede mandar nada.
 # - OJO: la dirección de Supabase está escrita aquí a mano. Si cambia el
 #   proyecto (VITE_SUPABASE_URL), se cambia también aquí; si no, el navegador
 #   bloquea todo y el sitio solo dice "No hay conexión".
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://sypxbwljlbarvdvylfmc.supabase.co wss://sypxbwljlbarvdvylfmc.supabase.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://sypxbwljlbarvdvylfmc.supabase.co wss://sypxbwljlbarvdvylfmc.supabase.co https://*.sentry.io; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin

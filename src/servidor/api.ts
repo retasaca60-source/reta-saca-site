@@ -11,7 +11,7 @@
 import type { IntentoDePago, Rol, Usuario } from '../datos/contrato'
 import { MINIMO_CONTRASENA, normalizarUsuario, usuarioValido } from '../datos/usuarios'
 import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
-import { ErrorDeDatos, type CodigoDeError } from '../negocio/errores'
+import { ErrorDeDatos, MENSAJE_INESPERADO, type CodigoDeError } from '../negocio/errores'
 import { formatoDinero } from '../negocio/formato'
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
@@ -102,7 +102,7 @@ export async function atender(p: Peticion, entorno: Entorno): Promise<Respuesta>
   } catch (e) {
     if (e instanceof ErrorDeDatos) return { error: { codigo: e.codigo, mensaje: e.message } }
     console.error('[api]', p.accion, e)
-    return { error: { codigo: 'datos_invalidos', mensaje: 'Algo falló de nuestro lado. Intenta otra vez en un momento.' } }
+    return { error: { codigo: 'datos_invalidos', mensaje: MENSAJE_INESPERADO } }
   }
 }
 

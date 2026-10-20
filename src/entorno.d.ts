@@ -7,6 +7,8 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL?: string
   /** La llave PUBLICABLE del proyecto (sb_publishable_…), nunca la secreta. */
   readonly VITE_SUPABASE_LLAVE_PUBLICA?: string
+  /** Dónde manda Sentry los errores. Sin ella, la vigilancia queda apagada. */
+  readonly VITE_SENTRY_DSN?: string
 }
 
 interface ImportMeta {

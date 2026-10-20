@@ -5,10 +5,11 @@
 // en panel.css y los datos llegan del servicio (contrato.ts). Lo que no se
 // cambia sin revisar RESERVAS.md es QUÉ puede hacer cada rol.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { servicio, servicioSimulado, type Usuario } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
+import { identificarUsuario } from '../mecanismos/vigilancia/vigilancia'
 import { Caja } from './Caja'
 import { Configuracion } from './Configuracion'
 import { Hoy } from './Hoy'
@@ -21,6 +22,8 @@ import { BotonTema } from './BotonTema'
 
 export default function Panel() {
   const { datos: usuario, cargando } = usarDatos(() => servicio.sesion(), [])
+  // Un error del panel llega a Sentry con quién estaba (id y rol, sin nombre).
+  useEffect(() => identificarUsuario(usuario ? { id: usuario.id, rol: usuario.rol } : null), [usuario])
 
   if (cargando && usuario === undefined) return <div className="panel-entrada">Cargando…</div>
   if (!usuario) return <Entrar />

@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ErrorDeDatos, servicio } from '../../datos'
+import { reportarError } from '../vigilancia/vigilancia'
 
 export interface Carga<T> {
   datos: T | undefined
@@ -57,5 +58,6 @@ export function usarDatos<T>(cargar: () => Promise<T>, dependencias: readonly un
 export function mensajeDeError(e: unknown): string {
   if (e instanceof ErrorDeDatos) return e.message
   console.error(e)
+  reportarError(e, 'inesperado')
   return 'Algo falló. Intenta de nuevo en un momento.'
 }

@@ -9,6 +9,8 @@
 // sale de Supabase.
 
 import { createClient, type RealtimeChannel } from '@supabase/supabase-js'
+import { reportarFalla } from '../mecanismos/vigilancia/vigilancia'
+import { MENSAJE_INESPERADO } from '../negocio/errores'
 import { ErrorDeDatos } from './contrato'
 import type { Conexion } from './real'
 import { correoInterno } from './usuarios'
@@ -73,10 +75,14 @@ export function conexionSupabase(url: string, llavePublica: string): Conexion {
       // pantalla se quedaba cargando o tronaba después sin decir por qué.
       const error = cuerpo && typeof cuerpo === 'object' ? cuerpo.error : null
       if (error && typeof error === 'object' && typeof error.mensaje === 'string') {
+        if (error.mensaje === MENSAJE_INESPERADO) reportarFalla('falla-del-servidor', { accion })
         throw new ErrorDeDatos(typeof error.codigo === 'string' ? error.codigo : 'datos_invalidos', error.mensaje)
       }
       if (!respuesta.ok || !cuerpo || typeof cuerpo !== 'object' || !('resultado' in cuerpo)) {
         console.error('[api]', accion, respuesta.status, cuerpo)
+        // Así se ve una pausa de Supabase o un límite de la plataforma: el
+        // sitio deja de funcionar para todos y nadie lo dice hasta que llama.
+        reportarFalla('servidor-no-responde', { accion, estado: respuesta.status })
         throw new ErrorDeDatos('datos_invalidos', `El servidor no respondió bien (${respuesta.status}). Intenta otra vez en un momento.`)
       }
       return cuerpo.resultado

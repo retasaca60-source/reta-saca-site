@@ -11,6 +11,13 @@ export type CodigoDeError =
   | 'apartado_vencido' // se tardó más de 10 min en pagar y la mesa ya no está
   | 'sin_sesion'
 
+/**
+ * Lo que contesta el servidor cuando algo falla que no estaba previsto. Lo
+ * comparten el servidor y el navegador: así el navegador distingue un fallo
+ * nuestro de un "ya no hay mesa" y lo manda a Sentry.
+ */
+export const MENSAJE_INESPERADO = 'Algo falló de nuestro lado. Intenta otra vez en un momento.'
+
 /** Todos los errores esperados del servicio son de este tipo: la pantalla muestra `message`. */
 export class ErrorDeDatos extends Error {
   readonly codigo: CodigoDeError
