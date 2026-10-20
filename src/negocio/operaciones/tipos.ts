@@ -37,7 +37,7 @@ export interface VistaDeCobro {
   precio: number
   organizador: string
   estado: Reserva['estado']
-  partes: { id: string; monto: number; pagada: boolean; nombre: string | null; delOrganizador: boolean }[]
+  partes: { id: string; monto: number; pagada: boolean; nombre: string | null; delOrganizador: boolean; enProceso?: boolean }[]
 }
 
 /** Un grupo que llega al mostrador sin reserva. Se cobra AL REGISTRARLO. */

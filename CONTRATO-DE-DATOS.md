@@ -221,3 +221,20 @@ en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 [`BASE-DE-DATOS.md`](BASE-DE-DATOS.md#el-sitio-con-datos-reales)); sin eso, la
 demostración. Así se puede seguir diseñando con datos de ejemplo sin tocar la
 base.
+
+## Corrección del 19/10/2026: partes con checkout en proceso
+
+- `IntentoDePago.venceEn` guarda el vencimiento enviado a Mercado Pago. Es
+  opcional para leer intentos anteriores, que no tenían este dato.
+- `Repositorio.partesEnProceso(reservaId, ahora)` devuelve las partes de
+  intentos pendientes cuyo checkout aún no vence.
+- `iniciarPago` consulta y bloquea dentro de la transacción existente. Si
+  alguna parte ya está en proceso, responde `no_permitido` antes de crear
+  otra preferencia.
+- `VistaDeCobro.partes[].enProceso` permite elegir otra parte disponible. No
+  expone el ID del intento ni datos privados del organizador.
+- Si crear la preferencia falla de forma incierta, el bloqueo conserva su
+  plazo: una respuesta perdida no demuestra que Mercado Pago no la creó.
+- Los intentos antiguos sin `venceEn` no quedan protegidos retroactivamente.
+  Antes de abrir a cobros reales, resolver los checkouts antiguos de prueba
+  y validar el vencimiento de los nuevos en sandbox.

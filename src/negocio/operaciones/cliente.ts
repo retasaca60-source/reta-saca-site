@@ -84,11 +84,14 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
  * estén pendientes, y quién paga. NO alarga el apartado: antes, tocar "Pagar"
  * una y otra vez lo renovaba sin fin (medido: 54 min apartada sin pagar).
  */
-export function prepararPago(r: Reserva, parteIds: string[], quienPaga: string): { nombre: string; monto: number } {
+export function prepararPago(r: Reserva, parteIds: string[], quienPaga: string, enProceso: readonly string[] = []): { nombre: string; monto: number } {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Esta reserva está cancelada.')
   const partes = r.partes.filter((p) => parteIds.includes(p.id))
   if (!partes.length || partes.length !== parteIds.length || partes.some((p) => p.pago)) {
     throw new ErrorDeDatos('datos_invalidos', 'Esa parte ya está pagada. Recarga la página.')
+  }
+  if (parteIds.some((id) => enProceso.includes(id))) {
+    throw new ErrorDeDatos('no_permitido', 'Alguien está pagando una de esas partes. Revisa las disponibles o espera a que termine o venza su pago.')
   }
   const nombre = quienPaga.trim()
   if (nombre.length < 2) throw new ErrorDeDatos('datos_invalidos', 'Escribe tu nombre para que recepción sepa quién pagó.')
@@ -207,7 +210,7 @@ export function vencerApartado(r: Reserva, ahora: number): Reserva | null {
 }
 
 /** Lo que ve quien abre el link de cobro: sin WhatsApp del organizador ni link privado. */
-export function vistaDeCobro(r: Reserva): VistaDeCobro {
+export function vistaDeCobro(r: Reserva, enProceso: readonly string[] = []): VistaDeCobro {
   return {
     folio: r.folio,
     deporte: r.deporte,
@@ -223,6 +226,7 @@ export function vistaDeCobro(r: Reserva): VistaDeCobro {
       pagada: Boolean(p.pago && !p.pago.devuelto),
       nombre: p.pago?.nombre ?? null,
       delOrganizador: p.delOrganizador,
+      enProceso: !p.pago && enProceso.includes(p.id),
     })),
   }
 }

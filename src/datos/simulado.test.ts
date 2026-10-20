@@ -99,7 +99,8 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       const r = await s.apartar(pedido())
       for (let i = 0; i < 2; i++) {
         reloj += 4 * 60_000
-        await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
+        if (i === 0) await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
+        else expect(await codigoDe(s.iniciarPago(r.tokenPrivado, [r.partes[0].id], ''))).toBe('no_permitido')
       }
       reloj += 3 * 60_000 // 11 min desde que apartó
       expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.estado).toBe('cancelada')
@@ -229,42 +230,15 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('datos_invalidos')
     })
 
-    it('rechaza un segundo intento sobre una parte que ya fue pagada', async () => {
-      const r = await reservarYPagar({
-        deporte: 'cornhole',
-        partes: 4,
-      })
-
+    it('rechaza el segundo checkout de la misma parte antes de cobrar', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
       const parteId = r.partes[1].id
-
-      const intentoLuis = await s.iniciarPago(
-        r.tokenCobro,
-        [parteId],
-        'Luis',
-      )
-
-      const intentoBeto = await s.iniciarPago(
-        r.tokenCobro,
-        [parteId],
-        'Beto',
-      )
-
-      const idLuis = intentoLuis.url.split('/').pop()!
-      const idBeto = intentoBeto.url.split('/').pop()!
-
-      await s.pagoSimulado.confirmar(idLuis)
-
-      await expect(
-        s.pagoSimulado.confirmar(idBeto),
-      ).rejects.toMatchObject({
-        codigo: 'datos_invalidos',
-      })
-
+      const luis = await s.iniciarPago(r.tokenCobro, [parteId], 'Luis')
+      await expect(s.iniciarPago(r.tokenCobro, [parteId], 'Beto')).rejects.toMatchObject({ codigo: 'no_permitido' })
+      await s.pagoSimulado.confirmar(luis.url.split('/').pop()!)
       const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
       expect(despues!.partes[1].pago!.nombre).toBe('Luis')
-
-      const intentoRechazado = await s.pagoSimulado.obtener(idBeto)
-      expect(intentoRechazado!.intento.resultado).toBeNull()
+      await expect(s.iniciarPago(r.tokenCobro, [parteId], 'Beto')).rejects.toMatchObject({ codigo: 'datos_invalidos' })
     })
 
     it('confirmar dos veces el mismo intento no duplica ni modifica el pago', async () => {
@@ -290,45 +264,49 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(despues).toEqual(antes)
     })
 
-    it('rechaza todo el intento si una de sus partes ya fue pagada', async () => {
-      const r = await reservarYPagar({
-        deporte: 'cornhole',
-        partes: 4,
-      })
+    it('no abre un pago individual mientras pagar todo bloquea las partes', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+      const ids = r.partes.filter((p) => !p.pago).map((p) => p.id)
+      await s.iniciarPago(r.tokenCobro, ids, 'Beto')
+      await expect(s.iniciarPago(r.tokenCobro, [ids[0]], 'Luis')).rejects.toMatchObject({ codigo: 'no_permitido' })
+    })
 
-      const pendientes = r.partes
-        .filter((p) => !p.pago)
-        .map((p) => p.id)
+    it('solo un intento gana cuando dos amigos piden la misma parte a la vez', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+      const resultados = await Promise.allSettled([
+        s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis'),
+        s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Beto'),
+      ])
+      expect(resultados.filter((x) => x.status === 'fulfilled')).toHaveLength(1)
+      expect(resultados.filter((x) => x.status === 'rejected')).toHaveLength(1)
+    })
 
-      const intentoCompleto = await s.iniciarPago(
-        r.tokenCobro,
-        pendientes,
-        'Beto',
-      )
+    it('muestra partes en proceso y permite pagar otra distinta', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+      await s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis')
+      const vista = await s.vistaDeCobro(r.tokenCobro)
+      expect(vista!.partes[1].enProceso).toBe(true)
+      expect(vista!.partes[2].enProceso).toBe(false)
+      expect(JSON.stringify(vista)).not.toContain(r.tokenPrivado)
+      await expect(s.iniciarPago(r.tokenCobro, [r.partes[2].id], 'Beto')).resolves.toHaveProperty('url')
+      const ids = r.partes.filter((p) => !p.pago).map((p) => p.id)
+      await expect(s.iniciarPago(r.tokenCobro, ids, 'Carlos')).rejects.toMatchObject({ codigo: 'no_permitido' })
+    })
 
-      const intentoIndividual = await s.iniciarPago(
-        r.tokenCobro,
-        [r.partes[1].id],
-        'Luis',
-      )
+    it('al vencer el checkout se puede volver a intentar sin bloquear indefinidamente', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+      await s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis')
+      reloj += 10 * 60_000
+      expect((await s.vistaDeCobro(r.tokenCobro))!.partes[1].enProceso).toBe(false)
+      await expect(s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Beto')).resolves.toHaveProperty('url')
+    })
 
-      await s.pagoSimulado.confirmar(
-        intentoIndividual.url.split('/').pop()!,
-      )
-
-      await expect(
-        s.pagoSimulado.confirmar(
-          intentoCompleto.url.split('/').pop()!,
-        ),
-      ).rejects.toMatchObject({
-        codigo: 'datos_invalidos',
-      })
-
-      const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
-
-      expect(despues!.partes[1].pago!.nombre).toBe('Luis')
-      expect(despues!.partes[2].pago).toBeNull()
-      expect(despues!.partes[3].pago).toBeNull()
+    it('cancelar el pago simulado libera su parte', async () => {
+      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+      const intento = await s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis')
+      await s.pagoSimulado.rechazar(intento.url.split('/').pop()!)
+      expect((await s.vistaDeCobro(r.tokenCobro))!.partes[1].enProceso).toBe(false)
+      await expect(s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Beto')).resolves.toHaveProperty('url')
     })
   })
 

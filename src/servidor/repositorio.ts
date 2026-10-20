@@ -46,6 +46,8 @@ export interface Repositorio {
   contarIntento(llave: string, ventana: number): Promise<number>
 
   crearIntento(i: IntentoDePago): Promise<void>
+  /** Consultar dentro de la transacción al iniciar un pago: evita checkouts solapados. */
+  partesEnProceso(reservaId: string, ahora: number): Promise<string[]>
   intento(id: string): Promise<IntentoDePago | null>
   cerrarIntento(id: string, resultado: 'pagado' | 'cancelado'): Promise<void>
 
@@ -100,6 +102,9 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
       return n
     },
     crearIntento: async (i) => void intentos.set(i.id, clon(i)),
+    partesEnProceso: async (reservaId, ahora) => [...intentos.values()]
+      .filter((i) => i.reservaId === reservaId && i.resultado === null && (i.venceEn ?? 0) > ahora)
+      .flatMap((i) => i.parteIds),
     intento: async (id) => clon(intentos.get(id) ?? null),
     cerrarIntento: async (id, resultado) => {
       const i = intentos.get(id)

@@ -58,6 +58,8 @@ export interface IntentoDePago {
   /** A dónde regresa al pagar o cancelar: "/r/<token>" o "/c/<token>". */
   volverA: string
   resultado: 'pagado' | 'cancelado' | null
+  /** Vencimiento del checkout y del bloqueo. Falta en intentos anteriores. */
+  venceEn?: number
 }
 
 /**

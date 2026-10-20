@@ -42,7 +42,7 @@ export interface CobroNuevo {
   monto: number
   /** URL completa a la que regresa al terminar, sin parámetros. */
   volverA: string
-  /** Hasta cuándo se puede pagar (ms): el fin del apartado. null si la mesa ya es suya. */
+  /** Hasta cuándo se puede pagar (ms). Coincide con el bloqueo de las partes. */
   venceEn: number | null
 }
 
@@ -360,10 +360,16 @@ const ACCIONES: Record<string, Accion> = {
       if (!r) throw noEncontrada()
       const actual = op.vencerApartado(r, ahora) ?? r
       const delOrganizador = token === actual.tokenPrivado
-      const pago = op.prepararPago(actual, parteIds, delOrganizador ? actual.organizador.nombre : nombre)
+      const enProceso = await repo.partesEnProceso(actual.id, ahora)
+      const pago = op.prepararPago(actual, parteIds, delOrganizador ? actual.organizador.nombre : nombre, enProceso)
       const id = nuevoId()
       const volverA = delOrganizador ? `/r/${actual.tokenPrivado}` : `/c/${actual.tokenCobro}`
-      const intento: IntentoDePago = { id, reservaId: actual.id, parteIds, ...pago, volverA, resultado: null }
+      // El plazo NO se renueva al reintentar. También los amigos necesitan un
+      // checkout que venza; de otro modo su bloqueo se liberaría con el cobro abierto.
+      const venceEn = actual.estado === 'apartada'
+        ? actual.apartadaHasta!
+        : ahora + config.reglas.minutosDeApartado * 60_000
+      const intento: IntentoDePago = { id, reservaId: actual.id, parteIds, ...pago, volverA, resultado: null, venceEn }
       await repo.crearIntento(intento)
       return { intento, reserva: actual }
     })
@@ -375,7 +381,7 @@ const ACCIONES: Record<string, Accion> = {
       titulo: `Reta Saca · ${config.deportes[reserva.deporte].nombre} · ${reserva.folio}`,
       monto: intento.monto,
       volverA: e.sitio + intento.volverA,
-      venceEn: reserva.estado === 'apartada' ? reserva.apartadaHasta : null,
+      venceEn: intento.venceEn!,
     })
     return { url }
   },
@@ -400,7 +406,7 @@ const ACCIONES: Record<string, Accion> = {
   vistaDeCobro: async (d, e) => {
     const r = await e.repo.reservaPor('tokenCobro', texto(d, 'token'))
     // Recortada: sin WhatsApp ni link privado. El link de cobro se reenvía en grupos.
-    return r ? op.vistaDeCobro(op.vencerApartado(r, e.ahora()) ?? r) : null
+    return r ? op.vistaDeCobro(op.vencerApartado(r, e.ahora()) ?? r, await e.repo.partesEnProceso(r.id, e.ahora())) : null
   },
 
   cancelarComoCliente: async (d, e) => {

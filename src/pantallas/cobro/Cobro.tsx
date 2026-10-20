@@ -11,31 +11,12 @@ import { nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 
-// Qué partes fue a pagar este navegador, para reconocer su regreso de Mercado
-// Pago. Lo guardado lo pudo escribir otra versión: se revisa la forma.
-const llavePago = (token: string) => `reta-saca:pagando:${token}`
-function recordarPago(token: string, ids: string[]) {
-  try {
-    sessionStorage.setItem(llavePago(token), JSON.stringify(ids))
-  } catch {
-    // Sin almacenamiento: al volver solo no sale el "¡Pagado!".
-  }
-}
-function partesQueFueAPagar(token: string): string[] {
-  try {
-    const v: unknown = JSON.parse(sessionStorage.getItem(llavePago(token)) ?? '[]')
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
-  } catch {
-    return []
-  }
-}
-
 export default function Cobro() {
   const { token = '' } = useParams()
   const [busqueda] = useSearchParams()
   const navegar = useNavigate()
   const pagoId = pagoDeMercadoPago(busqueda)
-  const { datos, cargando, error } = usarDatos(async () => {
+  const { datos, cargando, error, recargar } = usarDatos(async () => {
     await registrarAlVolver(pagoId)
     return Promise.all([servicio.vistaDeCobro(token), servicio.configuracion()])
   }, [token, pagoId])
@@ -60,26 +41,20 @@ export default function Cobro() {
   const d = config.deportes[v.deporte]
   const pendientes = v.partes.filter((p) => !p.pagada)
   const falta = pendientes.reduce((s, p) => s + p.monto, 0)
-  // "Mi parte" = la primera pendiente que no sea la del organizador (si queda alguna).
-  const miParte = pendientes.find((p) => !p.delOrganizador) ?? pendientes[0]
+  const disponibles = pendientes.filter((p) => !p.enProceso)
+  const hayEnProceso = pendientes.some((p) => p.enProceso)
+  const miParte = disponibles.find((p) => !p.delOrganizador) ?? disponibles[0]
   const nombreValido = nombre.trim().length > 1
-  // "¡Pagado!" solo si las partes que ESTE navegador fue a pagar ya están
-  // pagadas en los datos; la URL sola (?pago=aprobado) la puede escribir
-  // cualquiera.
-  const pagando = partesQueFueAPagar(token)
-  const recienPagado =
-    busqueda.get('pago') === 'aprobado' && pagando.length > 0 && pagando.every((id) => v.partes.some((p) => p.id === id && p.pagada))
-
   const pagar = async (ids: string[]) => {
     setEnviando(true)
     setErrorPago(null)
     try {
       const { url } = await servicio.iniciarPago(token, ids, nombre)
-      recordarPago(token, ids)
       if (url.startsWith('/')) navegar(url)
       else window.location.assign(url)
     } catch (e) {
       setErrorPago(mensajeDeError(e))
+      recargar()
       setEnviando(false)
     }
   }
@@ -88,11 +63,7 @@ export default function Cobro() {
   return (
     <>
       <h1 className="titulo-grande" style={{ marginTop: 20 }}>
-        {recienPagado
-  ? v.deporte === 'cornhole'
-    ? '¡Pagado! Nos vemos en el tablero'
-    : '¡Pagado! Nos vemos en la mesa'
-  : `${v.organizador} te invitó a jugar`}
+        {`${v.organizador} te invitó a jugar`}
       </h1>
 
       <div style={{ marginTop: 18 }}>
@@ -119,7 +90,7 @@ export default function Cobro() {
           <li key={p.id} className="fila-pago">
             <span className="fila-pago-texto">
               <strong>{p.delOrganizador ? `${v.organizador} (organiza)` : `Amigo ${amigo++}`}</strong>
-              <span className={p.pagada ? 'pagada' : ''}>{p.pagada ? `Pagó ${p.nombre}` : 'Pendiente'}</span>
+              <span className={p.pagada ? 'pagada' : ''}>{p.pagada ? `Pagó ${p.nombre}` : p.enProceso ? 'Pago en proceso' : 'Pendiente'}</span>
             </span>
             <span className="numeros">{formatoDinero(p.monto)}</span>
           </li>
@@ -129,7 +100,11 @@ export default function Cobro() {
       {v.estado === 'cancelada' && <p className="aviso aviso-alerta">Esta reserva se canceló. No hay nada que pagar.</p>}
       {v.estado !== 'cancelada' && pendientes.length === 0 && <p className="nota">Ya está todo pagado.</p>}
 
-      {v.estado !== 'cancelada' && pendientes.length > 0 && (
+      {v.estado !== 'cancelada' && hayEnProceso && (
+        <p className="aviso aviso-alerta">Hay partes con un pago en proceso. Puedes pagar otra parte disponible; el total se habilita cuando terminen o venzan esos pagos.</p>
+      )}
+
+      {v.estado !== 'cancelada' && disponibles.length > 0 && (
         <>
           <h2 className="titulo-seccion">Paga tu parte</h2>
           <div className="grupo">
@@ -146,7 +121,7 @@ export default function Cobro() {
           )}
           {pendientes.length > 1 && (
             <div className="acciones">
-              <button type="button" className="boton boton-secundario" disabled={!nombreValido || enviando} onClick={() => pagar(pendientes.map((p) => p.id))}>
+              <button type="button" className="boton boton-secundario" disabled={!nombreValido || enviando || hayEnProceso} onClick={() => pagar(pendientes.map((p) => p.id))}>
                 Pagar todo lo que falta ({formatoDinero(falta)})
               </button>
             </div>

@@ -206,6 +206,9 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
   }
 
   const contexto = (e: Estado): op.Contexto => ({ config: e.config, reservas: e.reservas, ahora: reloj() })
+  const partesEnProceso = (e: Estado, reservaId: string) => e.intentos
+    .filter((i) => i.reservaId === reservaId && i.resultado === null && (i.venceEn ?? 0) > reloj())
+    .flatMap((i) => i.parteIds)
 
   /** Lee, cambia y guarda en un solo paso. */
   async function cambiar<T>(f: (e: Estado) => T): Promise<T> {
@@ -270,10 +273,11 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
       cambiar((e) => {
         const r = existe(e.reservas.find((x) => x.tokenPrivado === token || x.tokenCobro === token))
         const delOrganizador = token === r.tokenPrivado
-        const pago = op.prepararPago(r, parteIds, delOrganizador ? r.organizador.nombre : nombre)
+        const pago = op.prepararPago(r, parteIds, delOrganizador ? r.organizador.nombre : nombre, partesEnProceso(e, r.id))
         const id = nuevoId()
         const volverA = delOrganizador ? `/r/${r.tokenPrivado}` : `/c/${r.tokenCobro}`
-        e.intentos.push({ id, reservaId: r.id, parteIds, ...pago, volverA, resultado: null })
+        const venceEn = r.estado === 'apartada' ? r.apartadaHasta! : reloj() + e.config.reglas.minutosDeApartado * 60_000
+        e.intentos.push({ id, reservaId: r.id, parteIds, ...pago, volverA, resultado: null, venceEn })
         return { url: `/pago/${id}` }
       }),
 
@@ -281,7 +285,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     vistaDeCobro: (token) =>
       consultar((e) => {
         const r = e.reservas.find((x) => x.tokenCobro === token)
-        return r ? op.vistaDeCobro(r) : null
+        return r ? op.vistaDeCobro(r, partesEnProceso(e, r.id)) : null
       }),
     // En la simulación no hay Mercado Pago: el pago ya quedó al confirmar la pantalla simulada.
     verificarPagoEnLinea: async () => {},

@@ -239,6 +239,15 @@ primero**, sin vender la misma mesa dos veces:
 
 ### El link de cobro
 
+Desde la corrección del 19/10/2026, iniciar un pago bloquea temporalmente las
+partes elegidas: no se abre otro checkout para esas mismas partes mientras
+el primero siga vigente. Las otras partes se pueden pagar al mismo tiempo.
+El checkout del organizador vence con su apartado; el de un amigo vence tras
+los minutos de apartado configurados (10 inicialmente). La pantalla distingue
+“Pago en proceso” de “Pagado”. Un pago aprobado cuyo aviso llega tarde se
+sigue conciliando con las reglas existentes; el vencimiento del checkout no
+permite ignorar dinero que Mercado Pago ya cobró.
+
 - Lo abre cualquiera. Pide **solo el nombre** de quien paga.
 - Ofrece dos botones: **"Pagar mi parte ($75)"** y **"Pagar lo que falta
   ($150)"**, para que el organizador (o cualquiera) pueda cerrar la cuenta en

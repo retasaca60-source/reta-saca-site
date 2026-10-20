@@ -96,12 +96,16 @@ export function repositorioPostgres(sql: Sql): Repositorio {
 
     crearIntento: async (i) => {
       await q`
-        insert into public.intentos_pago (id, reserva_id, parte_ids, nombre, monto, volver_a, resultado)
-        values (${i.id}, ${i.reservaId}, ${i.parteIds}, ${i.nombre}, ${i.monto}, ${i.volverA}, ${i.resultado})`
+        insert into public.intentos_pago (id, reserva_id, parte_ids, nombre, monto, volver_a, resultado, vence_en)
+        values (${i.id}, ${i.reservaId}, ${i.parteIds}, ${i.nombre}, ${i.monto}, ${i.volverA}, ${i.resultado}, ${i.venceEn === undefined ? null : new Date(i.venceEn)})`
     },
+    partesEnProceso: async (reservaId, ahora) =>
+      (await q`select unnest(parte_ids) as id from public.intentos_pago
+        where reserva_id::text = ${reservaId} and resultado is null and vence_en > ${new Date(ahora)}`)
+        .map((f) => f.id as string),
     intento: async (id) => {
       const [f] = await q`
-        select id::text, reserva_id::text, parte_ids, nombre, monto, volver_a, resultado
+        select id::text, reserva_id::text, parte_ids, nombre, monto, volver_a, resultado, vence_en
         from public.intentos_pago where id::text = ${id}`
       if (!f) return null
       const intento: IntentoDePago = {
@@ -112,6 +116,7 @@ export function repositorioPostgres(sql: Sql): Repositorio {
         monto: f.monto,
         volverA: f.volver_a,
         resultado: f.resultado,
+        venceEn: f.vence_en == null ? undefined : new Date(f.vence_en).getTime(),
       }
       return intento
     },
