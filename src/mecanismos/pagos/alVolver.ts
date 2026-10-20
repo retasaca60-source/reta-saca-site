@@ -12,13 +12,22 @@ export function pagoDeMercadoPago(busqueda: URLSearchParams): string | null {
 }
 
 /**
- * Registra el pago si viene uno. Si falla, la página se carga igual: el aviso
- * de Mercado Pago lo registra después, y es mejor ver la reserva que un error.
+ * Los pagos que ya se registraron desde esta página. La pantalla se recarga
+ * cada 30 segundos con el mismo payment_id en la dirección, y antes cada
+ * recarga le volvía a preguntar a Mercado Pago por el mismo pago.
+ */
+const yaRegistrados = new Set<string>()
+
+/**
+ * Registra el pago si viene uno, una sola vez. Si falla, la página se carga
+ * igual y se reintenta en la siguiente recarga: el aviso de Mercado Pago lo
+ * registra después, y es mejor ver la reserva que un error.
  */
 export async function registrarAlVolver(pagoId: string | null): Promise<void> {
-  if (!pagoId) return
+  if (!pagoId || yaRegistrados.has(pagoId)) return
   try {
     await servicio.verificarPagoEnLinea(pagoId)
+    yaRegistrados.add(pagoId)
   } catch (e) {
     console.warn('No se pudo registrar el pago al volver; llegará con el aviso de Mercado Pago.', e)
   }
