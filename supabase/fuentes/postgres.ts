@@ -127,6 +127,11 @@ export function repositorioPostgres(sql: Sql): Repositorio {
     cerrarIntento: async (id, resultado) => {
       await q`update public.intentos_pago set resultado = ${resultado} where id::text = ${id} and resultado is null`
     },
+    pagosRegistrados: async (intentoId) =>
+      (await q`select pago_id from public.pagos_en_linea where intento_id::text = ${intentoId}`).map((f) => f.pago_id as string),
+    registrarPago: async (pagoId, intentoId) => {
+      await q`insert into public.pagos_en_linea (pago_id, intento_id) values (${pagoId}, ${intentoId}) on conflict (pago_id) do nothing`
+    },
 
     perfil: async (id) => {
       const [f] = await q`select id::text, nombre, usuario, rol from public.perfiles where id::text = ${id}`

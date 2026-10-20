@@ -310,3 +310,23 @@ it('recupera un apartado vencido antes del inicio aunque falten menos de 30 minu
   })
   expect(despues.devolucion).toBeUndefined()
 })
+describe('pagos repetidos del mismo cobro', () => {
+  it('un segundo pago aprobado del mismo cobro queda por devolver, una sola vez', async () => {
+    const { r, cobro } = await apartarYCobrar()
+    const primero = pagarEnMercadoPago(cobro)
+    await registrarPagoEnLinea(primero, e)
+    // El mismo pago avisa otra vez (aviso de Mercado Pago y regreso): nada cambia.
+    await registrarPagoEnLinea(primero, e)
+    expect((await leer(r)).devolucion ?? null).toBeNull()
+
+    // Pagó, regresó y volvió a pagar el mismo cobro.
+    const segundo = pagarEnMercadoPago(cobro)
+    await registrarPagoEnLinea(segundo, e)
+    await registrarPagoEnLinea(segundo, e)
+    const guardada = await leer(r)
+    expect(guardada.estado).toBe('confirmada')
+    expect(guardada.partes[0].pago).not.toBeNull()
+    expect(guardada.devolucion).toMatchObject({ estado: 'por_revisar', monto: cobro.monto, extra: cobro.monto })
+    expect(guardada.devolucion!.nota).toContain(segundo)
+  })
+})

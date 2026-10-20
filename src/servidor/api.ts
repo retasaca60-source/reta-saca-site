@@ -249,6 +249,11 @@ function enPanel(
  * Mercado Pago, y solo cuenta un pago aprobado, en pesos, por el monto exacto
  * del intento. Lanza si Mercado Pago no contesta, para que el aviso se
  * reintente; lo demás (un id que no es nuestro, un pago rechazado) se ignora.
+ *
+ * Cada pago se apunta por su id de Mercado Pago: el mismo pago que llega dos
+ * veces (aviso y regreso) se registra una sola vez, y un SEGUNDO pago del
+ * mismo cobro (pagó, regresó y volvió a pagar) queda por devolver. Antes ese
+ * segundo cobro se ignoraba y el dinero no aparecía en ningún lado.
  */
 export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<void> {
   if (!e.mercadoPago || !/^\d{1,30}$/.test(pagoId)) return
@@ -257,13 +262,34 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
   const referencia = pago.referencia
   await e.repo.enTransaccion(async (repo) => {
     const intento = await repo.intento(referencia)
-    if (!intento || intento.resultado === 'pagado') return
+    if (!intento) return
     if (pago.monto !== intento.monto || pago.moneda !== 'MXN') {
       console.error('[mercadopago] el pago no coincide con su intento', pago.id, intento.id)
       return
     }
+    const yaRegistrados = await repo.pagosRegistrados(intento.id)
+    if (yaRegistrados.includes(pago.id)) return
+    if (intento.resultado === 'pagado' && yaRegistrados.length === 0) {
+      // Pagado antes de que se apuntaran los ids: se da por hecho que es ese
+      // mismo pago (un aviso repetido), no uno nuevo. Así no se abre una
+      // devolución falsa para los cobros viejos.
+      await repo.registrarPago(pago.id, intento.id)
+      return
+    }
     const guardada = await repo.reservaPor('id', intento.reservaId)
     if (!guardada) throw noEncontrada()
+    await repo.registrarPago(pago.id, intento.id)
+
+    if (intento.resultado === 'pagado') {
+      await repo.guardar(
+        op.pagoSinLugar(
+          op.vencerApartado(guardada, e.ahora()) ?? guardada,
+          intento.monto,
+          `${intento.nombre} pagó ${formatoDinero(intento.monto)} dos veces en línea por el mismo cobro (pago ${pago.id} de Mercado Pago).`,
+        ),
+      )
+      return
+    }
 
     // La reserva pudo moverse fuera de la ventana habitual: se revisa el
     // cupo de su fecha actual para no confirmar sobre mesas ya ocupadas.

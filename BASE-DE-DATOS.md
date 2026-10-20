@@ -179,6 +179,8 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 | `20260929034026_esquema.sql` | Las cuatro tablas, RLS, permisos, la política del panel y Realtime. |
 | `20260929164015_usuarios_del_panel.sql` | En `perfiles`, `correo` pasa a ser `usuario`, con la regla de nombres válidos. |
 | `20261001224621_limites_de_frecuencia.sql` | `limites_de_frecuencia`: cuántas veces apartó o inició un pago cada dirección en 10 minutos. Solo la función la toca. |
+| `20261020003415_bloquear_partes_en_pago.sql` | `intentos_pago.vence_en`: hasta cuándo un checkout abierto bloquea sus partes. Sin ella, iniciar un pago falla. |
+| `20261020022000_pagos_en_linea.sql` | `pagos_en_linea`: cada pago de Mercado Pago ya registrado, por su id. Un segundo pago del mismo cobro queda por devolver. Sin ella, ningún pago en línea se registra. |
 
 ### El servidor (la función `api`)
 
