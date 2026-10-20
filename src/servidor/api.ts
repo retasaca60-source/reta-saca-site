@@ -394,7 +394,7 @@ const ACCIONES: Record<string, Accion> = {
       // amigos: ahí el bloqueo se queda para que no paguen dos la misma parte.
       if (delOrganizador) await repo.liberarIntentos(actual.id, volverA, ahora)
       const enProceso = await repo.partesEnProceso(actual.id, ahora)
-      const pago = op.prepararPago(actual, parteIds, delOrganizador ? actual.organizador.nombre : nombre, enProceso)
+      const pago = op.prepararPago(actual, parteIds, delOrganizador ? actual.organizador.nombre : nombre, ahora, enProceso)
       const id = nuevoId()
       // El plazo NO se renueva al reintentar. También los amigos necesitan un
       // checkout que venza; de otro modo su bloqueo se liberaría con el cobro abierto.

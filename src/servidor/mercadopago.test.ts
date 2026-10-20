@@ -330,3 +330,21 @@ describe('pagos repetidos del mismo cobro', () => {
     expect(guardada.devolucion!.nota).toContain(segundo)
   })
 })
+describe('link de cobro después del juego', () => {
+  it('no deja pagar en línea una reserva que ya terminó', async () => {
+    // Ping Pong de 7 a 8 PM entre 2: el organizador pagó su parte en línea.
+    const r = await llamar<Reserva>('apartar', {
+      solicitud: { deporte: 'pingpong', fecha: VIERNES, inicio: h(19), duracion: 60, partes: 2, organizador: { nombre: 'Ana', whatsapp: '6621112233' } },
+    })
+    await llamar('iniciarPago', { token: r.tokenPrivado, parteIds: [r.partes[0].id], nombre: '' })
+    await registrarPagoEnLinea(pagarEnMercadoPago(cobros[0]), e)
+    expect((await leer(r)).estado).toBe('confirmada')
+
+    // A las 8 PM ya terminó: un amigo abre el link de cobro y ya no se le cobra.
+    reloj = instante(VIERNES, h(20))
+    await expect(
+      llamar('iniciarPago', { token: r.tokenCobro, parteIds: [r.partes[1].id], nombre: 'Beto' }),
+    ).rejects.toMatchObject({ codigo: 'no_permitido', message: expect.stringContaining('ya terminó') })
+    expect(cobros).toHaveLength(1)
+  })
+})

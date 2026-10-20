@@ -84,8 +84,14 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
  * estén pendientes, y quién paga. NO alarga el apartado: antes, tocar "Pagar"
  * una y otra vez lo renovaba sin fin (medido: 54 min apartada sin pagar).
  */
-export function prepararPago(r: Reserva, parteIds: string[], quienPaga: string, enProceso: readonly string[] = []): { nombre: string; monto: number } {
+export function prepararPago(r: Reserva, parteIds: string[], quienPaga: string, ahora: number, enProceso: readonly string[] = []): { nombre: string; monto: number } {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Esta reserva está cancelada.')
+  // El link de cobro funciona hasta que termina la reserva (RESERVAS.md §6).
+  // Antes se podía pagar en línea al día siguiente lo que ya se había cobrado
+  // en el local, y ese cobro de más acababa en Devoluciones por revisar.
+  if (instante(r.fecha, r.inicio + r.duracion) <= ahora) {
+    throw new ErrorDeDatos('no_permitido', 'Esta reserva ya terminó. Lo que falte se arregla en el local.')
+  }
   const partes = r.partes.filter((p) => parteIds.includes(p.id))
   if (!partes.length || partes.length !== parteIds.length || partes.some((p) => p.pago)) {
     throw new ErrorDeDatos('datos_invalidos', 'Esa parte ya está pagada. Recarga la página.')

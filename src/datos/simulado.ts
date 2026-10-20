@@ -280,7 +280,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
             if (i.reservaId === r.id && i.volverA === volverA && i.resultado === null && (i.venceEn ?? 0) > reloj()) i.venceEn = reloj()
           }
         }
-        const pago = op.prepararPago(r, parteIds, delOrganizador ? r.organizador.nombre : nombre, partesEnProceso(e, r.id))
+        const pago = op.prepararPago(r, parteIds, delOrganizador ? r.organizador.nombre : nombre, reloj(), partesEnProceso(e, r.id))
         const id = nuevoId()
         const venceEn = r.estado === 'apartada' ? r.apartadaHasta! : reloj() + e.config.reglas.minutosDeApartado * 60_000
         e.intentos.push({ id, reservaId: r.id, parteIds, ...pago, volverA, resultado: null, venceEn })
