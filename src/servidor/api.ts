@@ -484,8 +484,12 @@ const ACCIONES: Record<string, Accion> = {
       const intento = await repo.intento(id)
       if (!intento) throw new ErrorDeDatos('no_encontrada', 'Ese pago no existe.')
       if (intento.resultado) return intento.volverA
-      const ctx = await contexto(e, repo)
-      const r = await reservaPor(repo, 'id', intento.reservaId, ctx.ahora)
+      // Con el cupo del día de la reserva, igual que con Mercado Pago: pudo
+      // moverse a más de 30 días y ahí la ventana de siempre no ve a nadie.
+      const guardada = await repo.reservaPor('id', intento.reservaId)
+      if (!guardada) throw noEncontrada()
+      const ctx = await contexto(e, repo, guardada.fecha)
+      const r = op.vencerApartado(guardada, ctx.ahora) ?? guardada
       await repo.guardar(op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
       await repo.cerrarIntento(id, 'pagado')
       return intento.volverA + '?pago=aprobado'
