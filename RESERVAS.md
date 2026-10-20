@@ -242,6 +242,8 @@ primero**, sin vender la misma mesa dos veces:
 Desde la corrección del 19/10/2026, iniciar un pago bloquea temporalmente las
 partes elegidas: no se abre otro checkout para esas mismas partes mientras
 el primero siga vigente. Las otras partes se pueden pagar al mismo tiempo.
+Excepción: el **organizador** (link privado) siempre puede reintentar su
+pago; su intento anterior deja de bloquear (corrección del 19/10/2026).
 El checkout del organizador vence con su apartado; el de un amigo vence tras
 los minutos de apartado configurados (10 inicialmente). La pantalla distingue
 “Pago en proceso” de “Pagado”. Un pago aprobado cuyo aviso llega tarde se
@@ -572,3 +574,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 30/09/2026 | Punto final en la confirmación de reserva | Ajuste de presentación solicitado. |
 | 30/09/2026 | Eliminar el máximo de reservas activas por WhatsApp | Se permite reservar varias veces con el mismo número; la disponibilidad sigue limitando las reservas. |
 | 01/10/2026 | Límite a lo apartado sin pagar (2 por WhatsApp; 20 cada 10 min por conexión) y cabeceras de seguridad en el sitio | Revisión de seguridad: sin freno, un script podía dejar todas las mesas apartadas, y el panel se podía meter en un iframe ajeno. |
+| 19/10/2026 | El organizador puede reintentar su pago aunque tenga un checkout abierto | Su propio intento lo bloqueaba hasta que vencía el apartado: si salía de Mercado Pago sin pagar, perdía la mesa aunque la pantalla le decía que lo intentara otra vez. |

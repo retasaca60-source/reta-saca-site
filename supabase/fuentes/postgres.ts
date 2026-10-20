@@ -103,6 +103,10 @@ export function repositorioPostgres(sql: Sql): Repositorio {
       (await q`select unnest(parte_ids) as id from public.intentos_pago
         where reserva_id::text = ${reservaId} and resultado is null and vence_en > ${new Date(ahora)}`)
         .map((f) => f.id as string),
+    liberarIntentos: async (reservaId, volverA, ahora) => {
+      await q`update public.intentos_pago set vence_en = ${new Date(ahora)}
+        where reserva_id::text = ${reservaId} and volver_a = ${volverA} and resultado is null and vence_en > ${new Date(ahora)}`
+    },
     intento: async (id) => {
       const [f] = await q`
         select id::text, reserva_id::text, parte_ids, nombre, monto, volver_a, resultado, vence_en

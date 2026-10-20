@@ -48,6 +48,12 @@ export interface Repositorio {
   crearIntento(i: IntentoDePago): Promise<void>
   /** Consultar dentro de la transacción al iniciar un pago: evita checkouts solapados. */
   partesEnProceso(reservaId: string, ahora: number): Promise<string[]>
+    /**
+   * Da por vencido el bloqueo de los intentos abiertos de ese link (volverA).
+   * No los cierra: si Mercado Pago aprueba después uno de ellos, el pago se
+   * sigue registrando o queda por devolver, como cualquier pago tardío.
+   */
+  liberarIntentos(reservaId: string, volverA: string, ahora: number): Promise<void>
   intento(id: string): Promise<IntentoDePago | null>
   cerrarIntento(id: string, resultado: 'pagado' | 'cancelado'): Promise<void>
 
@@ -105,6 +111,11 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
     partesEnProceso: async (reservaId, ahora) => [...intentos.values()]
       .filter((i) => i.reservaId === reservaId && i.resultado === null && (i.venceEn ?? 0) > ahora)
       .flatMap((i) => i.parteIds),
+    liberarIntentos: async (reservaId, volverA, ahora) => {
+      for (const i of intentos.values()) {
+        if (i.reservaId === reservaId && i.volverA === volverA && i.resultado === null && (i.venceEn ?? 0) > ahora) i.venceEn = ahora
+      }
+    },
     intento: async (id) => clon(intentos.get(id) ?? null),
     cerrarIntento: async (id, resultado) => {
       const i = intentos.get(id)

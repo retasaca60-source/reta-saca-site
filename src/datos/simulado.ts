@@ -273,9 +273,15 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
       cambiar((e) => {
         const r = existe(e.reservas.find((x) => x.tokenPrivado === token || x.tokenCobro === token))
         const delOrganizador = token === r.tokenPrivado
+        const volverA = delOrganizador ? `/r/${r.tokenPrivado}` : `/c/${r.tokenCobro}`
+        // Igual que el servidor: el organizador que reintenta libera su intento anterior.
+        if (delOrganizador) {
+          for (const i of e.intentos) {
+            if (i.reservaId === r.id && i.volverA === volverA && i.resultado === null && (i.venceEn ?? 0) > reloj()) i.venceEn = reloj()
+          }
+        }
         const pago = op.prepararPago(r, parteIds, delOrganizador ? r.organizador.nombre : nombre, partesEnProceso(e, r.id))
         const id = nuevoId()
-        const volverA = delOrganizador ? `/r/${r.tokenPrivado}` : `/c/${r.tokenCobro}`
         const venceEn = r.estado === 'apartada' ? r.apartadaHasta! : reloj() + e.config.reglas.minutosDeApartado * 60_000
         e.intentos.push({ id, reservaId: r.id, parteIds, ...pago, volverA, resultado: null, venceEn })
         return { url: `/pago/${id}` }

@@ -360,10 +360,16 @@ const ACCIONES: Record<string, Accion> = {
       if (!r) throw noEncontrada()
       const actual = op.vencerApartado(r, ahora) ?? r
       const delOrganizador = token === actual.tokenPrivado
+      const volverA = delOrganizador ? `/r/${actual.tokenPrivado}` : `/c/${actual.tokenCobro}`
+      // El link privado es de una sola persona: si vuelve a pagar es porque
+      // salió de Mercado Pago sin pagar (regresó, cerró la pestaña, falló la
+      // red). Antes su propio intento la bloqueaba hasta que vencía el
+      // apartado y perdía la mesa. El link de cobro lo comparten varios
+      // amigos: ahí el bloqueo se queda para que no paguen dos la misma parte.
+      if (delOrganizador) await repo.liberarIntentos(actual.id, volverA, ahora)
       const enProceso = await repo.partesEnProceso(actual.id, ahora)
       const pago = op.prepararPago(actual, parteIds, delOrganizador ? actual.organizador.nombre : nombre, enProceso)
       const id = nuevoId()
-      const volverA = delOrganizador ? `/r/${actual.tokenPrivado}` : `/c/${actual.tokenCobro}`
       // El plazo NO se renueva al reintentar. También los amigos necesitan un
       // checkout que venza; de otro modo su bloqueo se liberaría con el cobro abierto.
       const venceEn = actual.estado === 'apartada'

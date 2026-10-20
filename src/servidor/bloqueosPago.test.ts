@@ -90,3 +90,28 @@ describe('bloqueos con checkout externo', () => {
     }
   })
 })
+
+describe('reintento del organizador', () => {
+  it('si sale de Mercado Pago sin pagar, puede volver a pagar mientras la mesa sigue apartada', async () => {
+    let ahora = instante('2026-10-19', 900)
+    const repo = repositorioEnMemoria(CONFIGURACION_INICIAL)
+    const crearCobro = vi.fn(async () => 'https://mercadopago.test/checkout')
+    const e: Entorno = {
+      repo, ahora: () => ahora, cuentaId: null, cuentas: { crear: async () => '', borrar: async () => {} },
+      pagosSimulados: false, sitio: 'https://example.test', cliente: null,
+      mercadoPago: { crearCobro, consultarPago: async () => null },
+    }
+    const apartado = await atender({ accion: 'apartar', datos: { solicitud: {
+      deporte: 'pingpong', fecha: '2026-10-19', inicio: 1140, duracion: 60, partes: 2,
+      organizador: { nombre: 'Ana', whatsapp: '6621234567' },
+    } } }, e)
+    const r = (apartado as { resultado: Reserva }).resultado
+    const pagar = () => atender({ accion: 'iniciarPago', datos: { token: r.tokenPrivado, parteIds: [r.partes[0].id], nombre: 'Ana' } }, e)
+    expect(await pagar()).toHaveProperty('resultado.url')
+    ahora += 60_000
+    expect(await pagar()).toHaveProperty('resultado.url')
+    // El link de cobro sigue protegido: un amigo no abre otro checkout de esa parte.
+    const amigo = await atender({ accion: 'iniciarPago', datos: { token: r.tokenCobro, parteIds: [r.partes[0].id], nombre: 'Beto' } }, e)
+    expect(amigo).toMatchObject({ error: { codigo: 'no_permitido' } })
+  })
+})

@@ -99,8 +99,8 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       const r = await s.apartar(pedido())
       for (let i = 0; i < 2; i++) {
         reloj += 4 * 60_000
-        if (i === 0) await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
-        else expect(await codigoDe(s.iniciarPago(r.tokenPrivado, [r.partes[0].id], ''))).toBe('no_permitido')
+        // El organizador puede reintentar; lo que no cambia es el vencimiento.
+        await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
       }
       reloj += 3 * 60_000 // 11 min desde que apartó
       expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.estado).toBe('cancelada')
