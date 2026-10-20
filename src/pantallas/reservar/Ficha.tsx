@@ -9,6 +9,7 @@ import { ErrorDeDatos, servicio, type SolicitudDeReserva } from '../../datos'
 import { mensajeDeError } from '../../mecanismos/datos/usarDatos'
 import { usarAlRegresar } from '../../mecanismos/pagos/alRegresar'
 import { datosCompletos, type Accion, type Borrador } from '../../mecanismos/reserva/estado'
+import { queHacerConLoApartado, type ApartadoDeLaFicha } from '../../mecanismos/reserva/apartadoDeLaFicha'
 import { mesasEnServicio, precioDeLista, type Configuracion, type Duracion, type Partes } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
 import { precioDe } from '../../negocio/precios'
@@ -51,18 +52,17 @@ export function Ficha({ borrador, despachar, config }: Props) {
   // apartar funcionaba y fallaba abrir el pago, reintentar apartaba OTRA mesa:
   // gastaba lugares y, con el límite de 2 apartados sin pagar por WhatsApp,
   // podía dejar al cliente sin poder reservar 10 minutos.
-  const apartada = useRef<{ clave: string; reserva: Reserva } | null>(null)
+  const apartada = useRef<(ApartadoDeLaFicha & { reserva: Reserva }) | null>(null)
   const reservaParaPagar = async (s: SolicitudDeReserva): Promise<Reserva> => {
     const clave = JSON.stringify(s)
     const previa = apartada.current
-    if (previa && previa.clave === clave && (previa.reserva.apartadaHasta ?? 0) > ahoraEnSonora().ms) return previa.reserva
-    if (previa) {
-      // Cambió algo (otra hora, otro nombre): se suelta la mesa de antes.
-      apartada.current = null
-      servicio.cancelarComoCliente(previa.reserva.tokenPrivado).catch(() => {})
-    }
+    const decision = queHacerConLoApartado(previa, clave, ahoraEnSonora().ms)
+    if (decision.tipo === 'reusar' && previa) return previa.reserva
+    apartada.current = null
+    // Cambió algo (otra hora, otro nombre) y nunca se abrió el pago: se suelta la mesa de antes.
+    if (decision.tipo === 'nueva' && decision.cancelar) servicio.cancelarComoCliente(decision.cancelar).catch(() => {})
     const reserva = await servicio.apartar(s)
-    apartada.current = { clave, reserva }
+    apartada.current = { clave, reserva, apartadaHasta: reserva.apartadaHasta, tokenPrivado: reserva.tokenPrivado, pagoAbierto: false }
     return reserva
   }
 
@@ -73,6 +73,8 @@ export function Ficha({ borrador, despachar, config }: Props) {
     try {
       const reserva = await reservaParaPagar({ deporte, fecha, inicio, duracion, partes, organizador: { nombre, whatsapp } })
       const { url } = await servicio.iniciarPago(reserva.tokenPrivado, [reserva.partes[0].id], nombre)
+            // Desde aquí pudo pagarse: ya no se cancela aunque cambie algo.
+      if (apartada.current) apartada.current.pagoAbierto = true
       // Se conserva lo apartado: si regresa de Mercado Pago sin pagar y vuelve
       // a deslizar, paga la MISMA reserva. Antes apartaba otra mesa y la
       // primera se quedaba ocupada hasta vencer.
