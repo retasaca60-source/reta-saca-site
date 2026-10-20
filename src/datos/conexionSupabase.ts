@@ -15,6 +15,17 @@ import { ErrorDeDatos } from './contrato'
 import type { Conexion } from './real'
 import { correoInterno } from './usuarios'
 
+/**
+ * Dónde vive la base de datos del proyecto. La función se pide AHÍ: sin esto
+ * Supabase la corre en la región más cercana a quien llama (California para
+ * Sonora) y cada consulta a la base cruzaba el continente. Medido el 20/10:
+ * la misma consulta tardaba 1.06–1.25 s desde California y 0.24–0.32 s junto
+ * a la base. Va en la dirección (?forceFunctionRegion) y no como cabecera
+ * x-region, que el navegador tendría que pedir permiso para mandar (CORS).
+ * Si el proyecto cambia de región, se cambia aquí.
+ */
+const REGION_DE_LA_BASE = 'ca-central-1'
+
 export function conexionSupabase(url: string, llavePublica: string): Conexion {
   const supabase = createClient(url, llavePublica)
   const oyentes = new Set<() => void>()
@@ -55,7 +66,7 @@ export function conexionSupabase(url: string, llavePublica: string): Conexion {
       const token = data.session?.access_token
       let respuesta: Response
       try {
-        respuesta = await fetch(`${url}/functions/v1/api`, {
+        respuesta = await fetch(`${url}/functions/v1/api?forceFunctionRegion=${REGION_DE_LA_BASE}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

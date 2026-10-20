@@ -8,6 +8,7 @@ import { useSearchParams } from 'react-router-dom'
 import { servicio } from '../datos'
 import { usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES } from '../negocio/configuracion'
+import { RANGOS_DE_REGLAS } from '../negocio/operaciones'
 import { formatoDinero } from '../negocio/formato'
 import { pendiente, total } from '../negocio/reserva'
 import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, sumarDias } from '../negocio/tiempo'
@@ -16,10 +17,13 @@ import { ListaDelDia } from './ListaDelDia'
 export function Semana() {
   const hoy = ahoraEnSonora().fecha
   const [busqueda, setBusqueda] = useSearchParams()
+  // Las dos consultas a la vez, no una tras otra: se piden las reservas hasta
+  // el máximo de días que Ajustes permite (60) y luego se recorta a la
+  // ventana real. Antes esperaba la configuración para saber hasta dónde pedir.
   const { datos, error } = usarDatos(async () => {
-    const config = await servicio.configuracion()
+    const [config, todas] = await Promise.all([servicio.configuracion(), servicio.reservasEntre(hoy, sumarDias(hoy, RANGOS_DE_REGLAS.diasDeAnticipacion.max))])
     const hasta = sumarDias(hoy, config.reglas.diasDeAnticipacion)
-    return [config, await servicio.reservasEntre(hoy, hasta), hasta] as const
+    return [config, todas.filter((r) => r.fecha <= hasta), hasta] as const
   }, [hoy])
 
   if (error) return <p className="panel-error">{error}</p>
