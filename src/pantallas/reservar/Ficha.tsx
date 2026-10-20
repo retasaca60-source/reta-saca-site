@@ -7,6 +7,7 @@ import { useRef, useState, type Dispatch } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ErrorDeDatos, servicio, type SolicitudDeReserva } from '../../datos'
 import { mensajeDeError } from '../../mecanismos/datos/usarDatos'
+import { usarAlRegresar } from '../../mecanismos/pagos/alRegresar'
 import { datosCompletos, type Accion, type Borrador } from '../../mecanismos/reserva/estado'
 import { mesasEnServicio, precioDeLista, type Configuracion, type Duracion, type Partes } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
@@ -32,6 +33,8 @@ export function Ficha({ borrador, despachar, config }: Props) {
   const navegar = useNavigate()
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+    // Regresó de Mercado Pago con "atrás": el deslizador vuelve a estar listo.
+  usarAlRegresar(() => setEnviando(false))
   // La ficha solo se abre con deporte y forma de pago elegidos (ElegirJuego).
   const deporte = borrador.deporte!
   const partes = borrador.partes ?? 1
@@ -70,8 +73,9 @@ export function Ficha({ borrador, despachar, config }: Props) {
     try {
       const reserva = await reservaParaPagar({ deporte, fecha, inicio, duracion, partes, organizador: { nombre, whatsapp } })
       const { url } = await servicio.iniciarPago(reserva.tokenPrivado, [reserva.partes[0].id], nombre)
-      // Ya va a pagar: lo apartado deja de ser "pendiente de esta ficha".
-      apartada.current = null
+      // Se conserva lo apartado: si regresa de Mercado Pago sin pagar y vuelve
+      // a deslizar, paga la MISMA reserva. Antes apartaba otra mesa y la
+      // primera se quedaba ocupada hasta vencer.
       // Mercado Pago real vive en otro dominio; la simulación, en este sitio.
       if (url.startsWith('/')) navegar(url)
       else window.location.assign(url)

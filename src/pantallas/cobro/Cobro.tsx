@@ -10,6 +10,7 @@ import { formatoDinero } from '../../negocio/formato'
 import { nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
+import { usarAlRegresar } from '../../mecanismos/pagos/alRegresar'
 
 export default function Cobro() {
   const { token = '' } = useParams()
@@ -23,6 +24,12 @@ export default function Cobro() {
   const [nombre, setNombre] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [errorPago, setErrorPago] = useState<string | null>(null)
+    // Regresó de Mercado Pago con "atrás": los botones vuelven a funcionar y se
+  // recarga quién ya pagó.
+  usarAlRegresar(() => {
+    setEnviando(false)
+    recargar()
+  })
 
   if (error) return <p className="aviso aviso-error">{error}</p>
   if (!datos && cargando) return <p className="cargando">Cargando…</p>
