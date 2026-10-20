@@ -223,6 +223,11 @@ VITE_SUPABASE_LLAVE_PUBLICA=sb_publishable_…
 Las tres son públicas por diseño (terminan dentro del sitio). La llave
 **secreta** nunca va ahí. Sin `VITE_DATOS=real` el sitio sigue en modo
 demostración, con los datos en el navegador.
+**Si cambia el proyecto de Supabase** (por ejemplo, al pasarlo a una cuenta
+de Hugo), además de `VITE_SUPABASE_URL` hay que cambiar la dirección en
+`public/_headers` (`connect-src`, en `https://` y en `wss://`). Esa regla le
+dice al navegador con quién puede hablar el sitio: con la dirección vieja,
+bloquea todo y el cliente solo ve "No hay conexión", sin pista de la causa.
 
 ## Pendiente
 
@@ -230,5 +235,7 @@ demostración, con los datos en el navegador.
   llave de prueba. Para cobrar de verdad falta la cuenta del negocio y cambiar
   `MP_ACCESS_TOKEN` por su llave de producción.
 - **Que Supabase no pause el proyecto**: los proyectos gratis se pausan tras
-  una semana sin actividad.
+  una semana sin actividad, y con el proyecto pausado el sitio entero deja de
+  funcionar. Ya pasó el 19/10/2026 (se reanudó desde el panel). Lo decide
+  Hugo: plan Pro o asegurar uso constante.
 - **La cuenta de dueño**: se crea en la entrega (arriba).
