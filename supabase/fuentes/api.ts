@@ -60,7 +60,7 @@ const pasarela = llaveClip ? clipReal(llaveClip, { avisoA: `${URL_SUPABASE}/func
  */
 // Un nombre de Netlify que se deja de usar queda libre para cualquiera: se
 // quita de aquí el mismo día (retasaca-hmo pasó a retasaca-hmo2 el 30/09).
-const SITIOS = ['https://retasaca-hmo2.netlify.app', 'https://reta-saca.netlify.app', 'https://retasaca.com', 'https://www.retasaca.com']
+const SITIOS = ['https://retasaca-reservas.netlify.app', 'https://retasaca-hmo2.netlify.app', 'https://reta-saca.netlify.app', 'https://retasaca.com', 'https://www.retasaca.com']
 function sitioDe(peticion: Request): string {
   const origen = peticion.headers.get('origin') ?? ''
   if (SITIOS.includes(origen) || /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origen)) return origen

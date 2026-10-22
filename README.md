@@ -108,14 +108,15 @@ enlaces simbólicos de `.claude/skills` no se siguen).
   repositorio privado, Netlify gratis solo publica los cambios de UNA persona,
   y somos dos). Nada secreto va en el código: contraseñas y llaves, en variables de
   entorno de Netlify.
-- Sitio: por ahora en **https://retasaca-hmo2.netlify.app** (una cuenta
-  temporal de Netlify, con datos reales de Supabase) mientras regresan los
-  créditos de la cuenta del negocio (`reta-saca.netlify.app`).
-- **Un `git push` ya no publica nada.** Netlify cobra créditos por cada
-  publicación y en el plan gratis se acabaron: en la cuenta del negocio las
-  compilaciones están detenidas y la temporal no está ligada a GitHub. Se
-  publica a mano, juntando cambios: `npm run build` (con el `.env.local` de
-  datos reales) y se sube `dist/` en la página de deploys de Netlify.
+- Sitio: **https://retasaca-reservas.netlify.app**, en la cuenta de Netlify
+  `retasaca-netlify`, con datos reales de Supabase. Las anteriores
+  (`retasaca-hmo2`, temporal, y `reta-saca`, sin créditos) quedan fuera de
+  uso; al darlas de baja se quitan también de `SITIOS` en
+  `supabase/fuentes/api.ts`, porque un nombre libre lo puede tomar cualquiera.
+- **Un `git push` no publica nada.** Netlify cobra créditos por cada
+  publicación y el sitio no está ligado a GitHub. Se publica a mano, juntando
+  cambios: `npm run build` (con el `.env.local` de datos reales) y se sube
+  `dist/` en la página de deploys de Netlify.
 - Base de datos: Supabase, proyecto de la cuenta del negocio. Pide acceso a la
   organización para ver las tablas.
 
