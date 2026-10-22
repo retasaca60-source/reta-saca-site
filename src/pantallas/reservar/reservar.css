@@ -4,7 +4,7 @@
 /* ── Lista de juegos ──────────────────────────────────────────────────── */
 
 .inicio-marca { display: flex; align-items: center; gap: 10px; min-height: 44px; padding-top: 18px; }
-.inicio-marca img { width: 36px; height: 36px; border-radius: 50%; }
+.inicio-marca img { width: auto; height: 32px; }
 .inicio-marca strong {
   font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
   font-size: 17px;

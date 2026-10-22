@@ -10,7 +10,7 @@ export function Cabecera() {
   return (
     <div className="barra-app">
       <Link to="/" aria-label="Reta Saca, inicio">
-        <img src="/imagenes/logo.png" alt="" />
+        <img src="/imagenes/emblema.png" alt="" width="77" height="32" />
         <strong>Reta Saca</strong>
       </Link>
     </div>

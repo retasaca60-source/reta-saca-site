@@ -26,7 +26,7 @@ export function ElegirJuego({ despachar, config }: Props) {
   return (
     <>
       <header className="inicio-marca">
-        <img src="/imagenes/logo.png" alt="" />
+        <img src="/imagenes/emblema.png" alt="" width="77" height="32" />
         <strong>Reta Saca</strong>
       </header>
 
