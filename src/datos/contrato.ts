@@ -9,7 +9,7 @@
 // CONTRATO-DE-DATOS.md, incluido qué tiene que garantizar el servidor (y no el
 // navegador).
 
-import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
+import type { Configuracion, DeporteId, Duracion, Modalidad } from '../negocio/configuracion'
 import type {
   ClienteSinReserva,
   Conflicto,
@@ -46,7 +46,7 @@ export interface Usuario {
   rol: Rol
 }
 
-// ─── Pago simulado (mientras no hay Mercado Pago) ────────────────────────
+// ─── Pago simulado (mientras no hay Clip) ────────────────────────
 
 /** Un pago en línea empezado: qué partes, a nombre de quién y a dónde regresar. */
 export interface IntentoDePago {
@@ -60,10 +60,12 @@ export interface IntentoDePago {
   resultado: 'pagado' | 'cancelado' | null
   /** Vencimiento del checkout y del bloqueo. Falta en intentos anteriores. */
   venceEn?: number
+  /** El id del cobro en la pasarela (Clip), cuando ya se creó. */
+  cobroId?: string | null
 }
 
 /**
- * La pantalla /pago/<id> que ocupa el lugar de Mercado Pago. La tienen la
+ * La pantalla /pago/<id> que ocupa el lugar de Clip. La tienen la
  * versión simulada y la real mientras los pagos en línea sean de prueba.
  */
 export interface VistaDePagoSimulado {
@@ -87,20 +89,21 @@ export interface ServicioDeDatos {
 
   // Cliente
   configuracion(): Promise<Configuracion>
-  disponibilidad(deporte: DeporteId, fecha: string, duracion: Duracion): Promise<HorarioDisponible[]>
+  /** Horas que se ofrecen en línea, con el precio de la mesa en esa modalidad (Cornhole para 2 personas). */
+  disponibilidad(deporte: DeporteId, fecha: string, duracion: Duracion, modalidad?: Modalidad): Promise<HorarioDisponible[]>
   /** Crea la reserva APARTADA (10 min) con sus partes. Revalida todo del lado de los datos. */
   apartar(solicitud: SolicitudDeReserva): Promise<Reserva>
   /**
    * Empieza un pago en línea de una o varias partes. Devuelve la URL a la que
-   * hay que mandar al cliente (Mercado Pago, o la pantalla simulada).
+   * hay que mandar al cliente (Clip, o la pantalla simulada).
    * `token` es el privado del organizador o el del link de cobro.
    */
   iniciarPago(token: string, parteIds: string[], nombre: string): Promise<{ url: string }>
   reservaPorTokenPrivado(token: string): Promise<Reserva | null>
-  /** Al regresar de Mercado Pago: registra ese pago si está aprobado. Lo decide Mercado Pago, no el navegador. */
-  verificarPagoEnLinea(pagoId: string): Promise<void>
+  /** Al regresar de Clip, con el id del intento: registra su cobro si está pagado. Lo decide Clip, no el navegador. */
+  verificarPagoEnLinea(intentoId: string): Promise<void>
   vistaDeCobro(tokenCobro: string): Promise<VistaDeCobro | null>
-  /** Cancela desde el link privado. Si pagó en línea, la devolución queda por revisar (la decide el negocio). */
+  /** Suelta un apartado SIN pagar desde el link privado. Lo pagado ya no se cancela así: se pide por WhatsApp o Instagram. */
   cancelarComoCliente(tokenPrivado: string): Promise<Reserva>
 
   // Panel
@@ -112,7 +115,7 @@ export interface ServicioDeDatos {
   /** Pagos HECHOS ese día (en línea y en el local), no los de las reservas de ese día. Para el cierre de caja. */
   pagosDelDia(fecha: string): Promise<PagoDelDia[]>
   /** Cuánto cuesta un grupo sin reserva que empieza AHORA, con la hora de los datos (en la real, la del servidor). */
-  cotizarSinReserva(deporte: DeporteId, duracion: Duracion): Promise<CotizacionSinReserva>
+  cotizarSinReserva(deporte: DeporteId, duracion: Duracion, modalidad?: Modalidad, palasExtra?: boolean): Promise<CotizacionSinReserva>
   /** Registra Y COBRA en el mostrador a un grupo sin reserva (empieza ahora). Con `precioEsperado` distinto al de los datos, no registra. */
   anotarSinReserva(cliente: ClienteSinReserva): Promise<Reserva>
   /** Asigna mesa y marca que llegaron. `null` quita la mesa. */

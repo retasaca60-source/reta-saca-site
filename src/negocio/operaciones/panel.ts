@@ -3,12 +3,12 @@
 // Quién está haciendo la acción (`quien`) lo pone la versión de datos a partir
 // de la sesión, nunca la pantalla.
 
-import type { Duracion } from '../configuracion'
+import type { Duracion, Modalidad } from '../configuracion'
 import { mesasLibres } from '../disponibilidad'
 import { ErrorDeDatos } from '../errores'
 import { bloqueEn, cabeEnUnBloque, estaCerrado } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
-import { precioDe, precioDeExtension, precioSiExiste } from '../precios'
+import { ofreceModalidad, precioDe, precioDePalas, precioDeExtension, precioSiExiste } from '../precios'
 import { fin, ocupaMesa, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
 import { formatoDinero } from '../formato'
 import { esFechaValida, formatoHora, instante, momentoDe } from '../tiempo'
@@ -16,22 +16,45 @@ import { abrirDevolucion, copia, type Contexto } from './contexto'
 import type { ClienteSinReserva, CotizacionSinReserva, PagoDelDia } from './tipos'
 
 /**
- * Precio para un grupo que llega sin reserva: cuenta la media hora en que
- * empiezan (llegan a las 5:10 → entran en la promo de las 5:00; pendiente de
- * confirmar con Hugo). Exportado para que la caja muestre el total ANTES de
+ * Precio de la mesa para un grupo que llega sin reserva: cuenta el turno en
+ * que empiezan (llegan a las 5:10 → entran en la promo de las 5:00; pendiente
+ * de confirmar con Hugo). Exportado para que la caja muestre el total ANTES de
  * cobrar con la misma regla con que se cobra.
  */
-export function precioSinReserva(config: Contexto['config'], deporte: ClienteSinReserva['deporte'], minutoDeLlegada: number, duracion: Duracion) {
+export function precioSinReserva(
+  config: Contexto['config'],
+  deporte: ClienteSinReserva['deporte'],
+  minutoDeLlegada: number,
+  duracion: Duracion,
+  modalidad: Modalidad = 'estandar',
+) {
   const paso = config.reglas.pasoDeInicio
-  return precioDe(config, deporte, Math.floor(minutoDeLlegada / paso) * paso, duracion)
+  return precioDe(config, deporte, Math.floor(minutoDeLlegada / paso) * paso, duracion, modalidad)
+}
+
+/** Lo que se le cobra a un grupo sin reserva: la mesa en su modalidad y, si las pidió, las palas. */
+function cobroSinReserva(ctx: Contexto, c: Pick<ClienteSinReserva, 'deporte' | 'duracion' | 'modalidad' | 'palasExtra'>, minuto: number) {
+  const d = ctx.config.deportes[c.deporte]
+  const modalidad = c.modalidad ?? 'estandar'
+  if (!d.duraciones.includes(c.duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
+  if (!ofreceModalidad(d, modalidad)) throw new ErrorDeDatos('datos_invalidos', `${d.nombre} no tiene precio para 2 personas.`)
+  if (c.palasExtra && d.precioPalasExtra === null) throw new ErrorDeDatos('datos_invalidos', `${d.nombre} no tiene palas extra.`)
+  const { precio, conPromo } = precioSinReserva(ctx.config, c.deporte, minuto, c.duracion, modalidad)
+  const palasExtra = precioDePalas(d, c.palasExtra)
+  return { precio, conPromo, modalidad, palasExtra, total: precio + palasExtra }
 }
 
 /** Lo que cuesta empezar AHORA (hora de quien calcula: el servidor en la versión real). */
-export function cotizarSinReserva(ctx: Contexto, deporte: ClienteSinReserva['deporte'], duracion: Duracion): CotizacionSinReserva {
-  const d = ctx.config.deportes[deporte]
-  if (!d.duraciones.includes(duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
+export function cotizarSinReserva(
+  ctx: Contexto,
+  deporte: ClienteSinReserva['deporte'],
+  duracion: Duracion,
+  modalidad: Modalidad = 'estandar',
+  palasExtra = false,
+): CotizacionSinReserva {
   const m = momentoDe(ctx.ahora)
-  return { ...precioSinReserva(ctx.config, deporte, m.minutos, duracion), inicio: m.minutos }
+  const { precio, conPromo, total, palasExtra: palas } = cobroSinReserva(ctx, { deporte, duracion, modalidad, palasExtra }, m.minutos)
+  return { precio, palasExtra: palas, total, conPromo, inicio: m.minutos }
 }
 
 /**
@@ -43,7 +66,6 @@ export function anotarSinReserva(ctx: Contexto, c: ClienteSinReserva, quien: str
   const { config, reservas, ahora } = ctx
   const m = momentoDe(ahora)
   const d = config.deportes[c.deporte]
-  if (!d.duraciones.includes(c.duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
   if (c.nombre.trim().length < 2) throw new ErrorDeDatos('datos_invalidos', 'Escribe un nombre para identificar al grupo.')
   const bloque = bloqueEn(config, m.fecha, m.minutos)
   if (!bloque) throw new ErrorDeDatos('fuera_de_horario', 'El local está cerrado a esta hora.')
@@ -53,11 +75,11 @@ export function anotarSinReserva(ctx: Contexto, c: ClienteSinReserva, quien: str
   if (mesasLibres(config, reservas, c.deporte, m.fecha, m.minutos, c.duracion, ahora) < 1) {
     throw new ErrorDeDatos('sin_lugar', `No hay ${d.nombre} libre durante todo ese tiempo.`)
   }
-  const { precio, conPromo } = precioSinReserva(config, c.deporte, m.minutos, c.duracion)
-  if (c.precioEsperado !== undefined && c.precioEsperado !== precio) {
+  const { precio, conPromo, modalidad, palasExtra, total: cobro } = cobroSinReserva(ctx, c, m.minutos)
+  if (c.precioEsperado !== undefined && c.precioEsperado !== cobro) {
     throw new ErrorDeDatos(
       'datos_invalidos',
-      `El total ahora es ${formatoDinero(precio)}, no ${formatoDinero(c.precioEsperado)}: cambió la tarifa o la promo. No se registró nada; revisa el total y cobra otra vez.`,
+      `El total ahora es ${formatoDinero(cobro)}, no ${formatoDinero(c.precioEsperado)}: cambió la tarifa o la promo. No se registró nada; revisa el total y cobra otra vez.`,
     )
   }
   const nombre = c.nombre.trim()
@@ -72,11 +94,13 @@ export function anotarSinReserva(ctx: Contexto, c: ClienteSinReserva, quien: str
     duracion: c.duracion,
     precio,
     conPromo,
+    ...(modalidad === 'pareja' ? { modalidad } : {}),
+    ...(palasExtra ? { palasExtra } : {}),
     partesElegidas: 1,
     partes: [
       {
         id: nuevoId(),
-        monto: precio,
+        monto: cobro,
         delOrganizador: true,
         concepto: 'reserva',
         pago: { medio: c.medio, nombre, en: new Date(ahora).toISOString(), marcadoPor: quien },
@@ -202,7 +226,7 @@ export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva 
       `${r.mesa} la tiene ${siguiente.organizador.nombre} desde las ${formatoHora(siguiente.inicio)}. Para extender, primero cámbialos a otra mesa libre.`,
     )
   }
-  const monto = precioDeExtension(ctx.config, r.deporte, r.duracion, minutos)
+  const monto = precioDeExtension(ctx.config, r.deporte, r.duracion, minutos, r.modalidad)
   // Con precios incoherentes (90 min más barato que 60) la resta salía
   // negativa y la "parte" bajaba lo que se debía. Ajustes ya no lo permite;
   // esto cuida una configuración vieja.
@@ -243,9 +267,10 @@ export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio:
     throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre en ese horario.')
   }
   const nueva = copia(r)
-  const nuevo = precioSiExiste(ctx.config, r.deporte, inicio, r.duracion)
+  const nuevo = precioSiExiste(ctx.config, r.deporte, inicio, r.duracion, r.modalidad)
   if (nuevo) {
-    const diferencia = nuevo.precio - total(r)
+    // Las palas extra no cambian con el horario: se suman a lo que vale la mesa nueva.
+    const diferencia = nuevo.precio + (r.palasExtra ?? 0) - total(r)
     if (diferencia > 0) nueva.partes.push({ id: nuevoId(), monto: diferencia, delOrganizador: true, concepto: 'cambio', pago: null })
     // La etiqueta "Promo" sigue al horario nuevo: si se sale de la promo, ya no la lleva.
     nueva.conPromo = nuevo.conPromo

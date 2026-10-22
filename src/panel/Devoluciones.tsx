@@ -1,6 +1,7 @@
 // Las cancelaciones con pagos en línea que el negocio no ha resuelto. El
 // sistema no devuelve dinero: el negocio decide caso por caso y, si devuelve,
-// transfiere desde su banco a la CLABE que el cliente le manda por WhatsApp.
+// lo reembolsa por el método de pago original (desde Clip) o en efectivo en
+// el local, si el cliente acepta (política 02).
 // Vive en Caja porque es dinero, y sale de todas las fechas: una devolución de
 // hace dos semanas no puede perderse porque ya nadie abre ese día.
 
@@ -41,7 +42,7 @@ function Devolucion({ r, alResolver }: { r: Reserva; alResolver: () => void }) {
   const resolver = async (decision: 'transferida' | 'sin_devolucion') => {
     const pregunta =
       decision === 'transferida'
-        ? `¿Ya se transfirieron ${monto}? Deja de contar como cobrado en la caja.`
+        ? `¿Ya se reembolsaron ${monto}? Deja de contar como cobrado en la caja.`
         : `¿No se le devuelve nada a ${r.organizador.nombre}? El cliente lo verá en su reserva.`
     if (!confirm(pregunta)) return
     setOcupado(true)
@@ -72,7 +73,7 @@ function Devolucion({ r, alResolver }: { r: Reserva; alResolver: () => void }) {
       {r.devolucion!.nota && <small>{r.devolucion!.nota}</small>}
       <div className="fila-acciones">
         <button type="button" className="panel-boton primario" disabled={ocupado} onClick={() => resolver('transferida')}>
-          Ya se transfirió
+          Ya se reembolsó
         </button>
         <button type="button" className="panel-boton" disabled={ocupado} onClick={() => resolver('sin_devolucion')}>
           Sin devolución

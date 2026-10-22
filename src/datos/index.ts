@@ -76,7 +76,7 @@ conRepaso(servicio)
 /** Lo que solo existe en la demostración (restablecer, entrar sin contraseña). */
 export const servicioSimulado: ServicioSimulado | null = simulado
 
-/** La pantalla que ocupa el lugar de Mercado Pago, en cualquiera de las dos versiones. */
+/** La pantalla que ocupa el lugar de Clip, en cualquiera de las dos versiones. */
 export const pagoSimulado: PagoSimulado = (real ?? simulado!).pagoSimulado
 
 export { ErrorDeDatos } from './contrato'

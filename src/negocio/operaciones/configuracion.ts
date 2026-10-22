@@ -38,6 +38,21 @@ const entero = (x: unknown, min: number, max: number): x is number => typeof x =
 const esObjeto = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x)
 
 /**
+ * Una tabla de precios: uno por cada duración, entero, y más tiempo nunca
+ * cuesta lo mismo o menos. Si 90 min costaba menos que 60, extender 30 min
+ * dejaba una parte NEGATIVA y bajaba lo que se debía.
+ */
+function validarTabla(tabla: Record<string, unknown>, duraciones: number[], nombre: string): void {
+  let anterior: { minutos: number; precio: number } | null = null
+  for (const minutos of [...duraciones].sort((a, b) => a - b)) {
+    const precio = tabla[minutos]
+    if (!entero(precio, 1, 100_000)) throw mal(`Falta el precio de ${nombre} de ${minutos} min.`)
+    if (anterior && precio <= anterior.precio) throw mal(`${nombre}: ${minutos} min tiene que costar más que ${anterior.minutos} min.`)
+    anterior = { minutos, precio }
+  }
+}
+
+/**
  * Revisa la configuración completa, campo por campo. Lo que llega puede venir
  * de cualquiera con la sesión del dueño o, en la demostración, de lo que otra
  * versión dejó guardado en el navegador: por eso se revisa también la forma,
@@ -56,28 +71,26 @@ export function validarConfiguracion(c: Configuracion): void {
     if (typeof d.nombre !== 'string' || !d.nombre.trim() || typeof d.clave !== 'string' || !d.clave.trim()) throw mal(`Falta el nombre o la clave de ${nombre}.`)
     if (!entero(d.mesas, 0, 50)) throw mal(`Número de mesas de ${nombre} inválido.`)
     if (!Array.isArray(d.fueraDeServicio) || !d.fueraDeServicio.every((n) => entero(n, 1, 50))) throw mal(`Mesas fuera de servicio de ${nombre} inválidas.`)
-    if (typeof d.seDivide !== 'boolean' || !entero(d.avisarDesde, 0, 50)) throw mal(`Reglas de ${nombre} inválidas.`)
+    if (!entero(d.avisarDesde, 0, 50)) throw mal(`Reglas de ${nombre} inválidas.`)
 
     const duraciones = d.duraciones as unknown
     if (!Array.isArray(duraciones) || !duraciones.length || !duraciones.every((m) => DURACIONES.includes(m)) || new Set(duraciones).size !== duraciones.length) {
       throw mal(`Las duraciones de ${nombre} no son válidas.`)
     }
     if (!esObjeto(d.precios)) throw mal(`Faltan los precios de ${nombre}.`)
-    const precios = d.precios as Record<number, unknown>
-    // Que ninguna parte de un pago dividido entre 4 quede en $0.
-    const minimo = d.seDivide ? 4 : 1
-    let anterior: { minutos: number; precio: number } | null = null
-    for (const minutos of [...(duraciones as number[])].sort((a, b) => a - b)) {
-      const precio = precios[minutos]
-      if (!entero(precio, minimo, 100_000)) throw mal(`Falta el precio de ${nombre} de ${minutos} min.`)
-      // Más tiempo nunca cuesta lo mismo o menos: si 90 min costaba menos que
-      // 60, extender 30 min dejaba una parte NEGATIVA y bajaba lo que se debía.
-      if (anterior && precio <= anterior.precio) {
-        throw mal(`${nombre}: ${minutos} min tiene que costar más que ${anterior.minutos} min.`)
-      }
-      anterior = { minutos, precio }
+    validarTabla(d.precios, duraciones as number[], nombre)
+    // La tabla para 2 personas (Cornhole): las mismas reglas, con sus propios precios.
+    if (d.preciosPareja !== null) {
+      if (!esObjeto(d.preciosPareja)) throw mal(`Faltan los precios para 2 personas de ${nombre}.`)
+      validarTabla(d.preciosPareja, duraciones as number[], `${nombre} para 2 personas`)
     }
-    if (d.precioPromo !== null && !entero(d.precioPromo, minimo, 100_000)) throw mal(`Precio de promo de ${nombre} inválido.`)
+    if (d.precioPromo !== null && !entero(d.precioPromo, 1, 100_000)) throw mal(`Precio de promo de ${nombre} inválido.`)
+    if (d.precioPalasExtra !== null && !entero(d.precioPalasExtra, 1, 10_000)) throw mal(`Precio de palas extra de ${nombre} inválido.`)
+  }
+
+  const enLinea = (c.reglas as unknown as Record<string, unknown>).duracionesEnLinea
+  if (!Array.isArray(enLinea) || !enLinea.length || !enLinea.every((m) => DURACIONES.includes(m)) || new Set(enLinea).size !== enLinea.length) {
+    throw mal('Las duraciones que se reservan en línea no son válidas.')
   }
 
   for (let dia = 0; dia < 7; dia++) {

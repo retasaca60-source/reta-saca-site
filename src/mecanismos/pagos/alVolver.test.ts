@@ -1,4 +1,4 @@
-// Al regresar de Mercado Pago, el pago se registra UNA vez aunque la pantalla
+// Al regresar de Clip, el cobro se registra UNA vez aunque la pantalla
 // se recargue cada 30 segundos; si falló, se reintenta en la siguiente.
 
 import { describe, expect, it, vi } from 'vitest'

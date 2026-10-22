@@ -119,7 +119,7 @@ export function FilaReserva({
             className="panel-boton"
             href={enlaceWhatsApp(
               `Hola ${r.organizador.nombre}, tu reserva en Reta Saca (${r.folio}) del ${etiquetaFecha(r.fecha)} a las ${formatoHora(r.inicio)} quedó cancelada.` +
-                (r.devolucion?.estado === 'por_revisar' ? ' Para lo que pagaste en línea, mándanos tu CLABE por este medio y lo revisamos.' : ''),
+                (r.devolucion?.estado === 'por_revisar' ? ' Lo que pagaste en línea lo revisamos y te avisamos cómo queda tu reembolso.' : ''),
               r.organizador.whatsapp,
             )}
             target="_blank"
@@ -147,7 +147,7 @@ export function FilaReserva({
         <div className="fila-detalle">
           <span>
             Cancelación del negocio.
-            {pagadoEnLinea(r) > 0 && ` Pagaron ${formatoDinero(pagadoEnLinea(r))} en línea: queda por devolver en Caja, por transferencia.`} Avísale al organizador por WhatsApp.
+            {pagadoEnLinea(r) > 0 && ` Pagaron ${formatoDinero(pagadoEnLinea(r))} en línea: queda por revisar en Caja (se reembolsa por Clip o en efectivo).`} Avísale al organizador por WhatsApp.
           </span>
           <button type="button" className="panel-boton peligro" disabled={ocupado} onClick={() => hacer(() => servicio.cancelarComoNegocio(r.id))}>
             Sí, cancelar
@@ -168,11 +168,14 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   }
   // También en una vigente: un pago que llegó cuando ya no había lugar.
   if (r.devolucion?.estado === 'por_revisar') e.push(['aviso', `Devolución por revisar ${formatoDinero(r.devolucion.monto)}`])
-  if (r.devolucion?.estado === 'transferida') e.push(['neutra', 'Devolución transferida'])
+  if (r.devolucion?.estado === 'transferida') e.push(['neutra', 'Reembolsada'])
   if (r.devolucion?.estado === 'sin_devolucion') e.push(['neutra', 'Sin devolución'])
   if (r.origen === 'mostrador') e.push(['neutra', 'Sin reserva'])
   if (r.llegaronEn && r.estado !== 'cancelada') e.push(['bien', r.mesa ? `En ${r.mesa}` : 'Llegaron'])
   else if (puedeLiberarPorRetraso(r, config, ahoraEnSonora().ms)) e.push(['mal', 'Retraso'])
+  if (r.modalidad === 'pareja') e.push(['neutra', '2 personas'])
+  if (r.palasExtra) e.push(['neutra', '+2 palas'])
+  // Solo reservas de antes del 21/10/2026: desde entonces se paga completo.
   if (r.partesElegidas > 1) e.push(['neutra', `Entre ${r.partesElegidas}`])
   if (r.conPromo) e.push(['neutra', 'Promo'])
   return (

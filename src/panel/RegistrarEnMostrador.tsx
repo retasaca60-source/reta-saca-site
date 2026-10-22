@@ -6,7 +6,7 @@
 import { useState } from 'react'
 import { servicio } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
-import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion } from '../negocio/configuracion'
+import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion, type Modalidad } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
 import { bloqueEn, estaCerrado } from '../negocio/horario'
 import { fin, ocupaMesa, total, type MedioDePago, type Reserva } from '../negocio/reserva'
@@ -30,6 +30,9 @@ export function RegistrarEnMostrador({
 }) {
   const [deporte, setDeporte] = useState<DeporteId>(inicial?.deporte ?? 'pingpong')
   const [duracion, setDuracion] = useState<Duracion>(60)
+  // Cornhole 2 vs 2 o 1 vs 1 (otro precio); Ping Pong con 2 palas más.
+  const [modalidad, setModalidad] = useState<Modalidad>('estandar')
+  const [palasExtra, setPalasExtra] = useState(false)
   const [mesa, setMesa] = useState(inicial?.mesa ?? '')
   const [nombre, setNombre] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
@@ -44,8 +47,9 @@ export function RegistrarEnMostrador({
   // El total lo da el servidor con SU hora y SU tarifa: antes se calculaba
   // aquí con el reloj de la laptop, y si iba desfasado (o terminaba la promo)
   // la pantalla decía un precio y se guardaba otro.
-  const cotizacion = usarDatos(() => servicio.cotizarSinReserva(deporte, duracion), [deporte, duracion])
-  const precio = cotizacion.datos?.precio
+  const cotizacion = usarDatos(() => servicio.cotizarSinReserva(deporte, duracion, modalidad, palasExtra), [deporte, duracion, modalidad, palasExtra])
+  // Lo que se cobra: la mesa en su modalidad más las palas, si las pidieron.
+  const precio = cotizacion.datos?.total
   const conPromo = cotizacion.datos?.conPromo ?? false
   const termina = (cotizacion.datos?.inicio ?? ahora.minutos) + duracion
   // Mesas que se ven libres en todo el tiempo que van a jugar. La revisión
@@ -77,6 +81,8 @@ export function RegistrarEnMostrador({
   const elegirDeporte = (nuevo: DeporteId) => {
     setDeporte(nuevo)
     setMesa('')
+    setModalidad('estandar')
+    setPalasExtra(false)
     if (!config.deportes[nuevo].duraciones.includes(duracion)) setDuracion(config.deportes[nuevo].duraciones[0])
   }
 
@@ -87,11 +93,21 @@ export function RegistrarEnMostrador({
     setHecho(null)
     try {
       // Con el precio que se vio: si el servidor calcula otro, no registra nada.
-      const r = await servicio.anotarSinReserva({ deporte, duracion, nombre, whatsapp, mesa: mesa || undefined, medio, precioEsperado: precio })
+      const r = await servicio.anotarSinReserva({
+        deporte,
+        duracion,
+        modalidad,
+        palasExtra,
+        nombre,
+        whatsapp,
+        mesa: mesa || undefined,
+        medio,
+        precioEsperado: precio,
+      })
       // Lo que se muestra sale de lo GUARDADO, no de lo que se calculó antes.
       const cobrado = total(r)
       setHecho(
-        `${r.organizador.nombre}: ${d.nombre} ${formatoDinero(cobrado)} cobrado en ${medio}` +
+        `${r.organizador.nombre}: ${d.nombre}${r.modalidad === 'pareja' ? ' (2 personas)' : ''}${r.palasExtra ? ' con 2 palas extra' : ''} ${formatoDinero(cobrado)} cobrado en ${medio}` +
           (r.mesa ? `, sentados en ${r.mesa}` : ', falta sentarlos') +
           ` hasta las ${formatoHora(fin(r))}.` +
           (medio === 'efectivo' && recibido > cobrado ? ` Cambio: ${formatoDinero(recibido - cobrado)}.` : ''),
@@ -100,6 +116,7 @@ export function RegistrarEnMostrador({
       setWhatsapp('')
       setMesa('')
       setPagaCon('')
+      setPalasExtra(false)
     } catch (e) {
       setError(mensajeDeError(e))
       // Si el precio cambió, que la pantalla traiga el nuevo antes de reintentar.
@@ -128,6 +145,30 @@ export function RegistrarEnMostrador({
             </button>
           ))}
         </div>
+        {d.preciosPareja && (
+          <div className="segmentado" role="group" aria-label="Cuántos juegan">
+            {(
+              [
+                ['estandar', '4 personas'],
+                ['pareja', '2 personas'],
+              ] as const
+            ).map(([m, texto]) => (
+              <button key={m} type="button" className={modalidad === m ? 'activo' : ''} aria-pressed={modalidad === m} onClick={() => setModalidad(m)}>
+                {texto}
+              </button>
+            ))}
+          </div>
+        )}
+        {d.precioPalasExtra !== null && (
+          <div className="segmentado" role="group" aria-label="Palas">
+            <button type="button" className={!palasExtra ? 'activo' : ''} aria-pressed={!palasExtra} onClick={() => setPalasExtra(false)}>
+              2 palas
+            </button>
+            <button type="button" className={palasExtra ? 'activo' : ''} aria-pressed={palasExtra} onClick={() => setPalasExtra(true)}>
+              +2 palas · {formatoDinero(d.precioPalasExtra)}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="caja-fila">

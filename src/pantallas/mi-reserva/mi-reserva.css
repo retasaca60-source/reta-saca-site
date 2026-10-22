@@ -1,6 +1,5 @@
-/* La confirmación de cancelar. */
+/* El aviso de reembolso de una reserva cancelada. */
 
-.zona-cancelar { margin-top: 22px; }
 .confirmar-cancelar { padding: 16px; }
 .confirmar-cancelar p { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
 .confirmar-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

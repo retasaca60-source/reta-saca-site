@@ -1,7 +1,7 @@
 // Qué es una reserva y las reglas que dependen solo de ella: cuánto falta
 // pagar, si ocupa mesa, si se puede cancelar o liberar. Sin pantallas.
 
-import type { Configuracion, DeporteId, Duracion, Partes } from './configuracion'
+import type { Configuracion, DeporteId, Duracion, Modalidad, Partes } from './configuracion'
 import { instante } from './tiempo'
 
 // Sin transferencia: el negocio cobra en el local solo en efectivo o con la terminal.
@@ -22,8 +22,9 @@ export interface Pago {
 /**
  * Lo pagado en línea de una reserva cancelada. El sistema no devuelve dinero
  * ni promete devolverlo: el negocio decide caso por caso y, si devuelve, lo
- * transfiere desde su banco. Antes se marcaba "devuelto" al cancelar, dando por
- * hecho que Mercado Pago lo regresaba solo; el negocio prefirió decidir él.
+ * reembolsa por el método de pago original o en efectivo en el local
+ * (política 02). Antes se marcaba "devuelto" al cancelar, dando por hecho que
+ * la pasarela lo regresaba sola; el negocio prefirió decidir él.
  */
 export interface Devolucion {
   /** Lo pagado en línea al momento de cancelar, más `extra`. */
@@ -72,9 +73,13 @@ export interface Reserva {
   inicio: number
   /** Minutos. Puede crecer si recepción extiende. */
   duracion: number
-  /** Precio de la reserva al momento de hacerla (no cambia si Hugo cambia precios). */
+  /** Precio de la mesa al momento de reservar (no cambia si Hugo cambia precios). Sin las palas extra. */
   precio: number
   conPromo: boolean
+  /** Cornhole para 2 personas. Sin el campo (reservas de antes del 21/10/2026) = estándar. */
+  modalidad?: Modalidad
+  /** Lo que se cobró por 2 palas extra de Ping Pong, ya incluido en la parte de la reserva. Sin el campo = sin palas. */
+  palasExtra?: number
   partesElegidas: Partes
   partes: Parte[]
   organizador: { nombre: string; whatsapp: string }

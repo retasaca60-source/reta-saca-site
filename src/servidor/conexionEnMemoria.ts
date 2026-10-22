@@ -34,7 +34,7 @@ export function conexionEnMemoria(reloj: () => number): { conexion: Conexion; re
           ahora: reloj,
           cuentaId,
           pagosSimulados: true,
-          mercadoPago: null,
+          pasarela: null,
           sitio: 'http://localhost:5190',
           cliente: null,
           cuentas: {

@@ -1,34 +1,34 @@
-// Al regresar de Mercado Pago, la URL trae el id del pago (payment_id, o
-// collection_id en avisos viejos). Se manda al servidor para que lo registre en
-// ese momento: el aviso de Mercado Pago puede llegar segundos después, y
-// mientras tanto la persona vería su mesa como "apartada" justo después de
-// pagar. El servidor no le cree al navegador: con el id le pregunta a Mercado
-// Pago si se pagó y por cuánto.
+// Al regresar de Clip, la URL trae el id del intento de pago (?intento=…). Se
+// manda al servidor para que registre el cobro en ese momento: el aviso de
+// Clip puede llegar segundos después, y mientras tanto la persona vería su
+// mesa como "apartada" justo después de pagar. El servidor no le cree al
+// navegador: busca el cobro de ese intento y le pregunta a Clip si se pagó y
+// por cuánto.
 
 import { servicio } from '../../datos'
 
-export function pagoDeMercadoPago(busqueda: URLSearchParams): string | null {
-  return busqueda.get('payment_id') ?? busqueda.get('collection_id')
+export function intentoAlVolver(busqueda: URLSearchParams): string | null {
+  return busqueda.get('intento')
 }
 
 /**
- * Los pagos que ya se registraron desde esta página. La pantalla se recarga
- * cada 30 segundos con el mismo payment_id en la dirección, y antes cada
- * recarga le volvía a preguntar a Mercado Pago por el mismo pago.
+ * Los intentos que ya se registraron desde esta página. La pantalla se
+ * recarga cada 30 segundos con el mismo intento en la dirección, y sin esto
+ * cada recarga le volvía a preguntar a Clip por el mismo cobro.
  */
 const yaRegistrados = new Set<string>()
 
 /**
- * Registra el pago si viene uno, una sola vez. Si falla, la página se carga
- * igual y se reintenta en la siguiente recarga: el aviso de Mercado Pago lo
+ * Registra el cobro si viene un intento, una sola vez. Si falla, la página se
+ * carga igual y se reintenta en la siguiente recarga: el aviso de Clip lo
  * registra después, y es mejor ver la reserva que un error.
  */
-export async function registrarAlVolver(pagoId: string | null): Promise<void> {
-  if (!pagoId || yaRegistrados.has(pagoId)) return
+export async function registrarAlVolver(intentoId: string | null): Promise<void> {
+  if (!intentoId || yaRegistrados.has(intentoId)) return
   try {
-    await servicio.verificarPagoEnLinea(pagoId)
-    yaRegistrados.add(pagoId)
+    await servicio.verificarPagoEnLinea(intentoId)
+    yaRegistrados.add(intentoId)
   } catch (e) {
-    console.warn('No se pudo registrar el pago al volver; llegará con el aviso de Mercado Pago.', e)
+    console.warn('No se pudo registrar el pago al volver; llegará con el aviso de Clip.', e)
   }
 }

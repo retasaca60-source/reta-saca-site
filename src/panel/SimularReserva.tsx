@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { pagoSimulado, servicio, type HorarioDisponible } from '../datos'
 import { mensajeDeError } from '../mecanismos/datos/usarDatos'
-import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion, type Partes } from '../negocio/configuracion'
+import { duracionesEnLinea, ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion, type Modalidad } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
 import { ahoraEnSonora, fechaLarga, formatoDuracion, formatoHora, sumarDias } from '../negocio/tiempo'
 
@@ -51,7 +51,8 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
   const [duracion, setDuracion] = useState<Duracion>(60)
   const [horarios, setHorarios] = useState<HorarioDisponible[] | null>(null)
   const [inicio, setInicio] = useState<number | null>(null)
-  const [partes, setPartes] = useState<Partes>(1)
+  const [modalidad, setModalidad] = useState<Modalidad>('estandar')
+  const [palasExtra, setPalasExtra] = useState(false)
   const [pagada, setPagada] = useState(true)
   const [nombre, setNombre] = useState(() => alAzar(NOMBRES))
   const [whatsapp, setWhatsapp] = useState(whatsappDeEjemplo)
@@ -74,11 +75,11 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
     const mio = ++turno.current
     setHorarios(null)
     setInicio(null)
-    servicio.disponibilidad(deporte, fecha, duracion).then(
+    servicio.disponibilidad(deporte, fecha, duracion, modalidad).then(
       (h) => mio === turno.current && setHorarios(h),
       (e) => mio === turno.current && setError(mensajeDeError(e)),
     )
-  }, [deporte, fecha, duracion])
+  }, [deporte, fecha, duracion, modalidad])
   useEffect(pedirHorarios, [pedirHorarios])
 
   // Antes, si la configuración no cargaba, se quedaba en "Cargando…" para siempre.
@@ -102,11 +103,15 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
   const dias = Array.from({ length: config.reglas.diasDeAnticipacion + 1 }, (_, i) => sumarDias(hoy, i))
   const elegido = horarios?.find((h) => h.inicio === inicio)
 
+  // Lo mismo que se puede reservar en el sitio: 1 o 2 horas, en hora cerrada.
+  const duraciones = duracionesEnLinea(config, d)
+
   const elegirDeporte = (id: DeporteId) => {
     setDeporte(id)
-    const durs = config.deportes[id].duraciones
+    const durs = duracionesEnLinea(config, config.deportes[id])
     if (!durs.includes(duracion)) setDuracion(durs.includes(60) ? 60 : durs[0])
-    if (!config.deportes[id].seDivide) setPartes(1)
+    setModalidad('estandar')
+    setPalasExtra(false)
   }
 
   const reservar = async () => {
@@ -114,10 +119,10 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
     setEnviando(true)
     setError(null)
     try {
-      const r = await servicio.apartar({ deporte, fecha, inicio, duracion, partes, organizador: { nombre, whatsapp } })
+      const r = await servicio.apartar({ deporte, fecha, inicio, duracion, modalidad, palasExtra, organizador: { nombre, whatsapp } })
       if (pagada) {
-        // Lo mismo que hace el sitio: paga la parte del organizador en la
-        // pantalla de pago de la demostración.
+        // Lo mismo que hace el sitio: paga la reserva completa en la pantalla
+        // de pago de la demostración.
         const { url } = await servicio.iniciarPago(r.tokenPrivado, [r.partes[0].id], nombre)
         await pagoSimulado.confirmar(url.split('/').pop()!)
       }
@@ -170,7 +175,7 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
         <div className="simular-campo">
           <span>Tiempo</span>
           <div className="segmentado">
-            {d.duraciones.map((m) => (
+            {duraciones.map((m) => (
               <button key={m} type="button" className={duracion === m ? 'activo' : ''} onClick={() => setDuracion(m)}>
                 {formatoDuracion(m)}
               </button>
@@ -203,15 +208,33 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
       </div>
 
       <div className="simular-fila">
-        {d.seDivide && (
+        {d.preciosPareja && (
           <div className="simular-campo">
-            <span>Cómo pagan</span>
+            <span>Cuántos juegan</span>
             <div className="segmentado">
-              {([1, 2, 4] as Partes[]).map((n) => (
-                <button key={n} type="button" className={partes === n ? 'activo' : ''} onClick={() => setPartes(n)}>
-                  {n === 1 ? 'Todo' : `Entre ${n}`}
+              {(
+                [
+                  ['estandar', '4 personas'],
+                  ['pareja', '2 personas'],
+                ] as const
+              ).map(([m, texto]) => (
+                <button key={m} type="button" className={modalidad === m ? 'activo' : ''} onClick={() => setModalidad(m)}>
+                  {texto}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+        {d.precioPalasExtra !== null && (
+          <div className="simular-campo">
+            <span>Palas</span>
+            <div className="segmentado">
+              <button type="button" className={!palasExtra ? 'activo' : ''} onClick={() => setPalasExtra(false)}>
+                Las 2 de la mesa
+              </button>
+              <button type="button" className={palasExtra ? 'activo' : ''} onClick={() => setPalasExtra(true)}>
+                +2 palas ({formatoDinero(d.precioPalasExtra)})
+              </button>
             </div>
           </div>
         )}
@@ -250,7 +273,7 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
           {enviando
             ? 'Reservando…'
             : elegido
-              ? `Reservar ${formatoHora(elegido.inicio)} · ${formatoDinero(elegido.precio)}`
+              ? `Reservar ${formatoHora(elegido.inicio)} · ${formatoDinero(elegido.precio + (palasExtra ? (d.precioPalasExtra ?? 0) : 0))}`
               : 'Elige una hora'}
         </button>
       </footer>

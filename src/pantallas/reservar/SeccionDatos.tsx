@@ -13,7 +13,7 @@ interface Props {
 }
 
 export function SeccionDatos({ borrador, despachar, config }: Props) {
-  const { nombre, whatsapp, aceptaReglas, partes } = borrador
+  const { nombre, whatsapp, aceptaReglas } = borrador
   const errorWhatsapp = whatsapp.length && whatsapp.length !== 10 ? 'Tienen que ser 10 dígitos.' : ''
   const r = config.reglas
 
@@ -57,19 +57,21 @@ export function SeccionDatos({ borrador, despachar, config }: Props) {
       <div className="grupo">
         <ul className="reglas">
           <li>
-  {borrador.deporte === 'cornhole'
-    ? 'Tu tablero queda apartado'
-    : 'Tu mesa queda apartada'}{' '}
-  {r.minutosDeApartado} minutos mientras pagas.
-</li>
-          <li>Hay {r.minutosDeTolerancia} minutos de tolerancia; llegar tarde no recorre tu horario.</li>
-          {partes !== null && partes > 1 && <li>Lo que tus amigos no paguen, lo cubres tú en el local.</li>}
+            {borrador.deporte === 'cornhole' ? 'Tu tablero queda apartado' : 'Tu mesa queda apartada'} {r.minutosDeApartado} minutos mientras
+            pagas.
+          </li>
+          <li>El tiempo empieza a la hora reservada, aunque lleguen tarde. Hay {r.minutosDeTolerancia} minutos de tolerancia.</li>
+          <li>Cambios o cancelaciones: con al menos 24 horas de anticipación, por WhatsApp o Instagram.</li>
         </ul>
         <label className="casilla">
           <input type="checkbox" checked={aceptaReglas} onChange={(e) => despachar({ tipo: 'aceptarReglas', acepta: e.target.checked })} />
           <span>
             {/* En otra pestaña: el borrador vive en esta pantalla y al navegar se perdía todo lo capturado. */}
-            Acepto las reglas y el{' '}
+            Acepto las{' '}
+            <Link to="/politicas" target="_blank" rel="noopener">
+              políticas
+            </Link>{' '}
+            y el{' '}
             <Link to="/privacidad" target="_blank" rel="noopener">
               aviso de privacidad
             </Link>

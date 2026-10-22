@@ -1,9 +1,9 @@
 # Contrato de datos: la versión real
 
-Para quien trabaja en **Supabase y Mercado Pago**. La versión real ya existe y
+Para quien trabaja en **Supabase y Clip**. La versión real ya existe y
 corre en Supabase; cómo quedaron las tablas, los permisos y cómo se sube un
 cambio está en [`BASE-DE-DATOS.md`](BASE-DE-DATOS.md). Aquí está el contrato
-que cualquier versión tiene que cumplir y cómo se cobra con Mercado Pago.
+que cualquier versión tiene que cumplir y cómo se cobra con Clip.
 
 ## La idea en una línea
 
@@ -88,7 +88,7 @@ nunca solo en el código de las pantallas:
 | **Quién ve qué**: el link de cobro **no** devuelve el WhatsApp del organizador ni su token privado | El link de cobro se reenvía en grupos. |
 | **Roles**: solo el dueño cambia configuración y usuarios | Recepción no debe poder cambiar precios. |
 | **Marcar pagos**: queda quién lo marcó (`marcadoPor`), lo pone el servidor con el usuario de la sesión | Lo que da fe no lo escribe el interesado. |
-| **Confirmar un pago en línea**: solo preguntándole a Mercado Pago por el pago | Si el navegador pudiera decir "ya pagué", cualquiera lo diría. |
+| **Confirmar un pago en línea**: solo preguntándole a Clip por el cobro | Si el navegador pudiera decir "ya pagué", cualquiera lo diría. |
 
 Dos trampas de Supabase que conviene tener presentes: "RLS filtra filas, no columnas" (una
 política que deja editar la fila deja editar TODAS sus columnas: estados y
@@ -107,12 +107,12 @@ el cliente o para recepción, en español.
 | Operación | Qué hace | Errores |
 |---|---|---|
 | `configuracion()` | La configuración vigente (mesas, precios, promo, horario, reglas, WhatsApp del negocio). Pública. | — |
-| `disponibilidad(deporte, fecha, duracion)` | Las horas de inicio de ese día con mesas libres (`libres`, 0 = lleno), precio y si lleva promo. Usa `iniciosPosibles` y `mesasLibres` de `src/negocio`. | — |
-| `apartar(solicitud)` | Revalida TODO (horario, corte, ventana, límite por WhatsApp, lugar), calcula precio y partes, y crea la reserva **apartada** 10 min. Devuelve la reserva completa (con `tokenPrivado`). | `datos_invalidos`, `fuera_de_horario`, `limite_whatsapp`, `sin_lugar` |
-| `iniciarPago(token, parteIds, nombre)` | `token` es el privado o el de cobro. Crea el pago en Mercado Pago (una "preferencia" por las partes elegidas) y devuelve `{ url }` a donde mandar al cliente. Si es el link de cobro, `nombre` es de quien paga. Si el apartado ya se venció, falla (la reserva quedó cancelada): hay que apartar otra vez. Si el pago de un apartado vencido llega igual, se acepta solo si la mesa sigue libre; si no, queda como devolución por revisar. | `no_encontrada`, `no_permitido` (cancelada), `datos_invalidos` (parte ya pagada, nombre vacío) |
+| `disponibilidad(deporte, fecha, duracion, modalidad?)` | Las horas de inicio **en línea** de ese día (solo duraciones de `reglas.duracionesEnLinea`, en hora cerrada) con mesas libres (`libres`, 0 = lleno), el precio de la mesa en esa modalidad (Cornhole para 2 personas) y si lleva promo. | — |
+| `apartar(solicitud)` | Revalida TODO (horario, corte, ventana, duración en línea, modalidad, palas, límite de apartados sin pagar, lugar), calcula el precio y crea la reserva **apartada** 10 min con **una sola parte** (mesa + palas extra). Devuelve la reserva completa (con `tokenPrivado`). | `datos_invalidos`, `fuera_de_horario`, `demasiados_intentos`, `sin_lugar` |
+| `iniciarPago(token, parteIds, nombre)` | `token` es el privado o el de cobro (reservas divididas de antes del 21/10/2026). Crea el cobro en Clip por las partes elegidas y devuelve `{ url }` a donde mandar al cliente. Si es el link de cobro, `nombre` es de quien paga. Si el apartado ya se venció, falla (la reserva quedó cancelada): hay que apartar otra vez. Si el pago de un apartado vencido llega igual, se acepta solo si la mesa sigue libre; si no, queda como devolución por revisar. | `no_encontrada`, `no_permitido` (cancelada), `datos_invalidos` (parte ya pagada, nombre vacío) |
 | `reservaPorTokenPrivado(token)` | La reserva completa, o `null`. | — |
 | `vistaDeCobro(tokenCobro)` | Vista **recortada** (`VistaDeCobro`): sin WhatsApp ni token privado. | — |
-| `cancelarComoCliente(tokenPrivado)` | Cancela. Si pagó en línea, deja `devolucion` por revisar: el sistema no devuelve dinero, lo decide el negocio. Ya empezada, no. | `no_encontrada`, `no_permitido` |
+| `cancelarComoCliente(tokenPrivado)` | Solo suelta un apartado **sin pagar** (la ficha lo usa al cambiar de hora antes de pagar). Lo pagado se cancela desde el panel: los cambios se piden por WhatsApp o Instagram (política 02). | `no_encontrada`, `no_permitido` |
 
 ### Del panel (con sesión)
 
@@ -153,38 +153,38 @@ búsqueda calculadas de ahí), con su diagrama, están en
   mostrador) → `cancelada` (con motivo). Un apartado vencido se trata como
   cancelado con motivo `apartado_vencido`.
 
-## Pagos con Mercado Pago
+## Pagos con Clip
 
-Checkout Pro con la API de Preferences, sin el SDK: son dos llamadas
-(`supabase/fuentes/mercadopago.ts`).
+Checkout de Clip ("Checkout Redireccionado", link de pago), sin SDK: son dos
+llamadas (`supabase/fuentes/clip.ts`). Reemplazó a Mercado Pago el 21/10/2026.
 
-1. `iniciarPago` crea una **preferencia** por el monto de las partes, con
-   `external_reference` = id del intento, regreso a `/r/<token>` o
-   `/c/<token>` (`?pago=aprobado|cancelado`), `binary_mode` (aprobado o
-   rechazado, sin "pendiente") y **solo pagos que se confirman al momento**:
-   fuera OXXO, cajeros y transferencias, porque la mesa se aparta 10 minutos.
-   La preferencia **vence con el apartado**.
-2. El cliente paga en Mercado Pago y regresa con `payment_id` en la URL. La
-   página manda ese id al servidor (`verificarPagoEnLinea`) para no esperar el
+1. `iniciarPago` crea un **link de pago** por el monto de las partes, con
+   `metadata.external_reference` = id del intento, `webhook_url` a la función
+   (`?aviso=clip`) y regreso a `/r/<token>` (o `/c/<token>`) con
+   `?pago=aprobado|cancelado&intento=<id>`. El link **vence con el apartado**
+   (Clip no acepta vencimientos después de las 23:59 de la CDMX: cerca de esa
+   hora se recorta). El id del cobro de Clip se guarda en el intento
+   (`intentos_pago.cobro_id`).
+2. El cliente paga en Clip y regresa con el id del **intento** en la URL. La
+   página lo manda al servidor (`verificarPagoEnLinea`) para no esperar el
    aviso. **El id no confirma nada por sí solo.**
-3. Mercado Pago también avisa a la función (`/functions/v1/api?aviso=mercadopago`).
-   En los dos casos el servidor **le pregunta a Mercado Pago por el pago** con
-   su llave y solo cuenta uno **aprobado, en MXN y por el monto exacto** del
-   intento. Da igual cuál llegue primero o si llega dos veces: se registra una
-   vez (`registrarPagoEnLinea` en `src/servidor/api.ts`).
+3. Clip también avisa a la función. En los dos casos el servidor **le pregunta
+   a Clip por el cobro** con su llave y solo cuenta uno `CHECKOUT_COMPLETED`,
+   **en MXN y por el monto exacto** del intento. Da igual cuál llegue primero o
+   si llega dos veces: se registra una vez (`registrarPagoEnLinea`).
 4. Si el pago llega cuando ya no hay mesa (se venció el apartado y otro la
    tomó), la reserva no cambia y el dinero queda como **devolución por
    revisar**, con una nota de qué pasó.
-5. **Devoluciones**: no pasan por Mercado Pago. El negocio decide y transfiere
-   desde su banco (`RESERVAS.md` §7).
-6. La llave va en los secretos de la función (`MP_ACCESS_TOKEN`), **nunca** en
-   el código ni con prefijo `VITE_` (lo que empieza con `VITE_` se publica en
-   el sitio). Con la llave de prueba se cobra de mentira; para cobrar de
-   verdad solo se cambia por la de producción del negocio.
+5. **Reembolsos**: los decide el negocio y los hace por el método de pago
+   original o en efectivo (`RESERVAS.md` §7).
+6. La llave va en los secretos de la función (`CLIP_API_KEY`), **nunca** en el
+   código ni con prefijo `VITE_`. Se manda como `Bearer <llave>` salvo que el
+   secreto ya traiga su esquema (`Basic …`). **Clip no acepta llaves de prueba
+   en este checkout**: la primera prueba de verdad es un pago real chico.
 
-Sin `MP_ACCESS_TOKEN`, la pantalla `/pago/<id>` (`src/pantallas/pago-simulado`)
-ocupa el lugar de Mercado Pago si la función tiene `PAGOS_SIMULADOS=si`. Con la
-llave puesta, esa pantalla deja de funcionar aunque el secreto siga: si no,
+Sin `CLIP_API_KEY`, la pantalla `/pago/<id>` (`src/pantallas/pago-simulado`)
+ocupa el lugar de Clip si la función tiene `PAGOS_SIMULADOS=si`. Con la llave
+puesta, esa pantalla deja de funcionar aunque el secreto siga: si no,
 cualquiera confirmaría ahí un cobro que nunca pagó.
 
 ## Casos que la versión real debe pasar
@@ -193,18 +193,18 @@ Son los de `src/datos/simulado.test.ts`, y **ya corren contra las dos
 versiones**: la simulada y la real (el mismo servidor de Supabase, con la base
 en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 
-- Aparta con precio por mesa y lo divide en pesos cerrados ($150 entre 4 →
-  39/37/37/37).
-- Popdarts siempre queda en un solo pago.
-- Queda firme con el primer pago.
+- Aparta con precio por mesa, en un solo pago completo.
+- Cornhole para 2 personas cobra su tabla y no lleva promo; las palas extra
+  se suman a la misma parte.
+- En línea solo 1 o 2 horas, en hora cerrada.
+- Queda firme con el pago.
 - No vende una mesa de más, ni con dos personas al mismo tiempo.
 - Un apartado ocupa mesa 10 min y luego se libera solo.
-- Máximo 2 reservas activas por WhatsApp.
+- Máximo 2 apartados sin pagar por WhatsApp.
 - No deja reservar fuera de horario, pasado el corte ni más allá de 7 días.
-- El link de cobro no enseña el WhatsApp del organizador.
-- Un amigo paga su parte con su nombre, o "lo que falta".
-- No se paga dos veces la misma parte.
-- Cancelar deja lo pagado en línea por revisar; el negocio lo resuelve y lo transferido deja de contar como cobrado.
+- No se paga dos veces la misma reserva.
+- El cliente no cancela lo pagado desde su link; si recepción cancela, lo
+  pagado en línea queda por revisar y lo reembolsado deja de contar como cobrado.
 - Sin sesión no se ven reservas; recepción no cambia configuración.
 - Marcar pago guarda quién lo marcó.
 - No asigna una mesa que ya tiene otro grupo.
@@ -224,7 +224,7 @@ base.
 
 ## Corrección del 19/10/2026: partes con checkout en proceso
 
-- `IntentoDePago.venceEn` guarda el vencimiento enviado a Mercado Pago. Es
+- `IntentoDePago.venceEn` guarda el vencimiento enviado a la pasarela. Es
   opcional para leer intentos anteriores, que no tenían este dato.
 - `Repositorio.partesEnProceso(reservaId, ahora)` devuelve las partes de
   intentos pendientes cuyo checkout aún no vence.
@@ -234,7 +234,7 @@ base.
 - `VistaDeCobro.partes[].enProceso` permite elegir otra parte disponible. No
   expone el ID del intento ni datos privados del organizador.
 - Si crear la preferencia falla de forma incierta, el bloqueo conserva su
-  plazo: una respuesta perdida no demuestra que Mercado Pago no la creó.
+  plazo: una respuesta perdida no demuestra que la pasarela no lo creó.
 - Los intentos antiguos sin `venceEn` no quedan protegidos retroactivamente.
   Antes de abrir a cobros reales, resolver los checkouts antiguos de prueba
   y validar el vencimiento de los nuevos en sandbox.

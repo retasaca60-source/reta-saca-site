@@ -12,7 +12,7 @@ import { Devoluciones } from './Devoluciones'
 const MEDIOS: { medio: MedioDePago; nombre: string }[] = [
   { medio: 'efectivo', nombre: 'Efectivo' },
   { medio: 'tarjeta', nombre: 'Tarjeta' },
-  { medio: 'en_linea', nombre: 'En línea (Mercado Pago)' },
+  { medio: 'en_linea', nombre: 'En línea (Clip)' },
 ]
 
 export function Caja() {
@@ -46,7 +46,7 @@ export function Caja() {
               <strong>{formatoDinero(suma(vigentes))}</strong>
             </div>
           </div>
-          {devueltos.length > 0 && <p className="nota">Devuelto por transferencia tras cancelaciones: {formatoDinero(suma(devueltos))} (no cuenta en el total).</p>}
+          {devueltos.length > 0 && <p className="nota">Reembolsado tras cancelaciones: {formatoDinero(suma(devueltos))} (no cuenta en el total).</p>}
           <table className="panel-tabla">
             <thead>
               <tr>

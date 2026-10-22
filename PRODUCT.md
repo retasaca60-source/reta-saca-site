@@ -12,45 +12,45 @@ web
   que buscan plan para la tarde o el fin de semana. Se organizan por WhatsApp
   y reservan desde el teléfono, muchas veces a última hora (se puede hasta
   30 minutos antes).
-- Quien reserva es el **organizador**: elige mesa y horario, paga su parte y
-  manda a sus amigos un link para que paguen la suya.
-- Los amigos abren el **link de cobro** desde WhatsApp, sin cuenta, y solo
-  escriben su nombre para pagar.
+- Quien reserva es el **organizador**: elige mesa y horario y paga el total
+  al reservar (desde el 21/10/2026 ya no se divide el pago).
 - Aparte está el personal del local (recepción y el dueño), que usa el panel
   en una laptop. El panel es otra superficie.
 
 ## Product Purpose
 
-Reservar y pagar una mesa de Ping Pong, un tablero de Cornhole o uno de
-Popdarts en Reta Saca, desde el teléfono y en menos de un minuto, sin llamar
-ni escribir al local. Éxito: el grupo llega a una mesa que ya es suya, con el
-pago resuelto entre todos.
+Reservar y pagar una mesa de Ping Pong o un tablero de Cornhole en Reta Saca, desde el teléfono y en menos de un minuto, sin llamar
+ni escribir al local. Éxito: el grupo llega a una mesa que ya es suya, ya
+pagada, y con las reglas del juego a la mano.
 
 ## Positioning
 
-La mesa se paga entre amigos: quien organiza aparta con su parte y los demás
-pagan con un link, en línea o en el local. El precio es por mesa, no por
-persona, y cada quien sabe exactamente cuánto le toca.
+El precio es por mesa, no por persona, y se paga completo al reservar. En
+Cornhole hay precio para 4 y para 2 personas; en Ping Pong se pueden rentar 2
+palas más.
 
 ## Operating Context
 
 - Se usa en el teléfono, en el momento de armar el plan, con el chat del
   grupo abierto al lado.
-- Horario del local: lunes a viernes de 5 a 10 PM; sábado y domingo de 9 AM a
-  12 PM y de 5 a 10 PM. Inicios cada 30 minutos; se reserva hasta 7 días
-  adelante. Hora de Sonora.
+- Horario del local: lunes a jueves de 5 a 10 PM; viernes de 5 a 11 PM;
+  sábado de 9 AM a 12 PM y de 5 a 11 PM; domingo de 9 AM a 12 PM y de 5 a
+  10 PM. En línea, 1 o 2 horas empezando en hora cerrada; se reserva hasta 7
+  días adelante. Hora de Sonora.
 - Todo compartir pasa por WhatsApp (botones que abren el chat con el mensaje
   ya escrito).
 
 ## Capabilities and Constraints
 
 - Las reglas completas están en `RESERVAS.md` y mandan sobre cualquier diseño.
-- Flujo: deporte y forma de pago (completo, entre 2, entre 4) → día, duración
-  y hora → datos y reglas → pago → link privado con estado y pagos; link de
-  cobro para los amigos.
-- Precios por mesa (Ping Pong $100/150/220/280; Cornhole $300/440/560;
-  Popdarts $120/180/240), promo en 60 min que empiezan 5:00 o 5:30 PM.
-- Pago con Mercado Pago (hoy simulado), sin cuentas de cliente.
+- Flujo: deporte (y en Cornhole, 4 o 2 personas) → día, duración y hora →
+  palas extra en Ping Pong → datos y políticas → pago completo → ticket con
+  "¡Listo, ya se armó la reta!", reglas del juego y políticas.
+- Precios por mesa (Ping Pong $100/150/220/280; Cornhole estándar
+  $280/410/540 y para 2 personas $200/290/380; palas extra $50), promo en 1
+  hora que empieza a las 5:00 PM.
+- Pago con Clip (simulado mientras no esté la cuenta del negocio), sin cuentas
+  de cliente. Cambios y cancelaciones por WhatsApp o Instagram, con 24 h.
 - Hoy el sitio corre con datos simulados; el aviso de demostración debe seguir
   visible mientras sea así.
 

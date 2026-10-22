@@ -72,7 +72,13 @@ export function almacenEnMemoria(): Almacen {
 // ─── Estado guardado ─────────────────────────────────────────────────────
 
 interface Estado {
-  version: 1
+  /**
+   * 2 desde el 21/10/2026 (sin Popdarts, Cornhole para 2 personas, palas
+   * extra, horario nuevo). Lo guardado por la versión 1 se descarta y la
+   * demostración empieza de cero con la configuración nueva: es de pruebas,
+   * y arrastrar precios y horarios viejos confundiría al revisarla.
+   */
+  version: 2
   config: Configuracion
   reservas: Reserva[]
   intentos: IntentoDePago[]
@@ -87,7 +93,7 @@ interface Estado {
  */
 function esEstadoValido(x: unknown): x is Estado {
   const e = x as Estado
-  if (!e || e.version !== 1 || !e.config || !Array.isArray(e.reservas) || !Array.isArray(e.intentos) || !Array.isArray(e.usuarios)) return false
+  if (!e || e.version !== 2 || !e.config || !Array.isArray(e.reservas) || !Array.isArray(e.intentos) || !Array.isArray(e.usuarios)) return false
   // La configuración se revisa con la MISMA regla que usa el servidor al
   // guardarla. Antes se revisaban unos cuantos campos: sin promo.inicios la
   // consulta de horarios tronaba al llamar .includes.
@@ -176,7 +182,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
   function nuevoEstado(): Estado {
     const config = structuredClone(CONFIGURACION_INICIAL)
     const reservas = conEjemplos ? sembrar(config, momentoDe(reloj())) : []
-    return { version: 1, config, reservas, intentos: [], usuarios: [...USUARIOS_DEMO], sesion: null }
+    return { version: 2, config, reservas, intentos: [], usuarios: [...USUARIOS_DEMO], sesion: null }
   }
 
   function leer(): Estado {
@@ -266,7 +272,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     modo: 'simulado',
 
     configuracion: () => consultar((e) => e.config),
-    disponibilidad: (deporte, fecha, duracion) => consultar((e) => op.horariosDisponibles(contexto(e), deporte, fecha, duracion)),
+    disponibilidad: (deporte, fecha, duracion, modalidad) => consultar((e) => op.horariosDisponibles(contexto(e), deporte, fecha, duracion, modalidad)),
     apartar: (s) => cambiar((e) => poner(e, op.apartar(contexto(e), s))),
 
     iniciarPago: (token, parteIds, nombre) =>
@@ -293,7 +299,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         const r = e.reservas.find((x) => x.tokenCobro === token)
         return r ? op.vistaDeCobro(r, partesEnProceso(e, r.id)) : null
       }),
-    // En la simulación no hay Mercado Pago: el pago ya quedó al confirmar la pantalla simulada.
+    // En la simulación no hay Clip: el pago ya quedó al confirmar la pantalla simulada.
     verificarPagoEnLinea: async () => {},
     cancelarComoCliente: (token) =>
       cambiar((e) => poner(e, op.cancelarComoCliente(contexto(e), existe(e.reservas.find((x) => x.tokenPrivado === token))))),
@@ -325,10 +331,10 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         return op.pagosDelDia(e.reservas, fecha)
       }),
 
-    cotizarSinReserva: (deporte, duracion) =>
+    cotizarSinReserva: (deporte, duracion, modalidad, palasExtra) =>
       consultar((e) => {
         usuarioActual(e)
-        return op.cotizarSinReserva(contexto(e), deporte, duracion)
+        return op.cotizarSinReserva(contexto(e), deporte, duracion, modalidad, palasExtra)
       }),
     anotarSinReserva: (c) =>
       cambiar((e) => {
@@ -395,7 +401,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
       }
     },
 
-    // ── Solo simulado: el lugar de Mercado Pago ──
+    // ── Solo simulado: el lugar de Clip ──
 
     pagoSimulado: {
         obtener: (id) =>

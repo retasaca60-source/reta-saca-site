@@ -46,9 +46,10 @@ src/
 ├── pantallas/                 El sitio del cliente (teléfono). Una carpeta por página.
 │   ├── reservar/              "/": lista de juegos (fotos) → ficha del juego, donde se
 │   │                          elige cómo pagan, día, hora y datos, y se paga deslizando.
-│   ├── pago-simulado/         "/pago/…": ocupa el lugar de Mercado Pago (solo demo).
+│   ├── pago-simulado/         "/pago/…": ocupa el lugar de Clip mientras no está su llave.
 │   ├── mi-reserva/            "/r/…": link privado del organizador.
 │   ├── cobro/                 "/c/…": link de cobro para los amigos.
+│   ├── politicas/             "/politicas": políticas del negocio y reglas de cada juego.
 │   └── privacidad/            "/privacidad": aviso (borrador).
 │
 ├── panel/                     "/panel": recepción y dueño (laptop).

@@ -1,6 +1,8 @@
-// El link privado del organizador (/r/<token>): su pase completo, quién ha
-// pagado, compartir el cobro y cancelar. Es también la confirmación al pagar.
-// Sin cuenta: quien tiene este link manda sobre la reserva (RESERVAS.md §6).
+// El link privado del organizador (/r/<token>): su ticket, lo pagado y las
+// reglas. Es también la confirmación al pagar ("¡Listo, ya se armó la reta!").
+// Desde el 21/10/2026 no se cancela desde aquí: los cambios y cancelaciones se
+// piden con 24 h de anticipación por WhatsApp o Instagram (política 02).
+// Sin cuenta: quien tiene este link ve su reserva (RESERVAS.md §6).
 
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
@@ -8,10 +10,11 @@ import { servicio } from '../../datos'
 import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../../mecanismos/whatsapp/enlaces'
 import { formatoDinero } from '../../negocio/formato'
-import { pagado, pagadoEnLinea, pendiente, total, type Reserva } from '../../negocio/reserva'
-import { ahoraEnSonora, fechaLarga, formatoHora, instante, momentoDe, nombreDelDia } from '../../negocio/tiempo'
+import { pagado, pendiente, total, type Reserva } from '../../negocio/reserva'
+import { fechaLarga, formatoHora, momentoDe, nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
-import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
+import { Politicas, ReglasDelJuego } from '../../vista/Reglamento'
+import { intentoAlVolver, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 import './mi-reserva.css'
 
 export default function MiReserva() {
@@ -19,14 +22,13 @@ export default function MiReserva() {
   const navegar = useNavigate()
   const [busqueda] = useSearchParams()
   const pago = busqueda.get('pago')
-  const pagoId = pagoDeMercadoPago(busqueda)
+  const intentoId = intentoAlVolver(busqueda)
   const { datos, cargando, error } = usarDatos(async () => {
-    await registrarAlVolver(pagoId)
+    await registrarAlVolver(intentoId)
     return Promise.all([servicio.reservaPorTokenPrivado(token), servicio.configuracion()])
-  }, [token, pagoId])
+  }, [token, intentoId])
   const [accion, setAccion] = useState<string | null>(null)
   const [errorAccion, setErrorAccion] = useState<string | null>(null)
-  const [confirmandoCancelar, setConfirmandoCancelar] = useState(false)
 
   if (error) return <p className="aviso aviso-error">{error}</p>
   if (!datos && cargando) return <p className="cargando">Cargando tu reserva…</p>
@@ -48,14 +50,10 @@ export default function MiReserva() {
   }
 
   const d = config.deportes[r.deporte]
-  const ahora = ahoraEnSonora().ms
   const falta = pendiente(r)
   const miParte = r.partes.find((p) => p.delOrganizador && p.concepto === 'reserva')
-  const linkCobro = direccion(`/c/${r.tokenCobro}`)
   const linkPrivado = direccion(`/r/${r.tokenPrivado}`)
   const cuando = `${fechaLarga(r.fecha)} a las ${formatoHora(r.inicio)}`
-  const yaEmpezo = instante(r.fecha, r.inicio) <= ahora
-  const enLinea = pagadoEnLinea(r)
   // La URL sola no basta (cualquiera puede escribir ?pago=aprobado): además
   // la parte del organizador tiene que estar pagada en los datos.
   const recienPagada = pago === 'aprobado' && r.estado === 'confirmada' && Boolean(miParte?.pago)
@@ -72,25 +70,19 @@ export default function MiReserva() {
     }
   }
 
-  const pagarMiParte = () =>
+  const pagar = () =>
     ejecutar('pagar', async () => {
       const { url } = await servicio.iniciarPago(r.tokenPrivado, [miParte!.id], r.organizador.nombre)
       if (url.startsWith('/')) navegar(url)
       else window.location.assign(url)
     })
 
-  const cancelar = () => ejecutar('cancelar', () => servicio.cancelarComoCliente(r.tokenPrivado).then(() => setConfirmandoCancelar(false)))
-
   return (
     <>
       <h1 className="titulo-grande" style={{ marginTop: 20 }}>
-        {recienPagada
-  ? r.deporte === 'cornhole'
-    ? '¡Listo! Ya tienen tablero.'
-    : '¡Listo! Ya tienen mesa.'
-  : 'Tu reserva'}
+        {recienPagada ? '¡Listo, ya se armó la reta!' : 'Tu reserva'}
       </h1>
-      {recienPagada && <p className="nota">Guarda este link: aquí ves quién ya pagó, compartes el cobro y puedes cancelar.</p>}
+      {recienPagada && <p className="nota">Guarda este link: aquí está tu ticket y las reglas.</p>}
       {pago === 'cancelado' && r.estado === 'apartada' && (
         <p className="aviso aviso-alerta" role="alert">
           No se hizo el pago. Tu reserva sigue apartada unos minutos: puedes intentarlo otra vez.
@@ -102,7 +94,7 @@ export default function MiReserva() {
           config={config}
           datos={{
             deporteId: r.deporte,
-            deporte: d.nombre,
+            deporte: r.modalidad === 'pareja' ? `${d.nombre} · 2 personas` : d.nombre,
             dia: nombreDelDia(r.fecha),
             inicio: r.inicio,
             duracion: r.duracion,
@@ -115,11 +107,13 @@ export default function MiReserva() {
         />
       </div>
 
+      {r.palasExtra ? <p className="nota">Incluye 2 palas extra ({formatoDinero(r.palasExtra)}).</p> : null}
+
       <h2 className="titulo-seccion">Pagos</h2>
       <ListaDePagos r={r} />
       <p className="nota numeros">
         Pagado {formatoDinero(pagado(r))}
-        {falta > 0 && r.estado !== 'cancelada' && ` · faltan ${formatoDinero(falta)}. Se pagan con el link o en el local; si no, los cubres tú.`}
+        {falta > 0 && r.estado !== 'cancelada' && ` · faltan ${formatoDinero(falta)}, se pagan en el local.`}
       </p>
 
       {errorAccion && (
@@ -130,16 +124,6 @@ export default function MiReserva() {
 
       {r.estado === 'confirmada' && (
         <div className="acciones">
-          {r.partesElegidas > 1 && falta > 0 && (
-            <a
-              className="boton boton-principal"
-              href={enlaceWhatsApp(`Ya aparté ${r.deporte === 'cornhole' ? 'el tablero' : 'la mesa'} de ${d.nombre} para el ${cuando} en Reta Saca. Aquí pagas tu parte: ${linkCobro}`)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Mandar el cobro a mis amigos
-            </a>
-          )}
           <a
             className="boton boton-secundario"
             href={enlaceWhatsApp(`Mi reserva en Reta Saca (${r.folio}), ${cuando}: ${linkPrivado}`, r.organizador.whatsapp)}
@@ -163,32 +147,19 @@ export default function MiReserva() {
 
       {r.devolucion && <AvisoDeDevolucion r={r} whatsappNegocio={config.whatsappNegocio} cuando={cuando} deporte={d.nombre} />}
 
-      {r.estado !== 'cancelada' && !yaEmpezo && (
-        <div className="zona-cancelar">
-          {!confirmandoCancelar ? (
-            <button type="button" className="boton boton-texto" onClick={() => setConfirmandoCancelar(true)}>
-              Cancelar reserva
-            </button>
-          ) : (
-            <div className="grupo confirmar-cancelar">
-              <p>
-                {r.deporte === 'cornhole'
-  ? 'El tablero se libera para alguien más.'
-  : 'La mesa se libera para alguien más.'}
-                {enLinea > 0 &&
-                  ` Lo pagado en línea (${formatoDinero(enLinea)}) no se devuelve solo: el negocio revisa cada caso y, si procede, te lo transfiere.`}
-              </p>
-              <div className="confirmar-botones">
-                <button type="button" className="boton boton-secundario" onClick={() => setConfirmandoCancelar(false)}>
-                  Mejor no
-                </button>
-                <button type="button" className="boton boton-principal" disabled={accion !== null} onClick={cancelar}>
-                  Sí, cancelar
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+      {r.estado !== 'cancelada' && (
+        <p className="nota">
+          ¿Cambios o cancelaciones? Pídelos con al menos 24 horas de anticipación por WhatsApp o Instagram.
+        </p>
+      )}
+
+      {/* Al terminar de reservar: las reglas del juego a la vista y las
+          políticas plegadas, que son largas. */}
+      {r.estado === 'confirmada' && (
+        <>
+          <ReglasDelJuego deporte={r.deporte} nombre={d.nombre} />
+          <Politicas plegadas />
+        </>
       )}
 
       <Link className="enlace-discreto" to="/">
@@ -197,8 +168,8 @@ export default function MiReserva() {
 
       {r.estado === 'apartada' && miParte && !miParte.pago && (
         <div className="barra-accion">
-          <button type="button" className="boton boton-principal" disabled={accion !== null} onClick={pagarMiParte}>
-            Pagar mi parte ({formatoDinero(miParte.monto)})
+          <button type="button" className="boton boton-principal" disabled={accion !== null} onClick={pagar}>
+            Pagar ({formatoDinero(miParte.monto)})
           </button>
         </div>
       )}
@@ -219,34 +190,36 @@ function textoDeEstado(r: Reserva): string {
 }
 
 /**
- * Qué pasa con lo pagado en línea de una cancelada. El sitio no pide ni guarda
- * datos bancarios: la CLABE va directo al WhatsApp del negocio.
+ * Qué pasa con lo pagado en línea de una cancelada. Los reembolsos autorizados
+ * se hacen por el método de pago original o en efectivo en el local (política
+ * 02): el sitio no pide datos bancarios.
  */
 function AvisoDeDevolucion({ r, whatsappNegocio, cuando, deporte }: { r: Reserva; whatsappNegocio: string; cuando: string; deporte: string }) {
   const dv = r.devolucion!
   const monto = formatoDinero(dv.monto)
   if (dv.estado === 'transferida') {
     const dia = dv.en ? ` el ${fechaLarga(momentoDe(Date.parse(dv.en)).fecha)}` : ''
-    return <p className="aviso aviso-alerta">El negocio te transfirió {monto}{dia}.</p>
+    return <p className="aviso aviso-alerta">El negocio te reembolsó {monto}{dia}.</p>
   }
   if (dv.estado === 'sin_devolucion') return <p className="aviso aviso-alerta">El negocio revisó tu cancelación: no hay devolución.</p>
   return (
     <div className="grupo confirmar-cancelar">
       <p>
-        Pagaron {monto} en línea. El negocio revisa tu cancelación y, si procede, te lo transfiere.{' '}
-        {whatsappNegocio ? 'Mándale tu folio y tu CLABE:' : `Pídelo en recepción con tu folio ${r.folio}.`}
+        Pagaron {monto} en línea. El negocio revisa tu cancelación y, si procede, te lo reembolsa por el mismo medio de pago o en
+        efectivo en el local.{' '}
+        {whatsappNegocio ? 'Escríbele con tu folio:' : `Pregunta en recepción con tu folio ${r.folio}.`}
       </p>
       {whatsappNegocio && (
         <a
           className="boton boton-principal"
           href={enlaceWhatsApp(
-            `Hola, cancelé mi reserva de ${deporte} del ${cuando}. Folio ${r.folio}, a nombre de ${r.organizador.nombre}; pagamos ${monto} en línea. Mi CLABE para la devolución es: `,
+            `Hola, mi reserva de ${deporte} del ${cuando} se canceló. Folio ${r.folio}, a nombre de ${r.organizador.nombre}; pagamos ${monto} en línea. ¿Cómo queda mi reembolso?`,
             whatsappNegocio,
           )}
           target="_blank"
           rel="noreferrer"
         >
-          Pedir mi devolución por WhatsApp
+          Preguntar por mi reembolso
         </a>
       )}
     </div>

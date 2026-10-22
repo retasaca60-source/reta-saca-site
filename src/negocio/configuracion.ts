@@ -6,28 +6,45 @@
 // y ESTE archivo solo se usa la primera vez. Si cambias un precio aquí y no se
 // ve, es porque ya hay una configuración guardada: se cambia desde el panel.
 
-export type DeporteId = 'pingpong' | 'cornhole' | 'popdarts'
+// Popdarts salió del negocio el 21/10/2026. Las reservas viejas de Popdarts
+// que haya en los datos se ignoran al leerlas (ver esDeporteVigente).
+export type DeporteId = 'pingpong' | 'cornhole'
 export type Duracion = 30 | 60 | 90 | 120
 
-/** En cuántas partes se divide el pago: 1 = una persona paga todo. */
+/**
+ * En cuántas partes se dividía el pago. Desde el 21/10/2026 siempre se paga
+ * completo (1); el tipo se queda porque las reservas viejas lo guardan.
+ */
 export type Partes = 1 | 2 | 4
+
+/**
+ * Cornhole se juega 2 vs 2 (estándar, 4 personas) o 1 vs 1 (2 personas), con
+ * precio distinto. Ping Pong solo tiene la estándar.
+ */
+export type Modalidad = 'estandar' | 'pareja'
 
 export interface ConfigDeporte {
   nombre: string
   /** Prefijo de la mesa en el panel: "PP 3", "CH 5". */
   clave: string
-  icono: 'paleta' | 'costal' | 'diana'
+  icono: 'paleta' | 'costal'
   /** Cuántas mesas hay en el local. */
   mesas: number
   /** Números de las mesas fuera de servicio (1 = la primera). No se venden. */
   fueraDeServicio: number[]
+  /** Las que se pueden cobrar en el local. En línea, solo las de `reglas.duracionesEnLinea`. */
   duraciones: Duracion[]
-  /** Precio por mesa, sin importar cuántos jueguen. */
+  /** Precio por mesa en la modalidad estándar. */
   precios: Partial<Record<Duracion, number>>
-  /** Precio con promo (solo para la duración de la promo). Sin él, no hay promo. */
+  /** Precio para 2 personas (Cornhole). null = no se ofrece esa modalidad. */
+  preciosPareja: Partial<Record<Duracion, number>> | null
+  /** Precio con promo (solo modalidad estándar y la duración de la promo). Sin él, no hay promo. */
   precioPromo: number | null
-  /** Si se puede pagar entre 2 o entre 4. Popdarts se paga completo. */
-  seDivide: boolean
+  /**
+   * Ping Pong trae 2 palas; esto es lo que cuestan 2 palas más (para jugar
+   * dobles). null = no se ofrece.
+   */
+  precioPalasExtra: number | null
   /** Con cuántas mesas libres o menos se avisa "Quedan N". */
   avisarDesde: number
 }
@@ -55,23 +72,28 @@ export interface Configuracion {
     diasDeAnticipacion: number
     /** Para hoy: hasta cuántos minutos antes del inicio. */
     minutosDeCorte: number
-    /** Cada cuántos minutos se puede empezar. */
+    /** Cada cuántos minutos se puede empezar en línea: 60 = solo horas cerradas (5:00, 6:00…). */
     pasoDeInicio: number
     /** Cuánto se aparta la mesa mientras se paga. */
     minutosDeApartado: number
     /** Después de cuántos minutos sin llegar se puede liberar la mesa. */
     minutosDeTolerancia: number
-    /** Reservas activas por número de WhatsApp. */
+    /** Duraciones que se pueden reservar en línea. En el local se cobran todas las del deporte. */
+    duracionesEnLinea: Duracion[]
   }
   /** WhatsApp del negocio, 10 dígitos. Vacío = todavía no lo da Hugo. */
   whatsappNegocio: string
 }
 
-export const ORDEN_DEPORTES: readonly DeporteId[] = ['pingpong', 'cornhole', 'popdarts']
+export const ORDEN_DEPORTES: readonly DeporteId[] = ['pingpong', 'cornhole']
+
+export const esDeporteVigente = (x: unknown): x is DeporteId => ORDEN_DEPORTES.includes(x as DeporteId)
 
 const h = (horas: number, minutos = 0) => horas * 60 + minutos
-const TARDE: Bloque = { desde: h(17), hasta: h(22) }
 const MANANA: Bloque = { desde: h(9), hasta: h(12) }
+const TARDE: Bloque = { desde: h(17), hasta: h(22) }
+/** Viernes y sábado se cierra a las 11 PM. */
+const TARDE_LARGA: Bloque = { desde: h(17), hasta: h(23) }
 
 export const CONFIGURACION_INICIAL: Configuracion = {
   deportes: {
@@ -83,8 +105,9 @@ export const CONFIGURACION_INICIAL: Configuracion = {
       fueraDeServicio: [],
       duraciones: [30, 60, 90, 120],
       precios: { 30: 100, 60: 150, 90: 220, 120: 280 },
+      preciosPareja: null,
       precioPromo: 120,
-      seDivide: true,
+      precioPalasExtra: 50,
       avisarDesde: 3,
     },
     cornhole: {
@@ -96,22 +119,11 @@ export const CONFIGURACION_INICIAL: Configuracion = {
       mesas: 6,
       fueraDeServicio: [],
       duraciones: [60, 90, 120],
-      precios: { 60: 300, 90: 440, 120: 560 },
+      precios: { 60: 280, 90: 410, 120: 540 },
+      preciosPareja: { 60: 200, 90: 290, 120: 380 },
       precioPromo: 240,
-      seDivide: true,
+      precioPalasExtra: null,
       avisarDesde: 3,
-    },
-    popdarts: {
-      nombre: 'Popdarts',
-      clave: 'PD',
-      icono: 'diana',
-      mesas: 3,
-      fueraDeServicio: [],
-      duraciones: [60, 90, 120],
-      precios: { 60: 120, 90: 180, 120: 240 },
-      precioPromo: null,
-      seDivide: false,
-      avisarDesde: 1,
     },
   },
   horario: {
@@ -120,17 +132,19 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     2: [TARDE],
     3: [TARDE],
     4: [TARDE],
-    5: [TARDE],
-    6: [MANANA, TARDE],
+    5: [TARDE_LARGA],
+    6: [MANANA, TARDE_LARGA],
   },
   diasCerrados: [],
-  promo: { activa: true, inicios: [h(17), h(17, 30)], duracion: 60 },
+  // En línea solo se empieza en hora cerrada: la promo de las 5:30 ya no existe.
+  promo: { activa: true, inicios: [h(17)], duracion: 60 },
   reglas: {
     diasDeAnticipacion: 7,
     minutosDeCorte: 30,
-    pasoDeInicio: 30,
+    pasoDeInicio: 60,
     minutosDeApartado: 10,
     minutosDeTolerancia: 30,
+    duracionesEnLinea: [60, 120],
   },
   whatsappNegocio: '',
 }
@@ -143,4 +157,39 @@ export function mesasEnServicio(d: ConfigDeporte): number {
 /** Precio de lista que se anuncia en la tarjeta del deporte: el de 60 minutos. */
 export function precioDeLista(d: ConfigDeporte): number | undefined {
   return d.precios[60]
+}
+
+/** Las duraciones de ese deporte que se pueden reservar en línea. */
+export function duracionesEnLinea(config: Configuracion, d: ConfigDeporte): Duracion[] {
+  return d.duraciones.filter((m) => config.reglas.duracionesEnLinea.includes(m))
+}
+
+/** "Tablero" o "mesa": cómo se le dice a lo que se renta en cada juego. */
+export const LUGAR: Record<DeporteId, { uno: string; varios: string; el: string }> = {
+  pingpong: { uno: 'mesa', varios: 'mesas', el: 'la mesa' },
+  cornhole: { uno: 'tablero', varios: 'tableros', el: 'el tablero' },
+}
+
+/**
+ * Pone al día una configuración guardada por una versión anterior: le quita
+ * los juegos que ya no existen (Popdarts) y le agrega los campos nuevos con
+ * su valor por omisión. Lo guardado lo escribió OTRA versión del sitio: sin
+ * esto, la primera pantalla que buscara `preciosPareja` o
+ * `duracionesEnLinea` tronaría. No cambia precios ni horarios: esos los
+ * decide el dueño en Ajustes.
+ */
+export function normalizarConfiguracion(c: Configuracion): Configuracion {
+  const x = structuredClone(c) as Configuracion & { deportes: Record<string, unknown> }
+  if (!x || typeof x !== 'object' || !x.deportes || typeof x.deportes !== 'object' || !x.reglas) return c
+  for (const id of Object.keys(x.deportes)) if (!esDeporteVigente(id)) delete x.deportes[id]
+  for (const id of ORDEN_DEPORTES) {
+    const d = x.deportes[id] as (ConfigDeporte & { seDivide?: unknown }) | undefined
+    if (!d) continue
+    if (d.preciosPareja === undefined) d.preciosPareja = null
+    if (d.precioPalasExtra === undefined) d.precioPalasExtra = null
+    delete d.seDivide
+  }
+  if (!Array.isArray(x.reglas.duracionesEnLinea)) x.reglas.duracionesEnLinea = [...CONFIGURACION_INICIAL.reglas.duracionesEnLinea]
+  delete (x.reglas as Record<string, unknown>).horasParaCancelar
+  return x
 }

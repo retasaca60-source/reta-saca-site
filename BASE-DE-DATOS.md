@@ -53,7 +53,7 @@ erDiagram
     text token_privado UK "link /r/"
     text token_cobro UK "link /c/"
     text fecha "AAAA-MM-DD"
-    text deporte "pingpong, cornhole, popdarts"
+    text deporte "pingpong, cornhole (popdarts: solo reservas viejas)"
     text estado "apartada, confirmada, cancelada"
     timestamptz creada_en
     timestamptz actualizada_en
@@ -85,7 +85,7 @@ erDiagram
 |---|---|---|
 | `configuracion` | **Una sola fila** (`id = 1`) con todo lo que Hugo edita en el panel: mesas, precios, promo, horario, días cerrados, reglas y WhatsApp del negocio. | La primera vez que alguien la pide y no existe, el servidor la crea con `CONFIGURACION_INICIAL` de `src/negocio/configuracion.ts`. |
 | `reservas` | Cada reserva **completa** en `datos` (la forma exacta de `Reserva` en `src/negocio/reserva.ts`: partes, pagos, cancelación, mesa…). | `folio`, `token_privado`, `token_cobro`, `fecha`, `deporte` y `estado` son **columnas generadas** a partir de `datos`: sirven para buscar rápido y para que la base impida repetidos. Nunca se escriben a mano. |
-| `intentos_pago` | Cada pago en línea que alguien empieza: qué partes, a nombre de quién, cuánto y cómo terminó. | Con Mercado Pago aquí irá el id de la preferencia. |
+| `intentos_pago` | Cada pago en línea que alguien empieza: qué partes, a nombre de quién, cuánto y cómo terminó. | `cobro_id` es el id del link de pago en Clip: al regresar de Clip el navegador solo trae el intento, y con esto se le pregunta a Clip. |
 | `perfiles` | Quién entra al panel y con qué rol. | Tener cuenta en Auth no basta para entrar: hace falta una fila aquí. El rol vive aquí y no en los metadatos del usuario, que el propio usuario puede editar. |
 | `auth.users` | Las cuentas de Supabase Auth. | La trae Supabase. No se toca con SQL: las cuentas las crea el dueño desde el panel. |
 
@@ -140,9 +140,9 @@ candado** (`pg_advisory_xact_lock`): leer las reservas, revisar el lugar y
 guardar pasan juntos, y la siguiente espera su turno. Para el tamaño del local,
 una sola fila de espera es de sobra.
 
-Medido contra el proyecto real: 5 personas apartando al mismo tiempo el mismo
-horario de Popdarts (3 mesas) → entran 3 y 2 reciben "Alguien acaba de tomar la
-última mesa de ese horario".
+Medido contra el proyecto real (01/10/2026, cuando aún había Popdarts con 3
+mesas): 5 personas apartando al mismo tiempo el mismo horario → entraron 3 y 2
+recibieron "Alguien acaba de tomar la última mesa de ese horario".
 
 ## Usuarios del panel
 
@@ -180,7 +180,8 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 | `20260929164015_usuarios_del_panel.sql` | En `perfiles`, `correo` pasa a ser `usuario`, con la regla de nombres válidos. |
 | `20261001224621_limites_de_frecuencia.sql` | `limites_de_frecuencia`: cuántas veces apartó o inició un pago cada dirección en 10 minutos. Solo la función la toca. |
 | `20261020003415_bloquear_partes_en_pago.sql` | `intentos_pago.vence_en`: hasta cuándo un checkout abierto bloquea sus partes. Sin ella, iniciar un pago falla. |
-| `20261020022000_pagos_en_linea.sql` | `pagos_en_linea`: cada pago de Mercado Pago ya registrado, por su id. Un segundo pago del mismo cobro queda por devolver. Sin ella, ningún pago en línea se registra. |
+| `20261020022000_pagos_en_linea.sql` | `pagos_en_linea`: cada cobro en línea ya registrado, por su id. Sin ella, ningún pago en línea se registra. |
+| `20261021180000_clip_y_cambios_del_negocio.sql` | `intentos_pago.cobro_id` (el cobro de Clip de cada intento) y la configuración nueva del negocio: sin Popdarts, Cornhole para 2 personas, palas extra, horario nuevo, en línea solo 1 o 2 horas en hora cerrada. Sin ella, iniciar un pago con Clip falla. |
 
 ### El servidor (la función `api`)
 
@@ -202,9 +203,9 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 
 | Nombre | Valor | Para qué |
 |---|---|---|
-| `MP_ACCESS_TOKEN` | El *Access Token* de Mercado Pago | Con él, el pago en línea va por Mercado Pago. El de **prueba** cobra de mentira; para abrir al público se cambia por el de **producción** de la cuenta del negocio. |
-| `MP_USAR_SANDBOX` | `si` (opcional) | Solo si con la llave de prueba Mercado Pago pide su página de pruebas (`sandbox_init_point`) en vez de la normal. |
-| `PAGOS_SIMULADOS` | `si` | Sin `MP_ACCESS_TOKEN`, el pago en línea es la pantalla de prueba del sitio. Con la llave puesta se ignora. **Sin Mercado Pago no se debe abrir al público**: cualquiera "paga" sin pagar. |
+| `CLIP_API_KEY` | La clave de API de Clip de la cuenta del negocio | Con ella, el pago en línea va por Clip. Se manda como `Bearer <clave>`; si Clip la da como `Basic …`, se pone completa. Clip no acepta claves de prueba en este checkout. |
+| `PAGOS_SIMULADOS` | `si` | Sin `CLIP_API_KEY`, el pago en línea es la pantalla de prueba del sitio. Con la clave puesta se ignora. **Sin Clip no se debe abrir al público**: cualquiera "paga" sin pagar. |
+| `MP_ACCESS_TOKEN`, `MP_USAR_SANDBOX` | — | De Mercado Pago, que ya no se usa (21/10/2026). Se pueden borrar. |
 
 `SUPABASE_URL`, `SUPABASE_DB_URL` y las llaves de servidor las pone Supabase
 solo; ninguna llave secreta va en el código.
@@ -231,9 +232,9 @@ bloquea todo y el cliente solo ve "No hay conexión", sin pista de la causa.
 
 ## Pendiente
 
-- **Mercado Pago de producción**: el cobro ya está conectado y se prueba con la
-  llave de prueba. Para cobrar de verdad falta la cuenta del negocio y cambiar
-  `MP_ACCESS_TOKEN` por su llave de producción.
+- **Clip de producción**: el cobro ya está conectado. Falta la cuenta del
+  negocio y su `CLIP_API_KEY`; después se borra `PAGOS_SIMULADOS` y se prueba
+  con un pago real chico que se reembolsa.
 - **Que Supabase no pause el proyecto**: los proyectos gratis se pausan tras
   una semana sin actividad, y con el proyecto pausado el sitio entero deja de
   funcionar. Ya pasó el 19/10/2026 (se reanudó desde el panel). Lo decide

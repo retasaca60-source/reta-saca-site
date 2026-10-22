@@ -1,4 +1,4 @@
-// Cuando alguien sale a Mercado Pago y regresa con "atrás", el navegador
+// Cuando alguien sale a Clip y regresa con "atrás", el navegador
 // puede devolver la página tal como la dejó (la caché de ida y vuelta), con
 // el botón todavía en "Apartando…" y sin forma de volver a intentarlo. Este
 // aviso deja que la pantalla se reacomode al regresar.

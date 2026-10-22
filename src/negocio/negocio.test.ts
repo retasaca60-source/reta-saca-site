@@ -30,22 +30,25 @@ describe('tiempo de Sonora', () => {
 })
 
 describe('horario (RESERVAS.md §2)', () => {
-  it('entre semana: de 5 a 10 PM, cada 30 min, terminando antes del cierre', () => {
-    expect(iniciosPosibles(C, '2026-09-28', 60, ahora)).toEqual([h(17), h(17, 30), h(18), h(18, 30), h(19), h(19, 30), h(20), h(20, 30), h(21)])
+  it('lunes a jueves: de 5 a 10 PM, en hora cerrada, terminando antes del cierre', () => {
+    expect(iniciosPosibles(C, '2026-09-28', 60, ahora)).toEqual([h(17), h(18), h(19), h(20), h(21)])
     expect(iniciosPosibles(C, '2026-09-28', 120, ahora).at(-1)).toBe(h(20))
-    expect(iniciosPosibles(C, '2026-09-28', 30, ahora).at(-1)).toBe(h(21, 30))
+  })
+  it('viernes y sábado cierran a las 11 PM; el domingo a las 10', () => {
+    expect(iniciosPosibles(C, VIERNES, 60, ahora).at(-1)).toBe(h(22))
+    expect(iniciosPosibles(C, '2026-09-26', 60, ahora).at(-1)).toBe(h(22))
+    expect(iniciosPosibles(C, '2026-09-27', 60, ahora).at(-1)).toBe(h(21))
   })
   it('sábado y domingo: también de 9 AM a 12 PM, sin cruzar de un bloque al otro', () => {
     const sabado = iniciosPosibles(C, '2026-09-26', 60, ahora)
-    expect(sabado.slice(0, 5)).toEqual([h(9), h(9, 30), h(10), h(10, 30), h(11)])
-    expect(sabado).not.toContain(h(11, 30))
-    expect(sabado).toContain(h(17))
+    expect(sabado.slice(0, 4)).toEqual([h(9), h(10), h(11), h(17)])
+    expect(iniciosPosibles(C, '2026-09-27', 120, ahora).slice(0, 2)).toEqual([h(9), h(10)])
   })
   it('para hoy, solo hasta 30 min antes', () => {
     const tarde = momentoDe(instante(VIERNES, h(18, 40)))
     const hoy = iniciosPosibles(C, VIERNES, 60, tarde)
     expect(hoy).not.toContain(h(19))
-    expect(hoy[0]).toBe(h(19, 30))
+    expect(hoy[0]).toBe(h(20))
   })
   it('ventana de 7 días móvil: viernes → hasta el viernes siguiente', () => {
     const dias = diasReservables(C, ahora)
@@ -61,16 +64,22 @@ describe('horario (RESERVAS.md §2)', () => {
 describe('precios (RESERVAS.md §3 y §4)', () => {
   it('precio por mesa', () => {
     expect(precioDe(C, 'pingpong', h(19), 90).precio).toBe(220)
-    expect(precioDe(C, 'cornhole', h(19), 120).precio).toBe(560)
-    expect(precioDe(C, 'popdarts', h(19), 90).precio).toBe(180)
-    expect(precioDe(C, 'popdarts', h(19), 120).precio).toBe(240)
+    expect(precioDe(C, 'cornhole', h(19), 60).precio).toBe(280)
+    expect(precioDe(C, 'cornhole', h(19), 90).precio).toBe(410)
+    expect(precioDe(C, 'cornhole', h(19), 120).precio).toBe(540)
   })
-  it('promo: 60 min que empiezan 5:00 o 5:30, cualquier día', () => {
+  it('Cornhole para 2 personas: su propia tabla, sin promo', () => {
+    expect(precioDe(C, 'cornhole', h(19), 60, 'pareja').precio).toBe(200)
+    expect(precioDe(C, 'cornhole', h(19), 90, 'pareja').precio).toBe(290)
+    expect(precioDe(C, 'cornhole', h(19), 120, 'pareja').precio).toBe(380)
+    expect(precioDe(C, 'cornhole', h(17), 60, 'pareja')).toEqual({ precio: 200, conPromo: false })
+  })
+  it('promo: 60 min que empiezan a las 5:00, cualquier día', () => {
     expect(precioDe(C, 'pingpong', h(17), 60)).toEqual({ precio: 120, conPromo: true })
-    expect(precioDe(C, 'cornhole', h(17, 30), 60)).toEqual({ precio: 240, conPromo: true })
+    expect(precioDe(C, 'cornhole', h(17), 60)).toEqual({ precio: 240, conPromo: true })
+    expect(esPromo(C, 'cornhole', h(17, 30), 60)).toBe(false)
     expect(esPromo(C, 'pingpong', h(18), 60)).toBe(false)
     expect(esPromo(C, 'pingpong', h(17), 90)).toBe(false)
-    expect(esPromo(C, 'popdarts', h(17), 60)).toBe(false)
   })
   it('la promo se puede apagar', () => {
     expect(esPromo({ ...C, promo: { ...C.promo, activa: false } }, 'pingpong', h(17), 60)).toBe(false)

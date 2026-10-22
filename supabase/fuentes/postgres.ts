@@ -5,7 +5,7 @@
 
 import postgres from 'npm:postgres@3.4.9'
 import type { Usuario } from '../../src/datos/contrato'
-import { CONFIGURACION_INICIAL, type Configuracion } from '../../src/negocio/configuracion'
+import { CONFIGURACION_INICIAL, esDeporteVigente, normalizarConfiguracion, type Configuracion } from '../../src/negocio/configuracion'
 import type { Reserva } from '../../src/negocio/reserva'
 import { FolioRepetido, type IntentoDePago, type Repositorio } from '../../src/servidor/repositorio'
 
@@ -21,16 +21,22 @@ const CANDADO = 4217
 
 const COLUMNA = { id: 'id', tokenPrivado: 'token_privado', tokenCobro: 'token_cobro' } as const
 
+/**
+ * Las reservas de juegos que ya no existen (Popdarts salió el 21/10/2026) se
+ * quedan en la base, pero no salen: ninguna pantalla sabría cómo mostrarlas.
+ */
+const vigentes = (filas: readonly { datos: unknown }[]) => filas.map((f) => f.datos as Reserva).filter((r) => esDeporteVigente(r.deporte))
+
 export function repositorioPostgres(sql: Sql): Repositorio {
   // `q` es la conexión normal o la de una transacción: las consultas son las mismas.
   const sobre = (q: Sql): Repositorio => ({
     config: async () => {
       const [fila] = await q`select datos from public.configuracion where id = 1`
-      if (fila) return fila.datos as Configuracion
+      if (fila) return normalizarConfiguracion(fila.datos as Configuracion)
       // Primera vez: se guarda la configuración inicial del código.
       await q`insert into public.configuracion (id, datos) values (1, ${q.json(CONFIGURACION_INICIAL as never)}) on conflict (id) do nothing`
       const [nueva] = await q`select datos from public.configuracion where id = 1`
-      return nueva.datos as Configuracion
+      return normalizarConfiguracion(nueva.datos as Configuracion)
     },
     guardarConfig: async (c) => {
       await q`
@@ -39,17 +45,17 @@ export function repositorioPostgres(sql: Sql): Repositorio {
     },
 
     reservasEntre: async (desde, hasta) =>
-      (await q`select datos from public.reservas where fecha between ${desde} and ${hasta}`).map((f) => f.datos as Reserva),
+      vigentes(await q`select datos from public.reservas where fecha between ${desde} and ${hasta}`),
 
     // Sin columna propia: son pocas y se buscan en el jsonb. Una devolución
     // pendiente de hace semanas tiene que seguir apareciendo.
     devolucionesPorRevisar: async () =>
-      (
+      vigentes(
         await q`
           select datos from public.reservas
           where datos -> 'devolucion' ->> 'estado' = 'por_revisar'
-          order by datos -> 'cancelacion' ->> 'en' desc`
-      ).map((f) => f.datos as Reserva),
+          order by datos -> 'cancelacion' ->> 'en' desc`,
+      ),
 
     contarIntento: async (llave, ventana) => {
       // Las ventanas de más de un día no le sirven a nadie: se barren aquí
@@ -67,21 +73,21 @@ export function repositorioPostgres(sql: Sql): Repositorio {
     // Se comparan como instantes, no como texto: el orden del texto depende
     // de la intercalación de la base.
     reservasConPagosEntre: async (desde, hasta) =>
-      (
+      vigentes(
         await q`
           select datos from public.reservas
           where exists (
             select 1 from jsonb_array_elements(datos -> 'partes') p
             where (p -> 'pago' ->> 'en')::timestamptz >= ${desde}::timestamptz
               and (p -> 'pago' ->> 'en')::timestamptz < ${hasta}::timestamptz
-          )`
-      ).map((f) => f.datos as Reserva),
+          )`,
+      ),
 
     reservaPor: async (campo, valor) => {
       // Se compara como texto: un "id" que no es uuid (lo mandó cualquiera) no
       // debe tronar la consulta, solo no encontrar nada.
-      const [fila] = await q`select datos from public.reservas where ${q(COLUMNA[campo])}::text = ${valor}`
-      return (fila?.datos as Reserva) ?? null
+      const [fila] = vigentes(await q`select datos from public.reservas where ${q(COLUMNA[campo])}::text = ${valor}`)
+      return fila ?? null
     },
 
     guardar: async (r) => {
@@ -109,7 +115,7 @@ export function repositorioPostgres(sql: Sql): Repositorio {
     },
     intento: async (id) => {
       const [f] = await q`
-        select id::text, reserva_id::text, parte_ids, nombre, monto, volver_a, resultado, vence_en
+        select id::text, reserva_id::text, parte_ids, nombre, monto, volver_a, resultado, vence_en, cobro_id
         from public.intentos_pago where id::text = ${id}`
       if (!f) return null
       const intento: IntentoDePago = {
@@ -121,8 +127,12 @@ export function repositorioPostgres(sql: Sql): Repositorio {
         volverA: f.volver_a,
         resultado: f.resultado,
         venceEn: f.vence_en == null ? undefined : new Date(f.vence_en).getTime(),
+        cobroId: f.cobro_id ?? null,
       }
       return intento
+    },
+    anotarCobro: async (intentoId, cobroId) => {
+      await q`update public.intentos_pago set cobro_id = ${cobroId} where id::text = ${intentoId}`
     },
     cerrarIntento: async (id, resultado) => {
       await q`update public.intentos_pago set resultado = ${resultado} where id::text = ${id} and resultado is null`

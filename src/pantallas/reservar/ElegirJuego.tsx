@@ -3,7 +3,7 @@
 
 import type { Dispatch } from 'react'
 import type { Accion, Borrador } from '../../mecanismos/reserva/estado'
-import { mesasEnServicio, ORDEN_DEPORTES, precioDeLista, type Configuracion, type DeporteId } from '../../negocio/configuracion'
+import { LUGAR, mesasEnServicio, ORDEN_DEPORTES, precioDeLista, type Configuracion, type DeporteId } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
 import { FOTO_DE } from '../../vista/fotos'
 import { cambiarDePantalla } from '../../vista/transicion'
@@ -14,16 +14,12 @@ interface Props {
   config: Configuracion
 }
 
-export function ElegirJuego({ borrador, despachar, config }: Props) {
+export function ElegirJuego({ despachar, config }: Props) {
   const abrir = (id: DeporteId) =>
     cambiarDePantalla(() => {
-      // Elegir el deporte suelta la forma de pago; la ficha abre con "uno paga
-      // todo" ya marcado (o con la que traía, si es el mismo juego) para que
-      // tocar la foto lleve directo a elegir horario. Se ve y se cambia arriba
-      // de la ficha. Popdarts no se divide y el reductor ya lo deja en 1.
-      const partes = borrador.deporte === id && borrador.partes ? borrador.partes : 1
+      // Tocar la foto lleva directo a elegir horario. Si es el mismo juego que
+      // ya traía, se queda lo que había elegido (modalidad, palas, hora).
       despachar({ tipo: 'elegirDeporte', deporte: id, config })
-      if (config.deportes[id].seDivide) despachar({ tipo: 'elegirPartes', partes })
       despachar({ tipo: 'irAPaso', paso: 2, config })
     })
 
@@ -82,11 +78,8 @@ export function ElegirJuego({ borrador, despachar, config }: Props) {
                   )}
                 </span>
                 <span className="pastilla juego-mesas numeros">
-  {mesasEnServicio(d)}{' '}
-  {id === 'cornhole'
-    ? mesasEnServicio(d) === 1 ? 'tablero' : 'tableros'
-    : mesasEnServicio(d) === 1 ? 'mesa' : 'mesas'}
-</span>
+                  {mesasEnServicio(d)} {mesasEnServicio(d) === 1 ? LUGAR[id].uno : LUGAR[id].varios}
+                </span>
               </button>
             </li>
           )

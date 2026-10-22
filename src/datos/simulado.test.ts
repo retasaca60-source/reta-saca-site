@@ -11,6 +11,10 @@ import type { PagoSimulado, ServicioDeDatos } from './contrato'
 import { crearServicioReal } from './real'
 import { almacenEnMemoria, crearServicioSimulado } from './simulado'
 import { total } from '../negocio/reserva'
+import { CONFIGURACION_INICIAL } from '../negocio/configuracion'
+
+/** Los tableros de Cornhole: el juego de las pruebas de cupo. */
+const LUGARES = CONFIGURACION_INICIAL.deportes.cornhole.mesas
 
 const h = (x: number, m = 0) => x * 60 + m
 const VIERNES = '2026-09-25'
@@ -18,11 +22,10 @@ let reloj = instante(VIERNES, h(15))
 let s: ServicioDeDatos & { pagoSimulado: PagoSimulado }
 
 const pedido = (extra: Partial<SolicitudDeReserva> = {}): SolicitudDeReserva => ({
-  deporte: 'popdarts',
+  deporte: 'cornhole',
   fecha: VIERNES,
   inicio: h(19),
   duracion: 60,
-  partes: 1,
   organizador: { nombre: 'Ana', whatsapp: '6621112233' },
   ...extra,
 })
@@ -36,7 +39,7 @@ const codigoDe = async (p: Promise<unknown>) => {
   }
 }
 
-/** Aparta y paga la parte del organizador, como hace el sitio. */
+/** Aparta y paga la reserva completa, como hace el sitio. */
 async function reservarYPagar(extra: Partial<SolicitudDeReserva> = {}) {
   const r = await s.apartar(pedido(extra))
   const { url } = await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
@@ -55,24 +58,40 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
   })
 
   describe('reservar', () => {
-    it('aparta con el precio por mesa y lo divide en pesos cerrados', async () => {
-      const r = await s.apartar(pedido({ deporte: 'pingpong', partes: 4 }))
+    it('aparta con el precio por mesa, en un solo pago completo', async () => {
+      const r = await s.apartar(pedido({ deporte: 'pingpong' }))
       expect(r.estado).toBe('apartada')
       expect(r.precio).toBe(150)
-      expect(r.partes.map((p) => p.monto)).toEqual([39, 37, 37, 37])
+      expect(r.partes.map((p) => p.monto)).toEqual([150])
       expect(r.folio).toMatch(/^RS-[2-9A-HJKMNP-Z]{5}$/)
     })
-    it('Popdarts siempre queda en un solo pago, aunque pidan dividir', async () => {
-      const r = await s.apartar(pedido({ partes: 4 }))
-      expect(r.partes).toHaveLength(1)
+    it('Cornhole para 2 personas cobra su propia tabla y no lleva promo', async () => {
+      expect((await s.apartar(pedido({ modalidad: 'pareja' }))).precio).toBe(200)
+      expect((await s.apartar(pedido({ inicio: h(17), modalidad: 'pareja', organizador: { nombre: 'Eva', whatsapp: '6620000101' } }))).precio).toBe(200)
+      expect((await s.apartar(pedido({ inicio: h(17), organizador: { nombre: 'Leo', whatsapp: '6620000102' } }))).precio).toBe(240)
+      const dos = await s.apartar(pedido({ duracion: 120, inicio: h(20), modalidad: 'pareja', organizador: { nombre: 'Ivo', whatsapp: '6620000103' } }))
+      expect(dos).toMatchObject({ precio: 380, modalidad: 'pareja' })
     })
-    it('queda firme con el primer pago', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
+    it('Ping Pong con 2 palas extra suma $50 a la misma parte; Cornhole no tiene palas', async () => {
+      const r = await s.apartar(pedido({ deporte: 'pingpong', palasExtra: true }))
+      expect(r).toMatchObject({ precio: 150, palasExtra: 50 })
+      expect(r.partes.map((p) => p.monto)).toEqual([200])
+      expect(await codigoDe(s.apartar(pedido({ palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })))).toBe('datos_invalidos')
+    })
+    it('en línea solo 1 o 2 horas, empezando en hora cerrada', async () => {
+      expect(await codigoDe(s.apartar(pedido({ deporte: 'pingpong', duracion: 30 })))).toBe('datos_invalidos')
+      expect(await codigoDe(s.apartar(pedido({ duracion: 90 })))).toBe('datos_invalidos')
+      expect(await codigoDe(s.apartar(pedido({ inicio: h(18, 30) })))).toBe('fuera_de_horario')
+      expect((await s.disponibilidad('pingpong', VIERNES, 30)).length).toBe(0)
+      expect((await s.disponibilidad('cornhole', VIERNES, 60)).map((x) => x.inicio)).toEqual([h(17), h(18), h(19), h(20), h(21), h(22)])
+    })
+    it('queda firme con el pago', async () => {
+      const r = await reservarYPagar()
       expect(r.estado).toBe('confirmada')
       expect(r.partes.filter((p) => p.pago)).toHaveLength(1)
     })
-    it('no vende una mesa de más: con las 3 de Popdarts ocupadas, la cuarta falla', async () => {
-      for (let i = 0; i < 3; i++) await reservarYPagar({ organizador: { nombre: 'X' + i, whatsapp: '662000000' + i } })
+    it('no vende una mesa de más: con todos los tableros ocupados, el siguiente falla', async () => {
+      for (let i = 0; i < LUGARES; i++) await reservarYPagar({ organizador: { nombre: 'X' + i, whatsapp: '66200000' + String(i).padStart(2, '0') } })
       expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Yola', whatsapp: '6629999999' } })))).toBe('sin_lugar')
     })
     it('un mismo WhatsApp no puede tener más de 2 mesas apartadas sin pagar; las pagadas no cuentan', async () => {
@@ -90,7 +109,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(await codigoDe(s.apartar(pedido({ organizador: ana })))).toBe('sin error')
     })
     it('una reserva apartada ocupa mesa 10 minutos y luego se libera sola', async () => {
-      for (let i = 0; i < 3; i++) await s.apartar(pedido({ organizador: { nombre: 'X' + i, whatsapp: '662000000' + i } }))
+      for (let i = 0; i < LUGARES; i++) await s.apartar(pedido({ organizador: { nombre: 'X' + i, whatsapp: '66200000' + String(i).padStart(2, '0') } }))
       expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Yola', whatsapp: '6629999999' } })))).toBe('sin_lugar')
       reloj += 10 * 60_000
       expect(await codigoDe(s.apartar(pedido({ organizador: { nombre: 'Yola', whatsapp: '6629999999' } })))).toBe('sin error')
@@ -114,15 +133,14 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect((await s.reservaPorTokenPrivado(r.tokenPrivado))!.estado).toBe('confirmada')
     })
      it('permite varias reservas con el mismo WhatsApp sin exceder la capacidad', async () => {
-      // Popdarts tiene 3 lugares: el teléfono puede repetirse,
-      // pero la cuarta reserva del mismo horario debe rechazarse.
+      // El teléfono puede repetirse, pero no más reservas que tableros.
       const reservas = []
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < LUGARES; i++) {
         reservas.push(await reservarYPagar())
       }
 
-      expect(new Set(reservas.map((r) => r.id)).size).toBe(3)
+      expect(new Set(reservas.map((r) => r.id)).size).toBe(LUGARES)
 
       expect(
         reservas.every(
@@ -135,92 +153,15 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('sin_lugar')
     })
     it('no deja reservar fuera de horario, pasado el corte ni más allá de 7 días', async () => {
-      expect(await codigoDe(s.apartar(pedido({ inicio: h(21, 30) })))).toBe('fuera_de_horario') // 60 min terminaría 10:30
+      expect(await codigoDe(s.apartar(pedido({ inicio: h(22, 30) })))).toBe('fuera_de_horario') // no es hora cerrada y terminaría 11:30
       reloj = instante(VIERNES, h(18, 40))
       expect(await codigoDe(s.apartar(pedido({ inicio: h(19) })))).toBe('fuera_de_horario') // menos de 30 min antes
       expect(await codigoDe(s.apartar(pedido({ fecha: '2026-10-03' })))).toBe('fuera_de_horario')
     })
   })
 
-  describe('pago dividido', () => {
-    it('el link de cobro no enseña el WhatsApp del organizador', async () => {
-      const r = await reservarYPagar({
-        deporte: 'pingpong',
-        partes: 2,
-      })
-
-      const vista = await s.vistaDeCobro(r.tokenCobro)
-
-      expect(JSON.stringify(vista)).not.toContain('6621112233')
-      expect(vista!.partes.map((p) => p.pagada)).toEqual([true, false])
-    })
-
-    it('un amigo paga su parte con su nombre, o "lo que falta"', async () => {
-      const r = await reservarYPagar({
-        deporte: 'pingpong',
-        partes: 4,
-      })
-
-      const pendientes = r.partes
-        .filter((p) => !p.pago)
-        .map((p) => p.id)
-
-      const { url } = await s.iniciarPago(
-        r.tokenCobro,
-        pendientes,
-        'Luis',
-      )
-
-      await s.pagoSimulado.confirmar(url.split('/').pop()!)
-
-      const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
-
-      expect(despues!.partes.every((p) => p.pago)).toBe(true)
-      expect(despues!.partes[1].pago!.nombre).toBe('Luis')
-    })
-    it('el pago de un amigo solo entrega los campos de la pantalla y permite pagar', async () => {
-      const r = await reservarYPagar({
-        deporte: 'pingpong',
-        partes: 4,
-      })
-
-      const parte = r.partes[1]
-      const { url } = await s.iniciarPago(
-        r.tokenCobro,
-        [parte.id],
-        'Luis',
-      )
-      const id = url.split('/').pop()!
-
-      // La comparación exacta falla si se vuelve a incluir la reserva
-      // completa, el WhatsApp, los tokens o cualquier otro campo extra.
-      expect(await s.pagoSimulado.obtener(id)).toEqual({
-        intento: {
-          nombre: 'Luis',
-          monto: parte.monto,
-          resultado: null,
-        },
-        reserva: {
-          folio: r.folio,
-          fecha: r.fecha,
-          inicio: r.inicio,
-        },
-      })
-
-      expect(await s.pagoSimulado.confirmar(id)).toBe(
-        `/c/${r.tokenCobro}?pago=aprobado`,
-      )
-
-      const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
-
-      expect(despues!.partes[1].pago!.nombre).toBe('Luis')
-
-      // El WhatsApp se conserva en la reserva privada.
-      expect(despues!.organizador.whatsapp).toBe(
-        r.organizador.whatsapp,
-      )
-    })
-    it('no se paga dos veces la misma parte', async () => {
+  describe('pago', () => {
+    it('no se paga dos veces la misma reserva', async () => {
       const r = await reservarYPagar()
 
       expect(
@@ -230,89 +171,20 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('datos_invalidos')
     })
 
-    it('rechaza el segundo checkout de la misma parte antes de cobrar', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      const parteId = r.partes[1].id
-      const luis = await s.iniciarPago(r.tokenCobro, [parteId], 'Luis')
-      await expect(s.iniciarPago(r.tokenCobro, [parteId], 'Beto')).rejects.toMatchObject({ codigo: 'no_permitido' })
-      await s.pagoSimulado.confirmar(luis.url.split('/').pop()!)
-      const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
-      expect(despues!.partes[1].pago!.nombre).toBe('Luis')
-      await expect(s.iniciarPago(r.tokenCobro, [parteId], 'Beto')).rejects.toMatchObject({ codigo: 'datos_invalidos' })
-    })
-
     it('confirmar dos veces el mismo intento no duplica ni modifica el pago', async () => {
-      const r = await reservarYPagar({
-        deporte: 'cornhole',
-        partes: 4,
-      })
-
-      const intento = await s.iniciarPago(
-        r.tokenCobro,
-        [r.partes[1].id],
-        'Luis',
-      )
-
+      const r = await s.apartar(pedido())
+      const intento = await s.iniciarPago(r.tokenPrivado, [r.partes[0].id], '')
       const id = intento.url.split('/').pop()!
-
       await s.pagoSimulado.confirmar(id)
       const antes = await s.reservaPorTokenPrivado(r.tokenPrivado)
-
       await s.pagoSimulado.confirmar(id)
-      const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
-
-      expect(despues).toEqual(antes)
-    })
-
-    it('no abre un pago individual mientras pagar todo bloquea las partes', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      const ids = r.partes.filter((p) => !p.pago).map((p) => p.id)
-      await s.iniciarPago(r.tokenCobro, ids, 'Beto')
-      await expect(s.iniciarPago(r.tokenCobro, [ids[0]], 'Luis')).rejects.toMatchObject({ codigo: 'no_permitido' })
-    })
-
-    it('solo un intento gana cuando dos amigos piden la misma parte a la vez', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      const resultados = await Promise.allSettled([
-        s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis'),
-        s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Beto'),
-      ])
-      expect(resultados.filter((x) => x.status === 'fulfilled')).toHaveLength(1)
-      expect(resultados.filter((x) => x.status === 'rejected')).toHaveLength(1)
-    })
-
-    it('muestra partes en proceso y permite pagar otra distinta', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      await s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis')
-      const vista = await s.vistaDeCobro(r.tokenCobro)
-      expect(vista!.partes[1].enProceso).toBe(true)
-      expect(vista!.partes[2].enProceso).toBe(false)
-      expect(JSON.stringify(vista)).not.toContain(r.tokenPrivado)
-      await expect(s.iniciarPago(r.tokenCobro, [r.partes[2].id], 'Beto')).resolves.toHaveProperty('url')
-      const ids = r.partes.filter((p) => !p.pago).map((p) => p.id)
-      await expect(s.iniciarPago(r.tokenCobro, ids, 'Carlos')).rejects.toMatchObject({ codigo: 'no_permitido' })
-    })
-
-    it('al vencer el checkout se puede volver a intentar sin bloquear indefinidamente', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      await s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis')
-      reloj += 10 * 60_000
-      expect((await s.vistaDeCobro(r.tokenCobro))!.partes[1].enProceso).toBe(false)
-      await expect(s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Beto')).resolves.toHaveProperty('url')
-    })
-
-    it('cancelar el pago simulado libera su parte', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      const intento = await s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Luis')
-      await s.pagoSimulado.rechazar(intento.url.split('/').pop()!)
-      expect((await s.vistaDeCobro(r.tokenCobro))!.partes[1].enProceso).toBe(false)
-      await expect(s.iniciarPago(r.tokenCobro, [r.partes[1].id], 'Beto')).resolves.toHaveProperty('url')
+      expect(await s.reservaPorTokenPrivado(r.tokenPrivado)).toEqual(antes)
     })
   })
 
   describe('cancelar', () => {
-    it('al cancelar, la página del cliente se entera sin recargar', async () => {
-      const r = await reservarYPagar({ inicio: h(19) })
+    it('al soltar un apartado, la página del cliente se entera sin recargar', async () => {
+      const r = await s.apartar(pedido())
       let avisos = 0
       const dejar = s.alCambiar(() => avisos++)
       await s.cancelarComoCliente(r.tokenPrivado)
@@ -320,10 +192,15 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(avisos).toBeGreaterThan(0)
     })
 
-    it('lo pagado en línea queda por revisar, falte lo que falte; nada se marca devuelto', async () => {
+    it('lo pagado ya no se cancela desde el link: se pide por WhatsApp o Instagram (política 02)', async () => {
       const a = await reservarYPagar({ inicio: h(19) })
-      reloj = instante(VIERNES, h(18, 30))
-      const cancelada = await s.cancelarComoCliente(a.tokenPrivado)
+      expect(await codigoDe(s.cancelarComoCliente(a.tokenPrivado))).toBe('no_permitido')
+      expect((await s.reservaPorTokenPrivado(a.tokenPrivado))!.estado).toBe('confirmada')
+    })
+    it('si recepción la cancela, lo pagado en línea queda por revisar; nada se marca devuelto', async () => {
+      const a = await reservarYPagar({ inicio: h(19) })
+      await s.iniciarSesion('recepcion', '')
+      const cancelada = await s.cancelarComoNegocio(a.id)
       expect(cancelada.estado).toBe('cancelada')
       expect(cancelada.partes[0].pago!.devuelto).toBeUndefined()
       expect(cancelada.devolucion).toEqual({ monto: cancelada.partes[0].monto, estado: 'por_revisar' })
@@ -335,11 +212,10 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     it('el negocio la resuelve: lo transferido deja de contar como cobrado', async () => {
       const a = await reservarYPagar({ inicio: h(19) })
       const b = await reservarYPagar({ inicio: h(20), organizador: { nombre: 'Beto', whatsapp: '6620000009' } })
-      await s.cancelarComoCliente(a.tokenPrivado)
-      await s.cancelarComoCliente(b.tokenPrivado)
-
       expect(await codigoDe(s.devolucionesPorRevisar())).toBe('sin_sesion')
       await s.iniciarSesion('recepcion', '')
+      await s.cancelarComoNegocio(a.id)
+      await s.cancelarComoNegocio(b.id)
       expect((await s.devolucionesPorRevisar()).map((r) => r.folio).sort()).toEqual([a.folio, b.folio].sort())
 
       const transferida = await s.resolverDevolucion(a.id, 'transferida')
@@ -369,19 +245,16 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
 
     it('recepción marca un pago en efectivo y queda quién lo marcó', async () => {
-      const r = await reservarYPagar({
-        deporte: 'cornhole',
-        partes: 2,
-      })
+      const r = await s.apartar(pedido())
 
       const despues = await s.marcarPago(
         r.id,
-        [r.partes[1].id],
+        [r.partes[0].id],
         'efectivo',
         'Pedro',
       )
 
-      expect(despues.partes[1].pago).toMatchObject({
+      expect(despues.partes[0].pago).toMatchObject({
         medio: 'efectivo',
         nombre: 'Pedro',
         marcadoPor: 'Recepción',
@@ -389,19 +262,20 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
 
     it('si alguna de las partes ya se pagó por otro lado, no cobra ninguna y avisa', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 4 })
-      // Un amigo paga la parte 2 en línea mientras recepción cobra la 2 y la 3.
-      await s.marcarPago(r.id, [r.partes[1].id], 'efectivo', 'Amigo')
-      expect(await codigoDe(s.marcarPago(r.id, [r.partes[1].id, r.partes[2].id], 'efectivo', 'Grupo'))).toBe('datos_invalidos')
+      // La reserva ya pagada en línea más un tiempo extra: recepción intenta
+      // cobrar las dos, pero la primera ya estaba pagada.
+      const r = await reservarYPagar()
+      const ext = await s.extender(r.id, 30)
+      expect(await codigoDe(s.marcarPago(r.id, [ext.partes[0].id, ext.partes[1].id], 'efectivo', 'Grupo'))).toBe('datos_invalidos')
       const despues = (await s.reservasEntre(VIERNES, VIERNES)).find((x) => x.id === r.id)!
-      expect(despues.partes[2].pago).toBeNull()
+      expect(despues.partes[1].pago).toBeNull()
     })
 
     it('una acción avisa a las pantallas para que vuelvan a cargar', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', partes: 2 })
+      const r = await s.apartar(pedido())
       let avisos = 0
       const dejar = s.alCambiar(() => avisos++)
-      await s.marcarPago(r.id, [r.partes[1].id], 'efectivo', 'Pedro')
+      await s.marcarPago(r.id, [r.partes[0].id], 'efectivo', 'Pedro')
       dejar()
       expect(avisos).toBeGreaterThan(0)
     })
@@ -415,15 +289,15 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
         },
       })
 
-      await s.asignarMesa(a.id, 'PD 1')
+      await s.asignarMesa(a.id, 'CH 1')
 
       expect(
-        await codigoDe(s.asignarMesa(b.id, 'PD 1')),
+        await codigoDe(s.asignarMesa(b.id, 'CH 1')),
       ).toBe('no_permitido')
 
       expect(
-        (await s.asignarMesa(b.id, 'PD 2')).mesa,
-      ).toBe('PD 2')
+        (await s.asignarMesa(b.id, 'CH 2')).mesa,
+      ).toBe('CH 2')
     })
 
     it('extender cobra la diferencia de la tabla y revisa que haya lugar', async () => {
@@ -443,11 +317,19 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
 
     it('cambiar de la promo de las 5 a las 7 cobra la diferencia y quita la etiqueta de promo', async () => {
-      const r = await reservarYPagar({ deporte: 'cornhole', inicio: h(17), partes: 1 })
+      const r = await reservarYPagar({ deporte: 'cornhole', inicio: h(17) })
       expect(r.conPromo).toBe(true)
       const movida = await s.cambiarHorario(r.id, VIERNES, h(19))
       expect(movida.conPromo).toBe(false)
-      expect(movida.partes.at(-1)).toMatchObject({ concepto: 'cambio', monto: 60 })
+      expect(movida.partes.at(-1)).toMatchObject({ concepto: 'cambio', monto: 40 })
+    })
+    it('mover una de 2 personas usa su tabla y las palas extra no se vuelven a cobrar', async () => {
+      const pareja = await reservarYPagar({ inicio: h(17), modalidad: 'pareja' })
+      expect(total(await s.cambiarHorario(pareja.id, VIERNES, h(19)))).toBe(200)
+      const conPalas = await reservarYPagar({ deporte: 'pingpong', inicio: h(19), palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
+      expect(total(await s.cambiarHorario(conPalas.id, VIERNES, h(20)))).toBe(200)
+      // La extensión de 2 personas también sale de su tabla: de 1 h ($200) a 1:30 ($290).
+      expect((await s.extender(pareja.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 90 })
     })
 
     it('extender no deja a dos grupos en la misma mesa: si el siguiente ya está en ella, avisa', async () => {
@@ -462,7 +344,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
     it('extender se bloquea si de 8 a 9 están todas las mesas', async () => {
       const a = await reservarYPagar({ inicio: h(19) })
-      for (let i = 0; i < 3; i++) await reservarYPagar({ inicio: h(20), organizador: { nombre: 'Grupo' + i, whatsapp: '662000001' + i } })
+      for (let i = 0; i < LUGARES; i++) await reservarYPagar({ inicio: h(20), organizador: { nombre: 'Grupo' + i, whatsapp: '662000001' + i } })
       expect(await codigoDe(s.extender(a.id, 60))).toBe('sin_lugar')
     })
 
@@ -478,15 +360,16 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     it('caja: con el local cerrado lo dice; si no alcanza el tiempo, dice a qué hora se cierra', async () => {
       reloj = instante(VIERNES, h(15))
       expect(await codigoDe(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Temprano', medio: 'efectivo' }))).toBe('fuera_de_horario')
-      reloj = instante(VIERNES, h(21, 30))
+      // El viernes se cierra a las 11 PM.
+      reloj = instante(VIERNES, h(22, 30))
       await s.anotarSinReserva({ deporte: 'pingpong', duracion: 30, nombre: 'Media hora', medio: 'efectivo' })
-      await expect(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Tarde', medio: 'efectivo' })).rejects.toThrow('10:00 PM')
+      await expect(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Tarde', medio: 'efectivo' })).rejects.toThrow('11:00 PM')
     })
     it('caja: no registra si no hay mesa libre todo el tiempo, y no cobra nada', async () => {
       reloj = instante(VIERNES, h(19))
-      for (let i = 0; i < 3; i++) await s.anotarSinReserva({ deporte: 'popdarts', duracion: 60, nombre: 'Grupo' + i, medio: 'efectivo' })
-      expect(await codigoDe(s.anotarSinReserva({ deporte: 'popdarts', duracion: 60, nombre: 'Otro', medio: 'efectivo' }))).toBe('sin_lugar')
-      expect((await s.pagosDelDia(VIERNES)).length).toBe(3)
+      for (let i = 0; i < LUGARES; i++) await s.anotarSinReserva({ deporte: 'cornhole', duracion: 60, nombre: 'Grupo' + i, medio: 'efectivo' })
+      expect(await codigoDe(s.anotarSinReserva({ deporte: 'cornhole', duracion: 60, nombre: 'Otro', medio: 'efectivo' }))).toBe('sin_lugar')
+      expect((await s.pagosDelDia(VIERNES)).length).toBe(LUGARES)
     })
 
     it('liberar por retraso solo pasada la tolerancia', async () => {
@@ -546,13 +429,13 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       }
 
       const config = await s.configuracion()
-      config.deportes.popdarts.mesas = 2
+      config.deportes.cornhole.mesas = 2
 
       const intento = await s.guardarConfiguracion(config)
 
       expect(intento.guardada).toBe(false)
       expect(intento.conflictos[0]).toMatchObject({
-        deporte: 'popdarts',
+        deporte: 'cornhole',
         inicio: h(19),
         reservas: 3,
         mesas: 2,
@@ -576,13 +459,13 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       await s.iniciarSesion('hugo', '')
 
       const config = await s.configuracion()
-      config.deportes.popdarts.precios[60] = 150
+      config.deportes.cornhole.precios[60] = 300
 
       await s.guardarConfiguracion(config)
 
       const despues = await s.reservaPorTokenPrivado(r.tokenPrivado)
 
-      expect(despues!.precio).toBe(120)
+      expect(despues!.precio).toBe(280)
     })
 
     it('no cobra otra vez la diferencia al cambiar entre horarios del mismo precio', async () => {
@@ -645,7 +528,7 @@ describe('datos de ejemplo', () => {
 describe('datos guardados por otra versión', () => {
   it('si lo guardado no tiene la forma esperada, se empieza de cero en vez de romper', async () => {
     const almacen = almacenEnMemoria()
-    almacen.escribir(JSON.stringify({ version: 1, config: {}, reservas: [{ id: 3 }] }))
+    almacen.escribir(JSON.stringify({ version: 2, config: {}, reservas: [{ id: 3 }] }))
     const otro = crearServicioSimulado({ almacen, reloj: () => reloj, conEjemplos: false })
     expect((await otro.configuracion()).deportes.pingpong.mesas).toBe(6)
   })

@@ -24,7 +24,7 @@ beforeEach(() => {
     cuentaId: null,
     cuentas: { crear: async () => 'x', borrar: async () => {} },
     pagosSimulados: true,
-    mercadoPago: null,
+    pasarela: null,
     sitio: 'https://retasaca-hmo2.netlify.app',
     cliente: null,
   }

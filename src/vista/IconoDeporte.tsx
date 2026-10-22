@@ -1,7 +1,7 @@
 // El ícono de cada deporte, dibujado en un solo sistema: el mismo trazo (2) y
 // el color del texto (`currentColor`) que el resto de los íconos del sitio.
-// Antes Ping Pong y Cornhole eran imágenes y Popdarts un dibujo: dos estilos
-// juntos en la misma lista.
+// Antes Ping Pong y Cornhole eran imágenes y el tercer juego un dibujo: dos
+// estilos juntos en la misma lista.
 
 import type { Configuracion, DeporteId } from '../negocio/configuracion'
 
@@ -25,13 +25,6 @@ export function IconoDeporte({ id, config }: { id: DeporteId; config: Configurac
           <path d="M6 4h7l3 15H3L6 4z" />
           <circle cx="9.5" cy="8" r="1.8" />
           <rect x="17" y="15" width="5" height="5" rx="1.2" />
-        </>
-      )}
-      {icono === 'diana' && (
-        <>
-          <circle cx="12" cy="12" r="7.5" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="12" cy="12" r=".8" fill="currentColor" />
         </>
       )}
     </svg>

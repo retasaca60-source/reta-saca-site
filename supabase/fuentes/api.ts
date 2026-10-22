@@ -13,7 +13,7 @@ import postgres from 'npm:postgres@3.4.9'
 import { createClient } from 'npm:@supabase/supabase-js@2.117.2'
 import { correoInterno } from '../../src/datos/usuarios'
 import { atender, registrarPagoEnLinea, type Entorno, type Peticion } from '../../src/servidor/api'
-import { mercadoPagoReal } from './mercadopago'
+import { clipReal } from './clip'
 import { repositorioPostgres } from './postgres'
 
 declare const Deno: {
@@ -38,24 +38,20 @@ const repo = repositorioPostgres(sql)
 const admin = createClient(URL_SUPABASE, LLAVE_SERVIDOR, { auth: { persistSession: false, autoRefreshToken: false } })
 
 /**
- * Mientras no haya Mercado Pago, el pago en línea es la pantalla simulada. Se
+ * Mientras no haya pasarela (Clip), el pago en línea es la pantalla simulada. Se
  * enciende con el secreto PAGOS_SIMULADOS=si; apagado, nadie puede "pagar" en
  * línea (y sin él, nadie puede confirmar una reserva sin pagar de verdad).
  */
 const pagosSimulados = Deno.env.get('PAGOS_SIMULADOS') === 'si'
 
 /**
- * Con la llave de Mercado Pago, el pago en línea es de verdad (o de prueba, si
- * la llave es de prueba) y la pantalla simulada deja de funcionar. Mercado Pago
- * avisa de cada pago a esta misma función, con ?aviso=mercadopago.
+ * Con la llave de Clip (CLIP_API_KEY) el pago en línea es de verdad y la
+ * pantalla simulada deja de funcionar. Clip avisa de cada cobro a esta misma
+ * función, con ?aviso=clip. Mercado Pago se quitó el 21/10/2026: su secreto
+ * MP_ACCESS_TOKEN ya no se lee y se puede borrar.
  */
-const llaveMP = Deno.env.get('MP_ACCESS_TOKEN')
-const mercadoPago = llaveMP
-  ? mercadoPagoReal(llaveMP, {
-      avisoA: `${URL_SUPABASE}/functions/v1/api?aviso=mercadopago`,
-      usarSandbox: Deno.env.get('MP_USAR_SANDBOX') === 'si',
-    })
-  : null
+const llaveClip = Deno.env.get('CLIP_API_KEY')
+const pasarela = llaveClip ? clipReal(llaveClip, { avisoA: `${URL_SUPABASE}/functions/v1/api?aviso=clip` }) : null
 
 /**
  * A dónde regresa quien paga. Se toma del navegador solo si es uno de estos:
@@ -107,7 +103,7 @@ const entornoBase: Omit<Entorno, 'cuentaId' | 'sitio' | 'cliente'> = {
   repo,
   ahora: Date.now,
   pagosSimulados,
-  mercadoPago,
+  pasarela,
   cuentas: {
     // Cuenta ya confirmada y con su contraseña: no se manda ningún correo.
     crear: async (usuario, contrasena) => {
@@ -125,28 +121,26 @@ const entornoBase: Omit<Entorno, 'cuentaId' | 'sitio' | 'cliente'> = {
 }
 
 /**
- * El aviso de Mercado Pago: "?data.id=123&type=payment" y el mismo dato en el
- * cuerpo. No se le cree: registrarPagoEnLinea pregunta por ese pago a Mercado
- * Pago con nuestra llave, así que un aviso inventado no confirma nada. Se
- * contesta 200 aunque no sea un pago nuestro; 500 solo si Mercado Pago o la
- * base no contestaron, para que lo reintente.
+ * El aviso de Clip: un JSON con `payment_request_id`, el recurso (CHECKOUT o
+ * REFUND) y su estado. No se le cree: Clip no firma sus avisos, así que
+ * registrarPagoEnLinea pregunta por ese cobro a Clip con nuestra llave y un
+ * aviso inventado no confirma nada. Se contesta 200 aunque no sea un cobro
+ * nuestro; 500 solo si Clip o la base no contestaron, para que lo reintente.
  */
-async function avisoDeMercadoPago(peticion: Request, entorno: Entorno): Promise<Response> {
-  const url = new URL(peticion.url)
-  let cuerpo: { type?: string; data?: { id?: unknown } } = {}
+async function avisoDeClip(peticion: Request, entorno: Entorno): Promise<Response> {
+  let cuerpo: { payment_request_id?: unknown; resource?: unknown } = {}
   try {
     cuerpo = await peticion.json()
   } catch {
-    // Algunos avisos llegan sin cuerpo: basta con la URL.
+    return new Response('ok', { headers: CORS })
   }
-  const tipo = url.searchParams.get('type') ?? url.searchParams.get('topic') ?? cuerpo.type
-  const id = url.searchParams.get('data.id') ?? url.searchParams.get('id') ?? String(cuerpo.data?.id ?? '')
-  if (tipo !== 'payment' || !id) return new Response('ok', { headers: CORS })
+  const id = typeof cuerpo.payment_request_id === 'string' ? cuerpo.payment_request_id : ''
+  if (cuerpo.resource !== 'CHECKOUT' || !id) return new Response('ok', { headers: CORS })
   try {
     await registrarPagoEnLinea(id, entorno)
     return new Response('ok', { headers: CORS })
   } catch (e) {
-    console.error('[mercadopago] aviso', id, e)
+    console.error('[clip] aviso', id, e)
     return new Response('reintenta', { status: 500, headers: CORS })
   }
 }
@@ -154,9 +148,11 @@ async function avisoDeMercadoPago(peticion: Request, entorno: Entorno): Promise<
 Deno.serve(async (peticion) => {
   if (peticion.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (peticion.method !== 'POST') return responder({ error: { codigo: 'datos_invalidos', mensaje: 'Método no permitido.' } }, 405)
-  if (new URL(peticion.url).searchParams.get('aviso') === 'mercadopago') {
-    return avisoDeMercadoPago(peticion, { ...entornoBase, cuentaId: null, sitio: SITIOS[0], cliente: null })
-  }
+  const aviso = new URL(peticion.url).searchParams.get('aviso')
+  if (aviso === 'clip') return avisoDeClip(peticion, { ...entornoBase, cuentaId: null, sitio: SITIOS[0], cliente: null })
+  // Mercado Pago ya no se usa: si todavía avisa de un cobro viejo, se le
+  // contesta que sí para que deje de reintentar.
+  if (aviso === 'mercadopago') return new Response('ok', { headers: CORS })
 
   let cuerpo: Peticion
   try {

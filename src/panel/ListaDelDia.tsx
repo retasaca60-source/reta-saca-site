@@ -122,7 +122,9 @@ function Fila({
         <span className="dia-quien">
           <strong>{r.organizador.nombre}</strong>
           <small>
-            {d.nombre} · {formatoHora(r.inicio)} – {formatoHora(fin(r))} · {formatoDuracion(r.duracion)}
+            {d.nombre}
+            {r.modalidad === 'pareja' && ' (2 personas)'} · {formatoHora(r.inicio)} – {formatoHora(fin(r))} · {formatoDuracion(r.duracion)}
+            {r.palasExtra ? ' · +2 palas' : ''}
           </small>
         </span>
         <span className="dia-etiquetas">

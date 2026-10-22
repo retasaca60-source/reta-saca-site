@@ -181,7 +181,6 @@
    crecer de una a otra al abrir la ficha (vista/transicion.ts). */
 .foto-pingpong { view-transition-name: foto-pingpong; }
 .foto-cornhole { view-transition-name: foto-cornhole; }
-.foto-popdarts { view-transition-name: foto-popdarts; }
 ::view-transition-group(*) { animation-duration: 0.5s; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
 
 /* ── Ficha ────────────────────────────────────────────────────────────── */
@@ -399,7 +398,5 @@
   font-size: 21px;
 }
 
-/* ── Entre cuántos dividen: segunda fila de pastillas, un escalón abajo ── */
-.dividir { display: grid; gap: 8px; margin-top: 12px; }
-.dividir-titulo { padding-left: 6px; color: var(--tinta-2); font-size: 13px; font-weight: 600; }
+/* ── El precio por hora dentro de una pastilla ("2 personas · $200/h") ── */
 .dividir-monto { font-weight: 500; opacity: 0.8; font-variant-numeric: tabular-nums; }

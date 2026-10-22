@@ -2,38 +2,53 @@ import { describe, expect, it, vi } from 'vitest'
 import { CONFIGURACION_INICIAL } from '../negocio/configuracion'
 import type { Reserva } from '../negocio/reserva'
 import { instante } from '../negocio/tiempo'
-import { atender, registrarPagoEnLinea, type CobroNuevo, type Entorno, type PagoDeMercadoPago } from './api'
+import { atender, registrarPagoEnLinea, type CobroNuevo, type Entorno, type PagoEnLinea } from './api'
 import { repositorioEnMemoria } from './repositorio'
-import { mercadoPagoReal } from '../../supabase/fuentes/mercadopago'
+import { clipReal } from '../../supabase/fuentes/clip'
+
+/**
+ * Los bloqueos protegen los links de cobro de las reservas que se dividieron
+ * antes del 21/10/2026 (ya no se pueden crear, pero las que existen siguen
+ * vivas): esto la reparte en 4 partes como se guardaban entonces.
+ */
+function dividirEnCuatro(r: Reserva): Reserva {
+  const monto = r.precio / 4
+  return {
+    ...r,
+    partesElegidas: 4,
+    partes: [0, 1, 2, 3].map((i) => ({ id: i === 0 ? r.partes[0].id : `parte-${i}`, monto, delOrganizador: i === 0, concepto: 'reserva' as const, pago: null })),
+  }
+}
 
 async function preparar() {
   let ahora = instante('2026-10-19', 900)
   const repo = repositorioEnMemoria(CONFIGURACION_INICIAL)
   const cobros: CobroNuevo[] = []
-  const pagos = new Map<string, PagoDeMercadoPago>()
+  const pagos = new Map<string, PagoEnLinea>()
   const crearCobro = vi.fn(async (c: CobroNuevo) => {
     cobros.push(c)
-    return 'https://mercadopago.test/checkout'
+    return { url: 'https://clip.test/checkout', cobroId: `clip-${c.intentoId}` }
   })
   const e: Entorno = {
     repo, ahora: () => ahora, cuentaId: null, cuentas: { crear: async () => '', borrar: async () => {} },
     pagosSimulados: false, sitio: 'https://example.test', cliente: null,
-    mercadoPago: { crearCobro, consultarPago: async (id) => pagos.get(id) ?? null },
+    pasarela: { crearCobro, consultarCobro: async (id: string) => pagos.get(id) ?? null },
   }
   async function llamar<T>(accion: string, datos: Record<string, unknown>): Promise<T> {
     const respuesta = await atender({ accion, datos }, e)
     if ('error' in respuesta) throw Object.assign(new Error(respuesta.error.mensaje), { codigo: respuesta.error.codigo })
     return respuesta.resultado as T
   }
-  const r = await llamar<Reserva>('apartar', { solicitud: {
-    deporte: 'cornhole', fecha: '2026-10-19', inicio: 1140, duracion: 60, partes: 4,
+  const r = dividirEnCuatro(await llamar<Reserva>('apartar', { solicitud: {
+    deporte: 'cornhole', fecha: '2026-10-19', inicio: 1140, duracion: 60,
     organizador: { nombre: 'Ana', whatsapp: '6621234567' },
-  } })
+  } }))
+  await repo.guardar(r)
   const iniciar = (ids: string[]) => llamar('iniciarPago', { token: r.tokenCobro, parteIds: ids, nombre: 'Amigo' })
   await iniciar([r.partes[0].id])
   const c = cobros[0]
-  pagos.set('1', { id: '1', estado: 'approved', referencia: c.intentoId, monto: c.monto, moneda: 'MXN' })
-  await registrarPagoEnLinea('1', e)
+  pagos.set(`clip-${c.intentoId}`, { id: `clip-${c.intentoId}`, pagado: true, referencia: c.intentoId, monto: c.monto, moneda: 'MXN' })
+  await registrarPagoEnLinea(`clip-${c.intentoId}`, e)
   return { r, repo, cobros, crearCobro, iniciar, avanzar: (ms: number) => { ahora += ms } }
 }
 
@@ -73,36 +88,39 @@ describe('bloqueos con checkout externo', () => {
     }
   })
 
-  it('envía el vencimiento efectivo a Mercado Pago también para un amigo', async () => {
-    const venceEn = Date.now() + 600_000
-    const pedir = vi.fn(async () => new Response(JSON.stringify({ init_point: 'https://mercadopago.test' }), { status: 200 }))
+  it('envía el vencimiento efectivo a Clip también para un amigo', async () => {
+    // Al mediodía de Sonora, lejos de la medianoche de la Ciudad de México.
+    const venceEn = instante('2026-10-19', 12 * 60 + 10)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(instante('2026-10-19', 12 * 60))
+    const pedir = vi.fn(async () => new Response(JSON.stringify({ payment_request_id: 'abc', payment_request_url: 'https://clip.test' }), { status: 200 }))
     vi.stubGlobal('fetch', pedir)
     try {
-      await mercadoPagoReal('llave-de-prueba', { avisoA: 'https://example.test', usarSandbox: false }).crearCobro({
+      await clipReal('llave-de-prueba', { avisoA: 'https://example.test' }).crearCobro({
         intentoId: 'prueba', titulo: 'Reserva', monto: 75, volverA: 'https://example.test/c/token', venceEn,
       })
       const opciones = (pedir.mock.calls[0] as unknown as [string, RequestInit])[1]
       const cuerpo = JSON.parse(opciones.body as string)
-      expect(cuerpo.expires).toBe(true)
-      expect(Date.parse(cuerpo.expiration_date_to)).toBe(venceEn)
+      expect(Date.parse(cuerpo.expires_at)).toBe(venceEn)
     } finally {
       vi.unstubAllGlobals()
+      vi.useRealTimers()
     }
   })
 })
 
 describe('reintento del organizador', () => {
-  it('si sale de Mercado Pago sin pagar, puede volver a pagar mientras la mesa sigue apartada', async () => {
+  it('si sale de Clip sin pagar, puede volver a pagar mientras la mesa sigue apartada', async () => {
     let ahora = instante('2026-10-19', 900)
     const repo = repositorioEnMemoria(CONFIGURACION_INICIAL)
-    const crearCobro = vi.fn(async () => 'https://mercadopago.test/checkout')
+    const crearCobro = vi.fn(async (c: CobroNuevo) => ({ url: 'https://clip.test/checkout', cobroId: `clip-${c.intentoId}` }))
     const e: Entorno = {
       repo, ahora: () => ahora, cuentaId: null, cuentas: { crear: async () => '', borrar: async () => {} },
       pagosSimulados: false, sitio: 'https://example.test', cliente: null,
-      mercadoPago: { crearCobro, consultarPago: async () => null },
+      pasarela: { crearCobro, consultarCobro: async () => null },
     }
     const apartado = await atender({ accion: 'apartar', datos: { solicitud: {
-      deporte: 'pingpong', fecha: '2026-10-19', inicio: 1140, duracion: 60, partes: 2,
+      deporte: 'pingpong', fecha: '2026-10-19', inicio: 1140, duracion: 60,
       organizador: { nombre: 'Ana', whatsapp: '6621234567' },
     } } }, e)
     const r = (apartado as { resultado: Reserva }).resultado

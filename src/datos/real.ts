@@ -54,7 +54,7 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     modo: 'real',
 
     configuracion: () => llamar<Configuracion>('configuracion'),
-    disponibilidad: (deporte, fecha, duracion) => llamar<HorarioDisponible[]>('disponibilidad', { deporte, fecha, duracion }),
+    disponibilidad: (deporte, fecha, duracion, modalidad = 'estandar') => llamar<HorarioDisponible[]>('disponibilidad', { deporte, fecha, duracion, modalidad }),
     apartar: (solicitud) => llamar<Reserva>('apartar', { solicitud: { ...solicitud } }),
     iniciarPago: (token, parteIds, nombre) => llamar<{ url: string }>('iniciarPago', { token, parteIds, nombre }),
     reservaPorTokenPrivado: (token) => llamar<Reserva | null>('reservaPorTokenPrivado', { token }),
@@ -79,7 +79,8 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
 
     reservasEntre: (desde, hasta) => llamar<Reserva[]>('reservasEntre', { desde, hasta }),
     pagosDelDia: (fecha) => llamar<PagoDelDia[]>('pagosDelDia', { fecha }),
-    cotizarSinReserva: (deporte, duracion) => llamar<CotizacionSinReserva>('cotizarSinReserva', { deporte, duracion }),
+    cotizarSinReserva: (deporte, duracion, modalidad = 'estandar', palasExtra = false) =>
+      llamar<CotizacionSinReserva>('cotizarSinReserva', { deporte, duracion, modalidad, palasExtra }),
     anotarSinReserva: (cliente) => cambia(llamar<Reserva>('anotarSinReserva', { cliente: { ...cliente } })),
     asignarMesa: (reservaId, mesa) => cambia(llamar<Reserva>('asignarMesa', { reservaId, mesa })),
     marcarPago: (reservaId, parteIds, medio, nombre) => cambia(llamar<Reserva>('marcarPago', { reservaId, parteIds, medio, nombre })),

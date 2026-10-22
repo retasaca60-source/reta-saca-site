@@ -1,5 +1,7 @@
-// El link de cobro (/c/<token>) que el organizador manda a sus amigos. Lo
-// puede abrir cualquiera: por eso no enseña el WhatsApp del organizador ni
+// El link de cobro (/c/<token>) que el organizador mandaba a sus amigos cuando
+// el pago se dividía. Desde el 21/10/2026 ya no se crean (se paga completo),
+// pero los que ya se mandaron siguen funcionando hasta que acabe su reserva.
+// Lo puede abrir cualquiera: por eso no enseña el WhatsApp del organizador ni
 // deja cancelar. Pide solo el nombre de quien paga (RESERVAS.md §6).
 
 import { useState } from 'react'
@@ -9,22 +11,22 @@ import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { formatoDinero } from '../../negocio/formato'
 import { nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
-import { pagoDeMercadoPago, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
+import { intentoAlVolver, registrarAlVolver } from '../../mecanismos/pagos/alVolver'
 import { usarAlRegresar } from '../../mecanismos/pagos/alRegresar'
 
 export default function Cobro() {
   const { token = '' } = useParams()
   const [busqueda] = useSearchParams()
   const navegar = useNavigate()
-  const pagoId = pagoDeMercadoPago(busqueda)
+  const intentoId = intentoAlVolver(busqueda)
   const { datos, cargando, error, recargar } = usarDatos(async () => {
-    await registrarAlVolver(pagoId)
+    await registrarAlVolver(intentoId)
     return Promise.all([servicio.vistaDeCobro(token), servicio.configuracion()])
-  }, [token, pagoId])
+  }, [token, intentoId])
   const [nombre, setNombre] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [errorPago, setErrorPago] = useState<string | null>(null)
-    // Regresó de Mercado Pago con "atrás": los botones vuelven a funcionar y se
+  // Regresó de Clip con "atrás": los botones vuelven a funcionar y se
   // recarga quién ya pagó.
   usarAlRegresar(() => {
     setEnviando(false)

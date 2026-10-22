@@ -5,7 +5,7 @@ import { useEffect, type Dispatch } from 'react'
 import { servicio } from '../../datos'
 import { usarDatos } from '../../mecanismos/datos/usarDatos'
 import type { Accion, Borrador } from '../../mecanismos/reserva/estado'
-import type { Configuracion, DeporteId } from '../../negocio/configuracion'
+import { duracionesEnLinea, type Configuracion, type DeporteId } from '../../negocio/configuracion'
 import { avisoPocosLugares } from '../../negocio/disponibilidad'
 import { formatoDinero } from '../../negocio/formato'
 import { diasReservables } from '../../negocio/horario'
@@ -19,11 +19,14 @@ interface Props {
 }
 
 export function SeccionHorario({ borrador, despachar, config, deporte }: Props) {
-  const { fecha, duracion, inicio } = borrador
+  const { fecha, duracion, inicio, modalidad } = borrador
   const d = config.deportes[deporte]
   const ahora = ahoraEnSonora()
   const dias = diasReservables(config, ahora)
-  const { datos: horarios, cargando, error } = usarDatos(() => servicio.disponibilidad(deporte, fecha, duracion), [deporte, fecha, duracion])
+  const { datos: horarios, cargando, error } = usarDatos(
+    () => servicio.disponibilidad(deporte, fecha, duracion, modalidad),
+    [deporte, fecha, duracion, modalidad],
+  )
 
   // Si la hora elegida ya no está libre (se llenó, o pasó el corte mientras
   // decidía), se suelta: así no se sigue con una hora que la pantalla dice llena.
@@ -59,7 +62,8 @@ export function SeccionHorario({ borrador, despachar, config, deporte }: Props) 
 
       <h2 className="titulo-seccion">Tiempo</h2>
       <div className="segmentado" role="group" aria-label="Cuánto tiempo">
-        {d.duraciones.map((m) => (
+        {/* En línea solo 1 o 2 horas; media hora y hora y media, en el local. */}
+        {duracionesEnLinea(config, d).map((m) => (
           <button key={m} type="button" aria-pressed={duracion === m} onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}>
             {formatoDuracion(m)}
           </button>
@@ -72,11 +76,15 @@ export function SeccionHorario({ borrador, despachar, config, deporte }: Props) 
           {borrador.aviso}
         </p>
       )}
-      {hayPromo && <p className="nota promo">Promo: 1 hora empezando a las 5:00 o 5:30 PM.</p>}
+      {hayPromo && (
+        <p className="nota promo">
+          Promo: {formatoDuracion(config.promo.duracion)} empezando a las {config.promo.inicios.map(formatoHora).join(' o ')}.
+        </p>
+      )}
       {error && <p className="aviso aviso-error">{error}</p>}
       {!horarios && cargando && <p className="cargando">Buscando horarios…</p>}
       {horarios && horarios.length === 0 && (
-        <p className="nota">No hay horarios este día para {formatoDuracion(duracion)}. Prueba otro día o menos tiempo.</p>
+        <p className="nota">No hay horarios este día para {formatoDuracion(duracion)}. Prueba otro día u otro tiempo.</p>
       )}
       {horarios && horarios.length > 0 && (
         <div className="horas" aria-busy={cargando}>

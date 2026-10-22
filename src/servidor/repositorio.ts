@@ -6,7 +6,7 @@
 // exactamente igual.
 
 import type { IntentoDePago, Usuario } from '../datos/contrato'
-import type { Configuracion } from '../negocio/configuracion'
+import { esDeporteVigente, normalizarConfiguracion, type Configuracion } from '../negocio/configuracion'
 import type { Reserva } from '../negocio/reserva'
 
 export type { IntentoDePago }
@@ -50,15 +50,17 @@ export interface Repositorio {
   partesEnProceso(reservaId: string, ahora: number): Promise<string[]>
     /**
    * Da por vencido el bloqueo de los intentos abiertos de ese link (volverA).
-   * No los cierra: si Mercado Pago aprueba después uno de ellos, el pago se
+   * No los cierra: si la pasarela aprueba después uno de ellos, el pago se
    * sigue registrando o queda por devolver, como cualquier pago tardío.
    */
   liberarIntentos(reservaId: string, volverA: string, ahora: number): Promise<void>
   intento(id: string): Promise<IntentoDePago | null>
+  /** Apunta qué cobro de la pasarela corresponde a ese intento. */
+  anotarCobro(intentoId: string, cobroId: string): Promise<void>
   cerrarIntento(id: string, resultado: 'pagado' | 'cancelado'): Promise<void>
-    /** Ids de Mercado Pago de los pagos ya registrados para ese intento. */
+  /** Ids de los cobros de la pasarela ya registrados para ese intento. */
   pagosRegistrados(intentoId: string): Promise<string[]>
-  /** Apunta que ese pago de Mercado Pago ya se registró (una sola vez por id). */
+  /** Apunta que ese cobro de la pasarela ya se registró (una sola vez por id). */
   registrarPago(pagoId: string, intentoId: string): Promise<void>
 
   perfil(id: string): Promise<Usuario | null>
@@ -82,23 +84,25 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
   const intentos = new Map<string, IntentoDePago>()
   const perfiles = new Map<string, Usuario>()
   const contadores = new Map<string, number>()
-    /** Id del pago de Mercado Pago → id del intento. */
+  /** Id del cobro de la pasarela → id del intento. */
   const pagos = new Map<string, string>()
   // Una cadena de promesas hace de candado: cada transacción espera a la anterior.
   let cola: Promise<unknown> = Promise.resolve()
 
   const clon = <T>(x: T): T => structuredClone(x)
+  // Igual que en Postgres: las reservas de juegos que ya no existen no salen.
+  const vigentes = () => [...reservas.values()].filter((r) => esDeporteVigente(r.deporte))
 
   const repo: Repositorio = {
-    config: async () => clon(config),
+    config: async () => normalizarConfiguracion(clon(config)),
     guardarConfig: async (c) => void (config = clon(c)),
 
-    reservasEntre: async (desde, hasta) => [...reservas.values()].filter((r) => r.fecha >= desde && r.fecha <= hasta).map(clon),
-    reservaPor: async (campo, valor) => clon([...reservas.values()].find((r) => r[campo] === valor) ?? null),
+    reservasEntre: async (desde, hasta) => vigentes().filter((r) => r.fecha >= desde && r.fecha <= hasta).map(clon),
+    reservaPor: async (campo, valor) => clon(vigentes().find((r) => r[campo] === valor) ?? null),
     reservasConPagosEntre: async (desde, hasta) =>
-      [...reservas.values()].filter((r) => r.partes.some((p) => p.pago && p.pago.en >= desde && p.pago.en < hasta)).map(clon),
+      vigentes().filter((r) => r.partes.some((p) => p.pago && p.pago.en >= desde && p.pago.en < hasta)).map(clon),
     devolucionesPorRevisar: async () =>
-      [...reservas.values()]
+      vigentes()
         .filter((r) => r.devolucion?.estado === 'por_revisar')
         .sort((a, b) => (b.cancelacion?.en ?? '').localeCompare(a.cancelacion?.en ?? ''))
         .map(clon),
@@ -123,6 +127,10 @@ export function repositorioEnMemoria(inicial: Configuracion): Repositorio {
       }
     },
     intento: async (id) => clon(intentos.get(id) ?? null),
+    anotarCobro: async (intentoId, cobroId) => {
+      const i = intentos.get(intentoId)
+      if (i) i.cobroId = cobroId
+    },
     cerrarIntento: async (id, resultado) => {
       const i = intentos.get(id)
       if (i && !i.resultado) i.resultado = resultado

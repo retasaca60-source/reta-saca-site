@@ -14,7 +14,6 @@ function crear(nombre: string, inicio = 19 * 60) {
     fecha: FECHA,
     inicio,
     duracion: 60,
-    partes: 1,
         organizador: {
       nombre,
       whatsapp: `662${String(ctx.reservas.length + 1).padStart(7, '0')}`,

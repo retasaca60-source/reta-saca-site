@@ -1,4 +1,4 @@
-// La pantalla de pago de MENTIRA que ocupa el lugar de Mercado Pago mientras
+// La pantalla de pago de MENTIRA que ocupa el lugar de Clip mientras
 // no hay cuenta del negocio. La usan las dos versiones: la simulada siempre, y
 // la real solo si el servidor tiene PAGOS_SIMULADOS=si. Cuando entre Mercado
 // Pago, el cliente irá allá y esta página se quita (CONTRATO-DE-DATOS.md → Pagos).
@@ -38,7 +38,7 @@ export default function PagoSimulado() {
       <h1 className="titulo-grande" style={{ marginTop: 20 }}>
         Pagar
       </h1>
-      <p className="aviso aviso-alerta">Esta pantalla ocupa el lugar de Mercado Pago mientras no hay cuenta del negocio. No se cobra nada.</p>
+      <p className="aviso aviso-alerta">Esta pantalla ocupa el lugar de Clip mientras no hay cuenta del negocio. No se cobra nada.</p>
       <div className="grupo" style={{ marginTop: 16 }}>
         <div className="fila-pago">
           <span className="fila-pago-texto">

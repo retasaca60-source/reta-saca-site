@@ -1,5 +1,5 @@
-// El pago con Mercado Pago, del lado del servidor: con un Mercado Pago de
-// mentira que contesta lo que la prueba le diga. Lo que se prueba es lo que no
+// El pago en línea con Clip, del lado del servidor: con un Clip de mentira
+// que contesta lo que la prueba le diga. Lo que se prueba es lo que no
 // se puede dejar al navegador: que solo un pago aprobado, en pesos y por el
 // monto exacto confirme la mesa, que llegar dos veces no cobre dos veces, y
 // que un pago que llega cuando ya no hay mesa quede por devolver.
@@ -9,7 +9,10 @@ import { USUARIOS_DEMO } from '../datos/ejemplos'
 import { CONFIGURACION_INICIAL } from '../negocio/configuracion'
 import type { Reserva } from '../negocio/reserva'
 import { instante } from '../negocio/tiempo'
-import { atender, registrarPagoEnLinea, type CobroNuevo, type Entorno, type PagoDeMercadoPago } from './api'
+
+/** Los tableros de Cornhole: el juego de las pruebas de cupo. */
+const LUGARES = CONFIGURACION_INICIAL.deportes.cornhole.mesas
+import { atender, registrarPagoEnLinea, type CobroNuevo, type Entorno, type PagoEnLinea } from './api'
 import { repositorioEnMemoria } from './repositorio'
 
 const h = (x: number, m = 0) => x * 60 + m
@@ -17,14 +20,22 @@ const VIERNES = '2026-09-25'
 let reloj = instante(VIERNES, h(15))
 let e: Entorno
 let cobros: CobroNuevo[]
-let pagos: Map<string, PagoDeMercadoPago>
-let siguientePago = 1000
+let pagos: Map<string, PagoEnLinea>
 
-/** Quien paga en Mercado Pago: aprueba (o lo que diga `cambios`) ese cobro y devuelve el id del pago. */
-function pagarEnMercadoPago(cobro: CobroNuevo, cambios: Partial<PagoDeMercadoPago> = {}): string {
-  const id = String(siguientePago++)
-  pagos.set(id, { id, estado: 'approved', referencia: cobro.intentoId, monto: cobro.monto, moneda: 'MXN', ...cambios })
+/** El id que Clip le da al cobro de ese intento. */
+const cobroDe = (c: CobroNuevo) => `clip-${c.intentoId}`
+
+/** Quien paga en Clip: lo da por pagado (o lo que diga `cambios`) y devuelve el id del cobro. */
+function pagarEnClip(cobro: CobroNuevo, cambios: Partial<PagoEnLinea> = {}): string {
+  const id = cobroDe(cobro)
+  pagos.set(id, { id, pagado: true, referencia: cobro.intentoId, monto: cobro.monto, moneda: 'MXN', ...cambios })
   return id
+}
+
+/** Paga en Clip y regresa al sitio, que manda el id del intento (?intento=…). */
+async function volverDeClip(cobro: CobroNuevo, cambios: Partial<PagoEnLinea> = {}) {
+  pagarEnClip(cobro, cambios)
+  await llamar('verificarPagoEnLinea', { pagoId: cobro.intentoId })
 }
 
 async function llamar<T>(accion: string, datos: Record<string, unknown> = {}, cuentaId: string | null = null): Promise<T> {
@@ -35,14 +46,31 @@ async function llamar<T>(accion: string, datos: Record<string, unknown> = {}, cu
 
 const apartar = (whatsapp = '6621112233', nombre = 'Ana') =>
   llamar<Reserva>('apartar', {
-    solicitud: { deporte: 'popdarts', fecha: VIERNES, inicio: h(19), duracion: 60, partes: 1, organizador: { nombre, whatsapp } },
+    solicitud: { deporte: 'cornhole', fecha: VIERNES, inicio: h(19), duracion: 60, organizador: { nombre, whatsapp } },
   })
 
-/** Aparta e inicia el pago del organizador: devuelve la reserva y el cobro que se le pidió a Mercado Pago. */
+/** Aparta e inicia el pago: devuelve la reserva y el cobro que se le pidió a Clip. */
 async function apartarYCobrar(whatsapp?: string, nombre?: string) {
   const r = await apartar(whatsapp, nombre)
   const { url } = await llamar<{ url: string }>('iniciarPago', { token: r.tokenPrivado, parteIds: [r.partes[0].id], nombre: '' })
   return { r, url, cobro: cobros[cobros.length - 1] }
+}
+
+/**
+ * Una reserva dividida entre 2 como se hacían antes del 21/10/2026: ya no se
+ * pueden crear, pero las que existen siguen con su link de cobro.
+ */
+async function dividirComoAntes(r: Reserva): Promise<Reserva> {
+  const vieja: Reserva = {
+    ...r,
+    partesElegidas: 2,
+    partes: [
+      { ...r.partes[0], monto: r.precio / 2 },
+      { id: 'parte-del-amigo', monto: r.precio / 2, delOrganizador: false, concepto: 'reserva', pago: null },
+    ],
+  }
+  await e.repo.guardar(vieja)
+  return vieja
 }
 
 const leer = (r: Reserva) => llamar<Reserva>('reservaPorTokenPrivado', { token: r.tokenPrivado })
@@ -58,24 +86,24 @@ beforeEach(async () => {
     ahora: () => reloj,
     cuentaId: null,
     cuentas: { crear: async () => 'x', borrar: async () => {} },
-    // Encendido a propósito: con Mercado Pago conectado no debe servir de nada.
+    // Encendido a propósito: con Clip conectado no debe servir de nada.
     pagosSimulados: true,
     sitio: 'https://retasaca-hmo2.netlify.app',
     cliente: null,
-    mercadoPago: {
+    pasarela: {
       crearCobro: async (c) => {
         cobros.push(c)
-        return `https://mercadopago.test/checkout/${c.intentoId}`
+        return { url: `https://clip.test/checkout/${c.intentoId}`, cobroId: cobroDe(c) }
       },
-      consultarPago: async (id) => pagos.get(id) ?? null,
+      consultarCobro: async (id) => pagos.get(id) ?? null,
     },
   }
 })
 
-describe('con Mercado Pago', () => {
+describe('con Clip', () => {
   it('el cobro va por el monto de la parte, vence con el apartado y regresa a la reserva', async () => {
     const { r, url, cobro } = await apartarYCobrar()
-    expect(url).toBe(`https://mercadopago.test/checkout/${cobro.intentoId}`)
+    expect(url).toBe(`https://clip.test/checkout/${cobro.intentoId}`)
     expect(cobro.monto).toBe(r.partes[0].monto)
     expect(cobro.venceEn).toBe(r.apartadaHasta)
     expect(cobro.volverA).toBe(`https://retasaca-hmo2.netlify.app/r/${r.tokenPrivado}`)
@@ -90,9 +118,9 @@ describe('con Mercado Pago', () => {
 
   it('un pago aprobado confirma la mesa una sola vez, llegue por el aviso o al volver', async () => {
     const { r, cobro } = await apartarYCobrar()
-    const pagoId = pagarEnMercadoPago(cobro)
+    const pagoId = pagarEnClip(cobro)
 
-    await llamar('verificarPagoEnLinea', { pagoId })
+    await llamar('verificarPagoEnLinea', { pagoId: cobro.intentoId })
     const pagada = await leer(r)
     expect(pagada.estado).toBe('confirmada')
     expect(pagada.partes[0].pago).toMatchObject({ medio: 'en_linea', nombre: 'Ana' })
@@ -105,8 +133,8 @@ describe('con Mercado Pago', () => {
 
   it('no confirma un pago rechazado, por otro monto, en otra moneda o que no es nuestro', async () => {
     const { r, cobro } = await apartarYCobrar()
-    for (const cambios of [{ estado: 'rejected' }, { monto: cobro.monto - 1 }, { moneda: 'USD' }, { referencia: 'otro-intento' }]) {
-      await llamar('verificarPagoEnLinea', { pagoId: pagarEnMercadoPago(cobro, cambios) })
+    for (const cambios of [{ pagado: false }, { monto: cobro.monto - 1 }, { moneda: 'USD' }, { referencia: 'otro-intento' }]) {
+      await volverDeClip(cobro, cambios)
     }
     await llamar('verificarPagoEnLinea', { pagoId: '999999' })
     await llamar('verificarPagoEnLinea', { pagoId: 'no-es-un-id' })
@@ -115,15 +143,15 @@ describe('con Mercado Pago', () => {
 
   it('si pagan cuando ya no hay mesa, el dinero queda por devolver y la mesa no se vende dos veces', async () => {
     const { r, cobro } = await apartarYCobrar()
-    // Se le vence el apartado y otros tres ocupan las 3 mesas de Popdarts.
+    // Se le vence el apartado y otros grupos ocupan todos los tableros.
     reloj = instante(VIERNES, h(15, 11))
-    for (let i = 0; i < 3; i++) {
-      const otro = await apartarYCobrar(`662000000${i}`, `Otro ${i}`)
-      await llamar('verificarPagoEnLinea', { pagoId: pagarEnMercadoPago(otro.cobro) })
+    for (let i = 0; i < LUGARES; i++) {
+      const otro = await apartarYCobrar(`66200000${String(i).padStart(2, '0')}`, `Otro ${i}`)
+      await volverDeClip(otro.cobro)
     }
 
-    // Mercado Pago le cobró de todos modos.
-    await llamar('verificarPagoEnLinea', { pagoId: pagarEnMercadoPago(cobro) })
+    // Clip le cobró de todos modos.
+    await volverDeClip(cobro)
 
     const despues = await leer(r)
     expect(despues.estado).toBe('cancelada')
@@ -155,15 +183,15 @@ it.each([false, true])(
     reloj = instante(VIERNES, h(15, 11))
 
     if (lleno) {
-      // Las tres mesas se ocupan en el destino después de vencer el apartado.
-      for (let i = 0; i < 3; i++) {
+      // Todos los tableros se ocupan en el destino después de vencer el apartado.
+      for (let i = 0; i < LUGARES; i++) {
         const otro = await apartarYCobrar(
-          `662000000${i}`,
+          `66200000${String(i).padStart(2, '0')}`,
           `Otro ${i}`,
         )
 
         await registrarPagoEnLinea(
-          pagarEnMercadoPago(otro.cobro),
+          pagarEnClip(otro.cobro),
           e,
         )
 
@@ -175,7 +203,7 @@ it.each([false, true])(
       }
     }
 
-    await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+    await registrarPagoEnLinea(pagarEnClip(cobro), e)
 
     const despues = await leer(r)
     expect(despues.fecha).toBe(destino)
@@ -203,7 +231,7 @@ it('un pago tardío no recupera una mesa que ya fue asignada a otro grupo', asyn
   )!.id
 
   const config = await e.repo.config()
-  const mesa = `${config.deportes.popdarts.clave} 1`
+  const mesa = `${config.deportes.cornhole.clave} 1`
   const { r, cobro } = await apartarYCobrar()
 
   await llamar(
@@ -218,7 +246,7 @@ it('un pago tardío no recupera una mesa que ya fue asignada a otro grupo', asyn
   const otro = await apartarYCobrar('6620000001', 'Otro grupo')
 
   await registrarPagoEnLinea(
-    pagarEnMercadoPago(otro.cobro),
+    pagarEnClip(otro.cobro),
     e,
   )
 
@@ -229,7 +257,7 @@ it('un pago tardío no recupera una mesa que ya fue asignada a otro grupo', asyn
   )
 
   // Llega el pago del primer grupo: hay cupo, pero su mesa ya tiene dueño.
-  await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+  await registrarPagoEnLinea(pagarEnClip(cobro), e)
 
   const recuperada = await leer(r)
 
@@ -241,7 +269,7 @@ it('un pago tardío no recupera una mesa que ya fue asignada a otro grupo', asyn
   expect((await leer(otro.r)).mesa).toBe(mesa)
 
   // Recepción puede asignar otra mesa disponible.
-  const otraMesa = `${config.deportes.popdarts.clave} 2`
+  const otraMesa = `${config.deportes.cornhole.clave} 2`
 
   await llamar(
     'asignarMesa',
@@ -279,7 +307,7 @@ it.each(['inicio', 'terminada', 'dia_cerrado', 'bloque_reducido'])(
 
     await e.repo.guardarConfig(config)
 
-    await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+    await registrarPagoEnLinea(pagarEnClip(cobro), e)
 
     const despues = await leer(r)
 
@@ -300,7 +328,7 @@ it('recupera un apartado vencido antes del inicio aunque falten menos de 30 minu
   const { r, cobro } = await apartarYCobrar()
   reloj = instante(VIERNES, h(18, 50))
 
-  await registrarPagoEnLinea(pagarEnMercadoPago(cobro), e)
+  await registrarPagoEnLinea(pagarEnClip(cobro), e)
 
   const despues = await leer(r)
 
@@ -310,34 +338,16 @@ it('recupera un apartado vencido antes del inicio aunque falten menos de 30 minu
   })
   expect(despues.devolucion).toBeUndefined()
 })
-describe('pagos repetidos del mismo cobro', () => {
-  it('un segundo pago aprobado del mismo cobro queda por devolver, una sola vez', async () => {
-    const { r, cobro } = await apartarYCobrar()
-    const primero = pagarEnMercadoPago(cobro)
-    await registrarPagoEnLinea(primero, e)
-    // El mismo pago avisa otra vez (aviso de Mercado Pago y regreso): nada cambia.
-    await registrarPagoEnLinea(primero, e)
-    expect((await leer(r)).devolucion ?? null).toBeNull()
-
-    // Pagó, regresó y volvió a pagar el mismo cobro.
-    const segundo = pagarEnMercadoPago(cobro)
-    await registrarPagoEnLinea(segundo, e)
-    await registrarPagoEnLinea(segundo, e)
-    const guardada = await leer(r)
-    expect(guardada.estado).toBe('confirmada')
-    expect(guardada.partes[0].pago).not.toBeNull()
-    expect(guardada.devolucion).toMatchObject({ estado: 'por_revisar', monto: cobro.monto, extra: cobro.monto })
-    expect(guardada.devolucion!.nota).toContain(segundo)
-  })
-})
 describe('link de cobro después del juego', () => {
   it('no deja pagar en línea una reserva que ya terminó', async () => {
-    // Ping Pong de 7 a 8 PM entre 2: el organizador pagó su parte en línea.
-    const r = await llamar<Reserva>('apartar', {
-      solicitud: { deporte: 'pingpong', fecha: VIERNES, inicio: h(19), duracion: 60, partes: 2, organizador: { nombre: 'Ana', whatsapp: '6621112233' } },
+    // Ping Pong de 7 a 8 PM entre 2, de antes del 21/10/2026: el organizador
+    // pagó su parte en línea y el link de cobro de los amigos sigue vivo.
+    const apartada = await llamar<Reserva>('apartar', {
+      solicitud: { deporte: 'pingpong', fecha: VIERNES, inicio: h(19), duracion: 60, organizador: { nombre: 'Ana', whatsapp: '6621112233' } },
     })
+    const r = await dividirComoAntes(apartada)
     await llamar('iniciarPago', { token: r.tokenPrivado, parteIds: [r.partes[0].id], nombre: '' })
-    await registrarPagoEnLinea(pagarEnMercadoPago(cobros[0]), e)
+    await registrarPagoEnLinea(pagarEnClip(cobros[0]), e)
     expect((await leer(r)).estado).toBe('confirmada')
 
     // A las 8 PM ya terminó: un amigo abre el link de cobro y ya no se le cobra.

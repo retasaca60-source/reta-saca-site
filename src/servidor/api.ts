@@ -10,7 +10,7 @@
 
 import type { IntentoDePago, Rol, Usuario } from '../datos/contrato'
 import { MINIMO_CONTRASENA, normalizarUsuario, usuarioValido } from '../datos/usuarios'
-import type { Configuracion, DeporteId, Duracion } from '../negocio/configuracion'
+import { esDeporteVigente, type Configuracion, type DeporteId, type Duracion, type Modalidad } from '../negocio/configuracion'
 import { ErrorDeDatos, MENSAJE_INESPERADO, type CodigoDeError } from '../negocio/errores'
 import { formatoDinero } from '../negocio/formato'
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
@@ -27,16 +27,20 @@ export interface Cuentas {
   borrar(id: string): Promise<void>
 }
 
-/** Lo que se le pide a Mercado Pago. La versión de verdad está en supabase/fuentes/mercadopago.ts. */
-export interface MercadoPago {
-  /** Crea el cobro (una "preferencia" de Checkout Pro) y devuelve a dónde mandar a quien paga. */
-  crearCobro(c: CobroNuevo): Promise<string>
-  /** Pregunta por un pago directamente a Mercado Pago. null si no existe. */
-  consultarPago(id: string): Promise<PagoDeMercadoPago | null>
+/**
+ * Lo que se le pide a la pasarela de pago. Desde el 21/10/2026 es Clip
+ * (supabase/fuentes/clip.ts); antes fue Mercado Pago. Las reglas no dependen
+ * de cuál sea: crear un cobro y preguntar por él.
+ */
+export interface Pasarela {
+  /** Crea el cobro y devuelve a dónde mandar a quien paga y el id del cobro en la pasarela. */
+  crearCobro(c: CobroNuevo): Promise<{ url: string; cobroId: string }>
+  /** Pregunta por un cobro directamente a la pasarela. null si no existe. */
+  consultarCobro(cobroId: string): Promise<PagoEnLinea | null>
 }
 
 export interface CobroNuevo {
-  /** El id del intento: Mercado Pago lo devuelve como referencia en cada pago. */
+  /** El id del intento: la pasarela lo devuelve como referencia del cobro. */
   intentoId: string
   titulo: string
   monto: number
@@ -46,10 +50,11 @@ export interface CobroNuevo {
   venceEn: number | null
 }
 
-export interface PagoDeMercadoPago {
+export interface PagoEnLinea {
+  /** El id del cobro en la pasarela. Con él se apunta que ya se registró. */
   id: string
-  /** "approved", "rejected", "in_process"… */
-  estado: string
+  /** Si la pasarela ya lo da por pagado. */
+  pagado: boolean
   /** La referencia con la que se creó el cobro: el id del intento. */
   referencia: string | null
   monto: number
@@ -64,21 +69,21 @@ export interface Entorno {
   cuentaId: string | null
   cuentas: Cuentas
   /**
-   * Mientras no haya Mercado Pago, el pago en línea es la pantalla simulada
-   * (/pago/<id>). Con Mercado Pago conectado se ignora: si no, cualquiera
+   * Mientras no haya pasarela, el pago en línea es la pantalla simulada
+   * (/pago/<id>). Con la pasarela conectada se ignora: si no, cualquiera
    * podría confirmar desde la pantalla simulada un cobro que nunca pagó.
    */
   pagosSimulados: boolean
-  /** Mercado Pago, si hay llave (MP_ACCESS_TOKEN). */
-  mercadoPago: MercadoPago | null
-  /** De dónde viene quien paga ("https://…"), para que Mercado Pago lo regrese ahí. */
+  /** Clip, si hay llave (CLIP_API_KEY). */
+  pasarela: Pasarela | null
+  /** De dónde viene quien paga ("https://…"), para que la pasarela lo regrese ahí. */
   sitio: string
   /** La dirección (IP) de quien llama, para el límite de frecuencia. null si no se sabe. */
   cliente: string | null
 }
 
-/** La pantalla simulada solo existe mientras no haya Mercado Pago de verdad. */
-const conPagoSimulado = (e: Entorno) => e.pagosSimulados && !e.mercadoPago
+/** La pantalla simulada solo existe mientras no haya pasarela de verdad. */
+const conPagoSimulado = (e: Entorno) => e.pagosSimulados && !e.pasarela
 
 export interface Peticion {
   accion: string
@@ -137,7 +142,20 @@ function fecha(d: Datos, campo: string): string {
 }
 function deporte(d: Datos, campo = 'deporte'): DeporteId {
   const v = texto(d, campo)
-  if (v !== 'pingpong' && v !== 'cornhole' && v !== 'popdarts') throw invalido(campo)
+  if (!esDeporteVigente(v)) throw invalido(campo)
+  return v
+}
+/** Sin el campo es la estándar: así siguen funcionando las peticiones de antes. */
+function modalidad(d: Datos, campo = 'modalidad'): Modalidad {
+  const v = d[campo]
+  if (v === undefined || v === 'estandar') return 'estandar'
+  if (v !== 'pareja') throw invalido(campo)
+  return v
+}
+function siONo(d: Datos, campo: string): boolean {
+  const v = d[campo]
+  if (v === undefined) return false
+  if (typeof v !== 'boolean') throw invalido(campo)
   return v
 }
 function duracion(d: Datos, campo = 'duracion'): Duracion {
@@ -242,29 +260,27 @@ function enPanel(
 }
 
 /**
- * Registra un pago de Mercado Pago: lo usan el aviso de Mercado Pago y el
+ * Registra un cobro de la pasarela (Clip): lo usan el aviso de Clip y el
  * regreso de quien pagó, y da igual cuál llegue primero o si llegan los dos.
  *
- * Nada de lo que manda quien llama se cree: con el id se le pregunta a
- * Mercado Pago, y solo cuenta un pago aprobado, en pesos, por el monto exacto
- * del intento. Lanza si Mercado Pago no contesta, para que el aviso se
- * reintente; lo demás (un id que no es nuestro, un pago rechazado) se ignora.
+ * Nada de lo que manda quien llama se cree: con el id se le pregunta a la
+ * pasarela, y solo cuenta un cobro pagado, en pesos, por el monto exacto del
+ * intento. Lanza si la pasarela no contesta, para que el aviso se reintente;
+ * lo demás (un id que no es nuestro, un cobro sin pagar) se ignora.
  *
- * Cada pago se apunta por su id de Mercado Pago: el mismo pago que llega dos
- * veces (aviso y regreso) se registra una sola vez, y un SEGUNDO pago del
- * mismo cobro (pagó, regresó y volvió a pagar) queda por devolver. Antes ese
- * segundo cobro se ignoraba y el dinero no aparecía en ningún lado.
+ * Cada cobro se apunta por su id: el mismo cobro que llega dos veces (aviso y
+ * regreso) se registra una sola vez.
  */
-export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<void> {
-  if (!e.mercadoPago || !/^\d{1,30}$/.test(pagoId)) return
-  const pago = await e.mercadoPago.consultarPago(pagoId)
-  if (!pago || pago.estado !== 'approved' || !pago.referencia) return
+export async function registrarPagoEnLinea(cobroId: string, e: Entorno): Promise<void> {
+  if (!e.pasarela || !/^[\w-]{1,64}$/.test(cobroId)) return
+  const pago = await e.pasarela.consultarCobro(cobroId)
+  if (!pago || !pago.pagado || !pago.referencia) return
   const referencia = pago.referencia
   await e.repo.enTransaccion(async (repo) => {
     const intento = await repo.intento(referencia)
     if (!intento) return
     if (pago.monto !== intento.monto || pago.moneda !== 'MXN') {
-      console.error('[mercadopago] el pago no coincide con su intento', pago.id, intento.id)
+      console.error('[pasarela] el cobro no coincide con su intento', pago.id, intento.id)
       return
     }
     const yaRegistrados = await repo.pagosRegistrados(intento.id)
@@ -285,7 +301,7 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
         op.pagoSinLugar(
           op.vencerApartado(guardada, e.ahora()) ?? guardada,
           intento.monto,
-          `${intento.nombre} pagó ${formatoDinero(intento.monto)} dos veces en línea por el mismo cobro (pago ${pago.id} de Mercado Pago).`,
+          `${intento.nombre} pagó ${formatoDinero(intento.monto)} dos veces en línea por el mismo cobro (cobro ${pago.id} de Clip).`,
         ),
       )
       return
@@ -299,7 +315,7 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
       await repo.guardar(op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
     } catch (error) {
       if (!(error instanceof ErrorDeDatos)) throw error
-      // Mercado Pago ya cobró, pero la mesa se fue o alguien pagó esas partes
+      // La pasarela ya cobró, pero la mesa se fue o alguien pagó esas partes
       // antes: el dinero entró y queda por devolver, como una cancelación.
       // La nota no copia el mensaje del error: ese le habla a quien paga ("no
       // se hizo ningún cobro") y aquí el cobro sí se hizo.
@@ -318,7 +334,7 @@ export async function registrarPagoEnLinea(pagoId: string, e: Entorno): Promise<
 /**
  * Límite por dirección para lo que cualquiera puede hacer sin sesión y cuesta
  * algo: apartar ocupa una mesa 10 minutos, iniciar un pago crea un cobro en
- * Mercado Pago. Holgado a propósito: en México muchos celulares salen a
+ * la pasarela. Holgado a propósito: en México muchos celulares salen a
  * internet por la misma dirección de la compañía, y un grupo reservando desde
  * el wifi del local también. Lo que frena es el bucle de un script, no a un
  * cliente. Sin dirección conocida no se limita (nunca castigar a ciegas).
@@ -352,7 +368,7 @@ const ACCIONES: Record<string, Accion> = {
 
   configuracion: async (_d, e) => e.repo.config(),
 
-  disponibilidad: async (d, e) => op.horariosDisponibles(await contexto(e), deporte(d), fecha(d, 'fecha'), duracion(d)),
+  disponibilidad: async (d, e) => op.horariosDisponibles(await contexto(e), deporte(d), fecha(d, 'fecha'), duracion(d), modalidad(d)),
 
   apartar: async (d, e) => {
     await frenar(e, 'apartar')
@@ -360,14 +376,18 @@ const ACCIONES: Record<string, Accion> = {
     if (!s || typeof s !== 'object') throw invalido('solicitud')
     const org = s.organizador as Datos | undefined
     if (!org || typeof org !== 'object') throw invalido('organizador')
-    const partes = numero(s, 'partes')
-    if (partes !== 1 && partes !== 2 && partes !== 4) throw invalido('partes')
+    // Desde el 21/10/2026 se paga completo. Una versión vieja del sitio
+    // (guardada en el teléfono) podría pedir dividir: se le dice que recargue.
+    if (s.partes !== undefined && s.partes !== 1) {
+      throw new ErrorDeDatos('datos_invalidos', 'Ya no se divide el pago: se paga completo al reservar. Recarga la página.')
+    }
     const solicitud: SolicitudDeReserva = {
       deporte: deporte(s),
       fecha: fecha(s, 'fecha'),
       inicio: numero(s, 'inicio'),
       duracion: duracion(s),
-      partes,
+      modalidad: modalidad(s),
+      palasExtra: siONo(s, 'palasExtra'),
       organizador: { nombre: texto(org, 'nombre'), whatsapp: texto(org, 'whatsapp') },
     }
     return e.repo.enTransaccion(async (repo) => guardarNueva(repo, op.apartar(await contexto(e, repo), solicitud)))
@@ -377,7 +397,7 @@ const ACCIONES: Record<string, Accion> = {
     const token = texto(d, 'token')
     const parteIds = textos(d, 'parteIds')
     const nombre = texto(d, 'nombre', true)
-    if (!e.mercadoPago && !conPagoSimulado(e)) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos. Paga en el local.')
+    if (!e.pasarela && !conPagoSimulado(e)) throw new ErrorDeDatos('no_permitido', 'Los pagos en línea todavía no están activos. Paga en el local.')
     await frenar(e, 'iniciarPago')
     const config = await e.repo.config()
     const { intento, reserva } = await e.repo.enTransaccion(async (repo) => {
@@ -388,7 +408,7 @@ const ACCIONES: Record<string, Accion> = {
       const delOrganizador = token === actual.tokenPrivado
       const volverA = delOrganizador ? `/r/${actual.tokenPrivado}` : `/c/${actual.tokenCobro}`
       // El link privado es de una sola persona: si vuelve a pagar es porque
-      // salió de Mercado Pago sin pagar (regresó, cerró la pestaña, falló la
+      // salió de la pasarela sin pagar (regresó, cerró la pestaña, falló la
       // red). Antes su propio intento la bloqueaba hasta que vencía el
       // apartado y perdía la mesa. El link de cobro lo comparten varios
       // amigos: ahí el bloqueo se queda para que no paguen dos la misma parte.
@@ -405,28 +425,31 @@ const ACCIONES: Record<string, Accion> = {
       await repo.crearIntento(intento)
       return { intento, reserva: actual }
     })
-    if (!e.mercadoPago) return { url: `/pago/${intento.id}` }
-    // Fuera de la transacción: mientras Mercado Pago contesta, nadie más
-    // tiene por qué esperar el candado de las mesas.
-    const url = await e.mercadoPago.crearCobro({
+    if (!e.pasarela) return { url: `/pago/${intento.id}` }
+    // Fuera de la transacción: mientras Clip contesta, nadie más tiene por
+    // qué esperar el candado de las mesas.
+    const { url, cobroId } = await e.pasarela.crearCobro({
       intentoId: intento.id,
-      titulo: `Reta Saca · ${config.deportes[reserva.deporte].nombre} · ${reserva.folio}`,
+      titulo: `Reta Saca · ${config.deportes[reserva.deporte]?.nombre ?? 'Reserva'} · ${reserva.folio}`,
       monto: intento.monto,
       volverA: e.sitio + intento.volverA,
       venceEn: intento.venceEn!,
     })
+    // Se apunta qué cobro de Clip es de este intento: al regresar, el
+    // navegador solo trae el id del intento y con esto se le pregunta a Clip.
+    await e.repo.anotarCobro(intento.id, cobroId)
     return { url }
   },
 
   /**
-   * Quien regresa de Mercado Pago trae el id de su pago: se registra en ese
-   * momento, sin esperar el aviso de Mercado Pago (que puede tardar). Lo que
-   * manda el navegador es solo el id; si se pagó y cuánto, se le pregunta a
-   * Mercado Pago.
+   * Quien regresa de Clip trae el id de su intento: su cobro se registra en
+   * ese momento, sin esperar el aviso de Clip (que puede tardar). Si se pagó y
+   * cuánto, se le pregunta a Clip; el navegador no decide nada.
    */
   verificarPagoEnLinea: async (d, e) => {
-    if (!e.mercadoPago) return null
-    await registrarPagoEnLinea(texto(d, 'pagoId'), e)
+    if (!e.pasarela) return null
+    const intento = await e.repo.intento(texto(d, 'pagoId'))
+    if (intento?.cobroId) await registrarPagoEnLinea(intento.cobroId, e)
     return null
   },
 
@@ -451,7 +474,7 @@ const ACCIONES: Record<string, Accion> = {
     })
   },
 
-  // ── Pago simulado (solo mientras no hay Mercado Pago) ──
+  // ── Pago simulado (solo mientras no hay pasarela) ──
 
   pagoSimuladoObtener: async (d, e) => {
     if (!conPagoSimulado(e)) return null
@@ -484,7 +507,7 @@ const ACCIONES: Record<string, Accion> = {
       const intento = await repo.intento(id)
       if (!intento) throw new ErrorDeDatos('no_encontrada', 'Ese pago no existe.')
       if (intento.resultado) return intento.volverA
-      // Con el cupo del día de la reserva, igual que con Mercado Pago: pudo
+      // Con el cupo del día de la reserva, igual que con la pasarela: pudo
       // moverse a más de 30 días y ahí la ventana de siempre no ve a nadie.
       const guardada = await repo.reservaPor('id', intento.reservaId)
       if (!guardada) throw noEncontrada()
@@ -531,7 +554,7 @@ const ACCIONES: Record<string, Accion> = {
 
   cotizarSinReserva: async (d, e) => {
     await usuarioDe(e)
-    return op.cotizarSinReserva({ config: await e.repo.config(), reservas: [], ahora: e.ahora() }, deporte(d), duracion(d))
+    return op.cotizarSinReserva({ config: await e.repo.config(), reservas: [], ahora: e.ahora() }, deporte(d), duracion(d), modalidad(d), siONo(d, 'palasExtra'))
   },
 
   anotarSinReserva: async (d, e) => {
@@ -546,6 +569,8 @@ const ACCIONES: Record<string, Accion> = {
       mesa: texto(c, 'mesa', true) || undefined,
       medio: medioDelLocal(c),
       precioEsperado: c.precioEsperado === undefined ? undefined : numero(c, 'precioEsperado'),
+      modalidad: modalidad(c),
+      palasExtra: siONo(c, 'palasExtra'),
     }
     return e.repo.enTransaccion(async (repo) => guardarNueva(repo, op.anotarSinReserva(await contexto(e, repo), cliente, quien.nombre)))
   },

@@ -3,7 +3,7 @@
 // Si al guardar alguna reserva futura se queda sin mesa, se avisa y NO se
 // guarda hasta que Hugo lo confirme. Nunca se cancela nada solo.
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { servicio, type Conflicto, type Rol } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion as Config, type Duracion } from '../negocio/configuracion'
@@ -91,13 +91,15 @@ export function Configuracion() {
                 <th key={m}>{m} min</th>
               ))}
               <th>Promo 60 min</th>
+              <th>2 palas extra</th>
             </tr>
           </thead>
           <tbody>
             {ORDEN_DEPORTES.map((id) => {
               const d = c.deportes[id]
               return (
-                <tr key={id}>
+                <Fragment key={id}>
+                <tr>
                   <td>{d.nombre}</td>
                   <td>
                     <input className="corto" type="number" min={0} max={50} value={d.mesas} onChange={(e) => cambiar((x) => void (x.deportes[id].mesas = numero(e.target.value)))} />
@@ -137,12 +139,59 @@ export function Configuracion() {
                       <input className="corto" type="number" min={1} value={d.precioPromo} onChange={(e) => cambiar((x) => void (x.deportes[id].precioPromo = numero(e.target.value)))} />
                     )}
                   </td>
+                  <td>
+                    {d.precioPalasExtra === null ? (
+                      <span className="nota">—</span>
+                    ) : (
+                      <input
+                        className="corto"
+                        type="number"
+                        min={1}
+                        value={d.precioPalasExtra}
+                        onChange={(e) => cambiar((x) => void (x.deportes[id].precioPalasExtra = numero(e.target.value)))}
+                      />
+                    )}
+                  </td>
                 </tr>
+                {/* Cornhole para 2 personas: mismas mesas, su propia tabla de precios. Sin promo. */}
+                {d.preciosPareja && (
+                  <tr className="fila-pareja">
+                    <td>{d.nombre} · 2 personas</td>
+                    <td colSpan={2}>
+                      <span className="nota">{id === 'cornhole' ? 'mismos tableros' : 'mismas mesas'}</span>
+                    </td>
+                    {([30, 60, 90, 120] as Duracion[]).map((m) => (
+                      <td key={m}>
+                        {d.duraciones.includes(m) ? (
+                          <input
+                            className="corto"
+                            type="number"
+                            min={1}
+                            value={d.preciosPareja?.[m] ?? ''}
+                            onChange={(e) => cambiar((x) => void (x.deportes[id].preciosPareja![m] = numero(e.target.value)))}
+                          />
+                        ) : (
+                          <span className="nota">—</span>
+                        )}
+                      </td>
+                    ))}
+                    <td>
+                      <span className="nota">sin promo</span>
+                    </td>
+                    <td>
+                      <span className="nota">—</span>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               )
             })}
           </tbody>
         </table>
-        <p className="nota">Cambiar un precio no toca las reservas ya hechas: cada una conserva el suyo.</p>
+        <p className="nota">
+          Cambiar un precio no toca las reservas ya hechas: cada una conserva el suyo. En línea solo se reserva{' '}
+          {c.reglas.duracionesEnLinea.map((m) => `${m / 60} h`).join(' o ')}, en hora cerrada; las demás duraciones se cobran en el local.
+        </p>
       </section>
 
       <section className="panel-seccion">

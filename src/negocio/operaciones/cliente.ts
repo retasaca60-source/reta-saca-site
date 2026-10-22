@@ -7,34 +7,54 @@ import { mesasLibres } from '../disponibilidad'
 import { ErrorDeDatos } from '../errores'
 import { cabeEnUnBloque, estaCerrado, iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
-import { precioDe } from '../precios'
-import { repartir, type Reserva } from '../reserva'
+import { ofreceModalidad, precioDe, precioDePalas } from '../precios'
+import { pagado, type Reserva } from '../reserva'
 import { instante, momentoDe } from '../tiempo'
-import type { DeporteId, Duracion } from '../configuracion'
+import { duracionesEnLinea, type DeporteId, type Duracion, type Modalidad } from '../configuracion'
 import { abrirDevolucion, copia, type Contexto } from './contexto'
 import type { HorarioDisponible, SolicitudDeReserva, VistaDeCobro } from './tipos'
 
-export function horariosDisponibles(ctx: Contexto, deporte: DeporteId, fecha: string, duracion: Duracion): HorarioDisponible[] {
+/**
+ * Las horas que se ofrecen EN LÍNEA, con el precio de la mesa en esa
+ * modalidad. Solo las duraciones de `reglas.duracionesEnLinea` (1 o 2 horas):
+ * media hora y hora y media se cobran solo en el local.
+ */
+export function horariosDisponibles(
+  ctx: Contexto,
+  deporte: DeporteId,
+  fecha: string,
+  duracion: Duracion,
+  modalidad: Modalidad = 'estandar',
+): HorarioDisponible[] {
+  const d = ctx.config.deportes[deporte]
+  if (!d || !duracionesEnLinea(ctx.config, d).includes(duracion) || !ofreceModalidad(d, modalidad)) return []
   return iniciosPosibles(ctx.config, fecha, duracion, momentoDe(ctx.ahora)).map((inicio) => ({
     inicio,
     libres: Math.max(0, mesasLibres(ctx.config, ctx.reservas, deporte, fecha, inicio, duracion, ctx.ahora)),
-    ...precioDe(ctx.config, deporte, inicio, duracion),
+    ...precioDe(ctx.config, deporte, inicio, duracion, modalidad),
   }))
 }
 
 /** Cuántas mesas puede tener apartadas sin pagar un mismo WhatsApp a la vez. */
 export const APARTADOS_SIN_PAGAR_POR_WHATSAPP = 2
 
-/** Revalida todo y crea la reserva APARTADA con su precio y sus partes. */
+/**
+ * Revalida todo y crea la reserva APARTADA con su precio. Se paga completa:
+ * una sola parte con la mesa y, si las pidió, las palas extra.
+ */
 export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   const { config, reservas, ahora } = ctx
   const d = config.deportes[s.deporte]
   const nombre = s.organizador.nombre.trim()
   const whatsapp = s.organizador.whatsapp.replace(/\D/g, '')
+  const modalidad = s.modalidad ?? 'estandar'
   if (!d || !d.duraciones.includes(s.duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
+  if (!duracionesEnLinea(config, d).includes(s.duracion)) {
+    throw new ErrorDeDatos('datos_invalidos', 'En línea se reserva por 1 o 2 horas. Otros tiempos, en el local.')
+  }
+  if (!ofreceModalidad(d, modalidad)) throw new ErrorDeDatos('datos_invalidos', `${d.nombre} no tiene precio para 2 personas.`)
+  if (s.palasExtra && d.precioPalasExtra === null) throw new ErrorDeDatos('datos_invalidos', `${d.nombre} no tiene palas extra.`)
   if (nombre.length < 2 || whatsapp.length !== 10) throw new ErrorDeDatos('datos_invalidos', 'Falta tu nombre o tu WhatsApp de 10 dígitos.')
-  const partes = d.seDivide ? s.partes : 1
-  if (![1, 2, 4].includes(partes)) throw new ErrorDeDatos('datos_invalidos', 'Solo se divide entre 2 o entre 4.')
   if (!iniciosPosibles(config, s.fecha, s.duracion, momentoDe(ahora)).includes(s.inicio)) {
     throw new ErrorDeDatos('fuera_de_horario', 'Ese horario ya no se puede reservar. Elige otro.')
   }
@@ -48,13 +68,14 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   if (sinPagar >= APARTADOS_SIN_PAGAR_POR_WHATSAPP) {
     throw new ErrorDeDatos(
       'demasiados_intentos',
-      `Ya tienes ${sinPagar} mesas apartadas sin pagar. Paga una, o espera unos minutos a que se liberen.`,
+      `Ya tienes ${sinPagar} reservas apartadas sin pagar. Paga una, o espera unos minutos a que se liberen.`,
     )
   }
   if (mesasLibres(config, reservas, s.deporte, s.fecha, s.inicio, s.duracion, ahora) < 1) {
     throw new ErrorDeDatos('sin_lugar', 'Alguien acaba de tomar la última mesa de ese horario. Elige otro.')
   }
-  const { precio, conPromo } = precioDe(config, s.deporte, s.inicio, s.duracion)
+  const { precio, conPromo } = precioDe(config, s.deporte, s.inicio, s.duracion, modalidad)
+  const palas = precioDePalas(d, s.palasExtra)
   return {
     id: nuevoId(),
     folio: nuevoFolio(),
@@ -66,8 +87,10 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
     duracion: s.duracion,
     precio,
     conPromo,
-    partesElegidas: partes,
-    partes: repartir(precio, partes).map((monto, i) => ({ id: nuevoId(), monto, delOrganizador: i === 0, concepto: 'reserva', pago: null })),
+    ...(modalidad === 'pareja' ? { modalidad } : {}),
+    ...(palas ? { palasExtra: palas } : {}),
+    partesElegidas: 1,
+    partes: [{ id: nuevoId(), monto: precio + palas, delOrganizador: true, concepto: 'reserva', pago: null }],
     organizador: { nombre, whatsapp },
     origen: 'sitio',
     estado: 'apartada',
@@ -175,12 +198,18 @@ export function confirmarPagoEnLinea(ctx: Contexto, r: Reserva, parteIds: string
 }
 
 /**
- * El cliente cancela desde su link. Siempre se puede antes de empezar (libera
- * la mesa para otro). Si pagó en línea, la devolución queda por revisar: la
- * decide el negocio caso por caso.
+ * Soltar un apartado SIN pagar desde el sitio (la ficha lo hace cuando el
+ * cliente cambia de hora antes de abrir el pago). Lo pagado ya no se cancela
+ * desde el link: desde el 21/10/2026 los cambios y cancelaciones se piden con
+ * 24 h de anticipación por WhatsApp o Instagram y los hace recepción
+ * (política 02). El botón se quitó; esto impide que una petición directa lo
+ * haga igual.
  */
 export function cancelarComoCliente(ctx: Contexto, r: Reserva): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Esta reserva ya estaba cancelada.')
+  if (r.estado !== 'apartada' || pagado(r) > 0) {
+    throw new ErrorDeDatos('no_permitido', 'Los cambios y cancelaciones se piden por WhatsApp o Instagram con al menos 24 horas de anticipación.')
+  }
   if (instante(r.fecha, r.inicio) <= ctx.ahora) throw new ErrorDeDatos('no_permitido', 'La reserva ya empezó. Habla con recepción.')
   const nueva = copia(r)
   abrirDevolucion(nueva)
@@ -190,7 +219,7 @@ export function cancelarComoCliente(ctx: Contexto, r: Reserva): Reserva {
 }
 
 /**
- * Mercado Pago cobró un pago que ya no se pudo aplicar (se fue la mesa, o
+ * Clip cobró un pago que ya no se pudo aplicar (se fue la mesa, o
  * alguien pagó esas partes antes). La reserva no cambia; el dinero queda por
  * devolver junto con lo que ya hubiera pendiente.
  */

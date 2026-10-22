@@ -22,7 +22,7 @@ negocio. Al final está el
 4. [Precios](#3-precios)
 5. [Promo](#4-promo)
 6. [Cómo reserva un cliente, paso a paso](#5-cómo-reserva-un-cliente-paso-a-paso)
-7. [Pago y pago dividido](#6-pago-y-pago-dividido)
+7. [Pago](#6-pago)
 8. [Cancelaciones, retrasos y cambios](#7-cancelaciones-retrasos-y-cambios)
 9. [Límites contra abusos](#8-límites-contra-abusos)
 10. [WhatsApp](#9-whatsapp)
@@ -41,33 +41,35 @@ negocio. Al final está el
 
 | Palabra | Qué significa |
 |---|---|
-| **Mesa** | Una mesa de Ping Pong, un tablero de Cornhole o uno de Popdarts. Lo que se renta. |
+| **Mesa** | Una mesa de Ping Pong o un tablero de Cornhole. Lo que se renta. |
 | **Reserva** | Una mesa de un deporte, un día, a una hora, por una duración. **No** lleva número de mesa: la mesa concreta la asigna recepción cuando llegan. |
-| **Organizador** | Quien hace la reserva en el sitio. Da nombre y WhatsApp. Responde por lo que falte pagar. |
-| **Parte** | Lo que le toca pagar a cada quien cuando el pago se divide (entre 2 o entre 4). |
-| **Link de cobro** | El link que el organizador manda a sus amigos para que cada quien pague su parte. |
-| **Link privado** | El link que solo tiene el organizador: ahí ve quién ha pagado, vuelve a compartir el cobro y puede cancelar. |
-| **Bloque** | Un tramo de horario abierto. Entre semana hay uno (5–10 PM); sábado y domingo, dos (9 AM–12 PM y 5–10 PM). |
+| **Modalidad** | En Cornhole: **estándar** (4 personas, 2 vs 2) o **para 2 personas** (1 vs 1), cada una con su precio. |
+| **Palas extra** | En Ping Pong la mesa trae 2 palas; se pueden rentar 2 más (para jugar dobles). |
+| **Organizador** | Quien hace la reserva en el sitio. Da nombre y WhatsApp. |
+| **Link privado** | El link que solo tiene el organizador: su ticket, lo pagado y las reglas. |
+| **Bloque** | Un tramo de horario abierto (ver sección 2). |
 | **Recepción** | Quien atiende el mostrador del local y usa el panel. |
 | **Panel** | La aplicación interna del negocio (en laptop) para recepción y para Hugo. |
-| **Cliente sin reserva** | Quien llega al local sin haber reservado. Recepción lo anota en el panel. |
+| **Cliente sin reserva** | Quien llega al local sin haber reservado. Recepción lo anota y cobra en el panel. |
 
 ---
 
 ## 1. Qué se renta
 
-| Deporte | Mesas | Duraciones | Jugadores |
-|---|---|---|---|
-| Ping Pong | **6** | 30, 60, 90, 120 min | Se elige pagar todo, entre 2 o entre 4 |
-| Cornhole | **6** (puede subir a 8) | 60, 90, 120 min | Se elige pagar todo, entre 2 o entre 4 |
-| Popdarts | **3** | 60, 90, 120 min | No se pregunta. Se paga completo. |
+| Deporte | Mesas | En línea | En el local | Opciones |
+|---|---|---|---|---|
+| Ping Pong | **6** | 1 h o 2 h | 30, 60, 90, 120 min | **2 palas extra** por $50 (la mesa trae 2) |
+| Cornhole | **6** (puede subir a 8) | 1 h o 2 h | 60, 90, 120 min | **Estándar (4 personas)** o **para 2 personas** |
 
+- Popdarts **salió** el 21/10/2026. Las reservas viejas de Popdarts que haya en
+  la base se quedan guardadas, pero no salen en ninguna pantalla.
 - Hugo no sabe todavía si le caben 8 tableros de Cornhole. **Se arranca con 6**
   y él lo cambia desde el panel. Es mejor vender de menos que de más: vender de
   más deja a alguien que ya pagó sin tablero.
 - Hugo puede marcar una mesa **fuera de servicio** desde el panel (se
   descompuso, se está limpiando). Mientras esté así, cuenta como una mesa menos.
-- Cornhole y Popdarts **no** tienen 30 minutos.
+- **En línea solo se reserva 1 hora o 2 horas.** Media hora (Ping Pong) y hora y
+  media se cobran solo en el local.
 
 ---
 
@@ -77,8 +79,10 @@ negocio. Al final está el
 
 | Días | Bloques abiertos |
 |---|---|
-| Lunes a viernes | 5:00 PM – 10:00 PM |
-| Sábado y domingo | 9:00 AM – 12:00 PM **y** 5:00 PM – 10:00 PM |
+| Lunes a jueves | 5:00 PM – 10:00 PM |
+| Viernes | 5:00 PM – 11:00 PM |
+| Sábado | 9:00 AM – 12:00 PM **y** 5:00 PM – 11:00 PM |
+| Domingo | 9:00 AM – 12:00 PM **y** 5:00 PM – 10:00 PM |
 
 - Hugo puede cambiar el horario y marcar **días cerrados** (festivos, eventos
   privados) desde el panel.
@@ -88,77 +92,73 @@ negocio. Al final está el
 
 ### Horas de inicio
 
-- Se puede empezar **cada 30 minutos**: 5:00, 5:30, 6:00…
-- **La reserva tiene que terminar antes del cierre de su bloque.** Si faltan 30
-  minutos para cerrar, no se vende una mesa de 1 hora. Una reserva nunca cruza
-  de un bloque a otro (no existe "de 11:30 AM a 5:30 PM").
+- **En línea se empieza solo en hora cerrada**: 5:00, 6:00, 7:00… (no 5:30).
+- **La reserva tiene que terminar antes del cierre de su bloque.** No se vende
+  una mesa de 2 horas si faltan 90 minutos para cerrar. Una reserva nunca cruza
+  de un bloque a otro (no existe "de 11 AM a 5 PM").
 
-Última hora de inicio según la duración:
+Última hora de inicio en línea según la duración:
 
-| Duración | Bloque que cierra a las 10 PM | Bloque que cierra a las 12 PM |
-|---|---|---|
-| 30 min | 9:30 PM | 11:30 AM |
-| 60 min | 9:00 PM | 11:00 AM |
-| 90 min | 8:30 PM | 10:30 AM |
-| 120 min | 8:00 PM | 10:00 AM |
+| Duración | Cierra a las 10 PM | Cierra a las 11 PM | Cierra a las 12 PM |
+|---|---|---|---|
+| 1 hora | 9:00 PM | 10:00 PM | 11:00 AM |
+| 2 horas | 8:00 PM | 9:00 PM | 10:00 AM |
 
 ### Qué tan pronto y qué tan lejos
 
 - **Para hoy:** hasta **30 minutos antes** de la hora de inicio. A las 6:40 PM
-  ya no se puede reservar las 7:00 PM, pero sí las 7:30 PM.
+  ya no se puede reservar las 7:00 PM, pero sí las 8:00 PM.
 - **Hacia adelante:** **7 días**, y la ventana se va recorriendo un día a la
-  vez. Si hoy es sábado 26, se puede reservar hasta el sábado 3 (incluido). El
-  domingo 27 se abre el domingo 4, y así.
+  vez. Si hoy es sábado 26, se puede reservar hasta el sábado 3 (incluido).
 
 ### Disponibilidad
 
-- Una reserva ocupa **una mesa durante todo su tiempo**. Una de 90 minutos a
-  las 7:00 ocupa la mesa a las 7:00, 7:30, 8:00 y 8:30 (hasta las 8:30). Para
-  saber si cabe una reserva nueva, se revisa **cada media hora** que va a
-  ocupar: en todas tiene que quedar al menos una mesa libre.
+- Una reserva ocupa **una mesa durante todo su tiempo**. Para saber si cabe una
+  reserva nueva, se revisa todo el tiempo que va a ocupar: en todo momento tiene
+  que quedar al menos una mesa libre.
 - Cuentan como ocupadas: las reservas confirmadas, las que están apartadas
   mientras alguien paga (ver [apartado de 10 minutos](#el-apartado-de-10-minutos))
   y los clientes sin reserva que anotó recepción.
+- Las dos modalidades de Cornhole usan los **mismos tableros**.
 - Mesas disponibles = mesas del deporte − mesas fuera de servicio.
 
 ---
 
 ## 3. Precios
 
-**El precio es por mesa. No cambia por cuántos jueguen.**
+**El precio es por mesa.** En Cornhole depende de la modalidad.
 
-| | 30 min | 60 min | 90 min | 120 min |
+| | 30 min | 1 h | 1:30 | 2 h |
 |---|---|---|---|---|
 | Ping Pong | $100 | $150 | $220 | $280 |
-| Cornhole | — | $300 | $440 | $560 |
-| Popdarts | — | $120 | $180 | $240 |
+| Cornhole estándar (4 personas) | — | $280 | $410 | $540 |
+| Cornhole para 2 personas | — | $200 | $290 | $380 |
 
-- Hugo edita los precios desde el panel.
+- **Palas extra (Ping Pong):** $50 por 2 palas más. Se suman al total de la
+  reserva.
+- Hugo edita los precios desde el panel (Ajustes), incluidos los de 2 personas y
+  el de las palas.
 - **Cada reserva conserva el precio con el que se hizo.** Si Hugo sube un precio,
-  las reservas ya hechas no cambian: quien ya pagó su parte no se encuentra con
-  que ahora le falta dinero.
-- **La comisión de Mercado Pago la absorbe el negocio.** El cliente ve $300 y
-  paga $300. (Referencia: ~3.49% + $4 + IVA por cobro. Dividir entre 4 son 4
-  cobros, así que le cuesta al negocio unos $13 más que un solo pago.)
+  las reservas ya hechas no cambian.
+- **La comisión de Clip la absorbe el negocio.** El cliente ve $280 y paga $280.
+  Como ya no se divide el pago, hay una sola comisión por reserva.
 
 ---
 
 ## 4. Promo
 
-| | Precio normal (60 min) | Con promo |
+| | Precio normal (1 h) | Con promo |
 |---|---|---|
 | Ping Pong | $150 | **$120** |
-| Cornhole | $300 | **$240** |
-| Popdarts | $120 | sin promo |
+| Cornhole estándar | $280 | **$240** |
+| Cornhole para 2 personas | $200 | sin promo |
 
-**Cuándo aplica:** reservas de **60 minutos** que **empiezan a las 5:00 PM o a
-las 5:30 PM**, **todos los días** (también sábado y domingo en su bloque de la
-tarde).
+**Cuándo aplica:** reservas de **1 hora** que **empiezan a las 5:00 PM**,
+**todos los días**.
 
-- **No** aplica a 30, 90 ni 120 minutos.
+- **No** aplica a otras duraciones ni a la modalidad para 2 personas (ya es más
+  barata que la promo).
 - **No** aplica en el bloque de la mañana del fin de semana.
-- La reserva entera se cobra a precio de promo (de 5:30 a 6:30 cuesta $120 en
-  Ping Pong, no se prorratea).
 - Hugo la **prende y apaga** desde el panel, y edita sus precios.
 
 ---
@@ -166,156 +166,116 @@ tarde).
 ## 5. Cómo reserva un cliente, paso a paso
 
 1. **Elige el deporte.**
-2. **Elige día, duración y hora.** Solo aparecen las horas en que cabe la
-   reserva (sección 2). Las llenas se ven como "Lleno".
-3. **Si es Ping Pong o Cornhole, elige cómo pagar:** “Pagar el total”
-   o “Pagar mi parte”. Al elegir su parte, indica si divide entre 2 o 4
-   personas. En Popdarts se paga completo.
-4. **Escribe su nombre y su WhatsApp** (10 dígitos). Antes de pagar ve el
-   resumen y **las reglas**: cuánto tiempo queda apartada la mesa mientras
-   paga, 30 minutos de tolerancia, que lo que no se pague lo cubre él, y el
-   aviso de privacidad. Las devoluciones no son automáticas: las decide el
-   negocio (sección 7).
-5. **Paga con Mercado Pago:** todo, o solo su parte. Mientras paga, la mesa
-   queda apartada 10 minutos.
-6. **Confirmación:** ve su reserva y tres botones:
-   - **"Mandar link a mis amigos"**: abre WhatsApp con el link de cobro ya
-     escrito (solo si dividió el pago).
-   - **"Enviarme el link por WhatsApp"**: abre su propio chat ("Tú") con su
-     link privado, para no perderlo.
+2. **En Cornhole, elige cuántos juegan:** 4 personas (estándar) o 2 personas.
+3. **Elige día, duración (1 h o 2 h) y hora.** Solo aparecen las horas en que
+   cabe la reserva (sección 2). Las llenas se ven como "Lleno".
+4. **En Ping Pong, puede agregar 2 palas extra** (+$50).
+5. **Escribe su nombre y su WhatsApp** (10 dígitos). Antes de pagar ve el total
+   y **las reglas**: cuánto tiempo queda apartada la mesa mientras paga, que el
+   tiempo empieza a la hora reservada (30 minutos de tolerancia), y que los
+   cambios o cancelaciones se piden con 24 horas de anticipación por WhatsApp o
+   Instagram. Acepta **las políticas** y **el aviso de privacidad** (los dos
+   se abren en otra pestaña para no perder lo capturado).
+6. **Paga el total con Clip.** Mientras paga, la mesa queda apartada 10 minutos.
+7. **Confirmación:** su ticket con **"¡Listo, ya se armó la reta!"**, las
+   **reglas de su juego** y las **políticas** de Reta Saca. Tiene dos botones:
+   - **"Guardar mi link en WhatsApp"**: abre su propio chat ("Tú") con su link
+     privado, para no perderlo.
    - **"Avisar al negocio"**: abre WhatsApp al número del negocio con los datos
-     de la reserva.
+     de la reserva (aparece cuando Hugo ponga el número).
 
-Al llegar al local, recepción le asigna la mesa y cobra lo que falte.
+Al llegar al local, recepción le asigna la mesa. Lo que se agregue ahí (tiempo
+extra) se cobra en el local.
 
 ---
 
-## 6. Pago y pago dividido
+## 6. Pago
 
-Funciona como Playtomic: una persona reserva y paga su parte, y comparte un
-link para que los demás paguen la suya. Lo que no se pague en línea se paga en
-el local.
-
-### Quién paga qué
-
-- **Popdarts:** se paga completo al reservar. No se divide.
-- **Ping Pong y Cornhole:** el organizador elige:
-  - **Pago completo:** paga todo él.
-  - **Entre 2:** paga 1 de 2 partes.
-  - **Entre 4:** paga 1 de 4 partes.
-
-### Partes en pesos cerrados
-
-Las partes son en pesos enteros. Si no sale exacto, **el organizador absorbe la
-diferencia**. Con los precios de hoy solo pasa con Ping Pong de 60 min sin
-promo, entre 4:
-
-| Total | Entre 2 | Entre 4 |
-|---|---|---|
-| $150 (Ping Pong 60 min) | $75 y $75 | **organizador $39**, los otros tres $37 |
-| $220 | $110 y $110 | $55 cada quien |
-| $300 | $150 y $150 | $75 cada quien |
-
-Regla: parte = total ÷ partes, redondeado hacia abajo; el organizador paga su
-parte más lo que sobre.
-
-### Cuándo queda firme la mesa
-
-- **Con el primer pago** (la parte del organizador), la mesa ya es suya,
-  aunque los demás nunca paguen.
-- Lo que falte **lo cubre el organizador**. Recepción ve en el panel "faltan
-  $150" y se lo cobra antes de que se vayan.
+Desde el 21/10/2026 **se paga siempre el monto completo al reservar** (política
+03). Ya no hay pago dividido ni link de cobro para los amigos.
 
 ### El apartado de 10 minutos
 
 Si queda una sola mesa y dos personas la quieren a la vez, **gana quien paga
 primero**, sin vender la misma mesa dos veces:
 
-1. Ana elige la mesa y toca "Pagar": la mesa queda **apartada 10 minutos** a su
-   nombre. Quien entre en ese momento la ve como "Lleno".
+1. Ana elige la mesa y desliza para pagar: la mesa queda **apartada 10
+   minutos** a su nombre. Quien entre en ese momento la ve como "Lleno".
 2. Si Ana paga, queda firme.
 3. Si en 10 minutos no pagó (se arrepintió, se le cayó la señal), la mesa **se
    libera sola**.
+4. Si sale de Clip sin pagar y regresa, puede volver a deslizar: paga la
+   **misma** reserva, no aparta otra mesa.
 
-### El link de cobro
+### Reservas divididas de antes
 
-Desde la corrección del 19/10/2026, iniciar un pago bloquea temporalmente las
-partes elegidas: no se abre otro checkout para esas mismas partes mientras
-el primero siga vigente. Las otras partes se pueden pagar al mismo tiempo.
-Excepción: el **organizador** (link privado) siempre puede reintentar su
-pago; su intento anterior deja de bloquear (corrección del 19/10/2026).
-El checkout del organizador vence con su apartado; el de un amigo vence tras
-los minutos de apartado configurados (10 inicialmente). La pantalla distingue
-“Pago en proceso” de “Pagado”. Un pago aprobado cuyo aviso llega tarde se
-sigue conciliando con las reglas existentes; el vencimiento del checkout no
-permite ignorar dinero que Mercado Pago ya cobró.
-
-- Lo abre cualquiera. Pide **solo el nombre** de quien paga.
-- Ofrece dos botones: **"Pagar mi parte ($75)"** y **"Pagar lo que falta
-  ($150)"**, para que el organizador (o cualquiera) pueda cerrar la cuenta en
-  línea antes de llegar.
-- Muestra quién ya pagó (solo nombres) y cuánto falta.
-- Funciona hasta que termina la reserva.
+Las reservas que se dividieron antes del 21/10/2026 conservan su link de cobro
+(`/c/…`) hasta que termine la reserva. Iniciar un pago bloquea las partes
+elegidas mientras su cobro siga vigente; el organizador siempre puede
+reintentar el suyo.
 
 ### Pagos en el local
 
-- Lo que no se pagó en línea se paga en el local en **efectivo, tarjeta o
-  tarjeta** (sin transferencia). Recepción lo marca en el panel y elige el medio.
+- Lo que se cobra en el local (clientes sin reserva, tiempo extra) se paga en
+  **efectivo o tarjeta** (sin transferencia). Recepción lo marca en el panel y
+  elige el medio.
 - Queda registrado **quién de recepción** lo marcó.
 
-### Medio de pago en línea: Mercado Pago
+### Medio de pago en línea: Clip
 
-- **Mercado Pago**, porque el cliente de la región ya tiene cuenta y paga en
-  dos toques con su saldo o su tarjeta guardada.
-- **Pagos en OXXO apagados:** un pago en OXXO se confirma horas después, y la
-  mesa no puede quedar apartada tanto tiempo.
+- **Clip** (checkout de Clip con link de pago), desde el 21/10/2026; antes fue
+  Mercado Pago. El motivo: Clip cobra un porcentaje sin cuota fija por pago.
+- Solo tarjeta, que se confirma al momento. La mesa no puede quedar apartada
+  esperando un pago que se confirma horas después.
 - La cuenta es **del negocio**, a nombre del mismo titular que factura (ver
-  [Pendientes de Hugo](#pendientes-de-hugo)).
+  [Pendientes de Hugo](#pendientes-de-hugo)). Mientras no esté su llave
+  (`CLIP_API_KEY`), el pago en línea es la pantalla de prueba.
 
 ---
 
 ## 7. Cancelaciones, retrasos y cambios
 
-### Devoluciones: las decide el negocio, por transferencia
+### Cambios y cancelaciones: con 24 horas, por WhatsApp o Instagram
+
+- **El cliente ya no cancela desde su link** (política 02). Los cambios y
+  cancelaciones se piden con **al menos 24 horas de anticipación** por WhatsApp
+  o Instagram, y los hace recepción desde el panel.
+- Lo único que el sitio sí suelta solo es un **apartado sin pagar** (por ejemplo,
+  si el cliente cambia de hora antes de pagar).
+
+### Reembolsos: los decide el negocio
 
 - **El sistema no devuelve dinero ni promete devolverlo.** Si una reserva
   cancelada tenía pagos en línea, queda con **"devolución por revisar"** y el
-  negocio decide **caso por caso** si devuelve.
-- Si devuelve, lo hace **por transferencia** desde su banco. El cliente le manda
-  su folio y su **CLABE por WhatsApp** con un botón de su página de reserva; el
-  sitio **no pide ni guarda datos bancarios**.
+  negocio decide **caso por caso**.
+- Si reembolsa, lo hace **por el método de pago original** (desde Clip) o **en
+  efectivo en el local**, si el cliente acepta (política 02). El sitio **no
+  pide ni guarda datos bancarios**.
 - En el panel, **Caja → Devoluciones por revisar** junta las pendientes de
-  cualquier fecha. Recepción marca **"Ya se transfirió"** (deja de contar como
+  cualquier fecha. Recepción marca **"Ya se reembolsó"** (deja de contar como
   cobrado) o **"Sin devolución"**; queda quién lo marcó y cuándo, y el cliente
   lo ve en su página.
 - Lo cobrado **en el local** no entra: eso se arregla en persona y ya está
   cuadrado en la caja de su día.
-
-### Si cancela el cliente
-
-- Cancela desde su link privado, en cualquier momento **antes de que empiece**.
-  La mesa se libera para alguien más.
-- Antes de confirmar, la página le dice que lo pagado en línea no se devuelve
-  solo: lo revisa el negocio.
 
 ### Si cancela el negocio
 
 (Se descompuso una mesa, evento privado, se fue la luz…)
 
 - Recepción cancela desde el panel y le avisa al organizador con el botón de
-  WhatsApp. Lo pagado en línea queda por devolver en Caja, igual que arriba.
+  WhatsApp. Lo pagado en línea queda por revisar en Caja, igual que arriba.
 
 ### Si llegan tarde
 
-- Hay **30 minutos de tolerancia**. Si a los 30 minutos no ha llegado nadie,
-  recepción puede **liberar la mesa**, sin devolución.
-- Llegar tarde **no recorre** la reserva: si era de 7:00 a 8:00 y llegan 7:15,
-  juegan hasta las 8:00.
+- El tiempo reservado empieza a la hora acordada aunque lleguen tarde (política
+  01). Si a los **30 minutos** no ha llegado nadie, recepción puede **liberar la
+  mesa**, sin devolución.
 
 ### Si quieren jugar más
 
 - Recepción **extiende** la reserva desde el panel **si la mesa sigue libre**, y
-  cobra ahí mismo (efectivo o tarjeta).
+  cobra ahí mismo (efectivo o tarjeta). En Cornhole para 2 personas, el tiempo
+  extra sale de su tabla.
 - "Libre" quiere decir dos cosas: que haya mesa en el inventario para ese
   tiempo extra **y** que la mesa donde ya están sentados no se la hayan dado
   a otro grupo. Si el grupo de las 8 ya está en su mesa, el panel avisa quién
@@ -325,9 +285,8 @@ permite ignorar dinero que Mercado Pago ya cobró.
 
 - **Solo recepción** cambia el horario de una reserva, desde el panel, porque
   tiene que revisar que haya lugar y a veces cambia el precio. El cliente lo
-  pide por WhatsApp.
-- El sitio **no** deja que el cliente cambie su horario: con el pago dividido se
-  complica (¿qué pasa con lo que ya pagaron los amigos?).
+  pide por WhatsApp o Instagram, con 24 horas de anticipación.
+- Las reservas se mueven a horas cerradas, igual que en línea.
 
 ---
 
@@ -353,8 +312,8 @@ permite ignorar dinero que Mercado Pago ya cobró.
 
 - **Sin mensajes automáticos** (por ahora). Todo son **botones que abren
   WhatsApp con el mensaje ya escrito**: es gratis y no requiere trámite con Meta.
-- Botones del cliente: mandar el link de cobro a sus amigos, mandarse su link
-  privado a sí mismo, avisar al negocio.
+- Botones del cliente: mandarse su link privado a sí mismo y avisar al negocio.
+  Los cambios y cancelaciones los pide él por WhatsApp o Instagram.
 - Botones de recepción (en el panel): reenviarle al organizador su link
   privado, avisarle de un cambio o cancelación.
 - Si un día el volumen lo justifica, se pasa a la API de WhatsApp Business
@@ -416,14 +375,13 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 - Del **organizador** se pide: nombre y WhatsApp.
 - De quien **paga una parte**: solo su nombre.
 - **Sin cuentas** de cliente.
-- Los datos de tarjeta **nunca** pasan por nuestro sistema: los maneja Mercado
-  Pago.
+- Los datos de tarjeta **nunca** pasan por nuestro sistema: los maneja Clip.
 - Hace falta un **aviso de privacidad** (lo pide la ley en México) y las reglas
   de la reserva visibles **antes de pagar**. Se redacta un borrador y Hugo lo
   revisa (idealmente con su contador o abogado). **Sin eso no se cobra.**
 - **El repositorio es público**: ninguna llave, contraseña ni dato de clientes
-  va en el código. Las llaves (Mercado Pago, Supabase) van en variables de
-  entorno de Netlify.
+  va en el código. Las llaves (Clip, Supabase) van en los secretos de
+  Supabase o en variables de entorno.
 
 ---
 
@@ -436,30 +394,31 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
 | Demostración | Netlify, cuenta temporal, proyecto `retasaca-demo` → `retasaca-demo.netlify.app` | Solo para pruebas: datos en el navegador, reloj de prueba y "Simular reserva en línea". Se borra cuando ya no haga falta. |
 | Dominio | `retasaca.com`, comprado por Hugo en GoDaddy (22/09/2026, vence 22/09/2029) | Hoy apunta a **otro** sitio de Netlify que hizo Hugo (`retasaca.netlify.app`, sin guion) con la demostración vieja. Se liga a nuestro sitio al abrir al público. |
 | Base de datos | Supabase, proyecto de la cuenta del negocio | **En uso**: reservas, pagos, configuración y usuarios del panel (ver `BASE-DE-DATOS.md`). |
-| Pagos | Mercado Pago | **Conectado con una llave de prueba** (cobra de mentira). Para cobrar de verdad, Hugo crea su cuenta y se cambia la llave `MP_ACCESS_TOKEN`. |
+| Pagos | Clip (desde el 21/10/2026; antes Mercado Pago) | **Falta la cuenta del negocio.** Hugo crea su cuenta de Clip y pone su llave `CLIP_API_KEY` en los secretos de Supabase. Mientras tanto, el pago en línea es la pantalla de prueba. Clip no acepta llaves de prueba en este cobro: la primera prueba de verdad es con un pago real chico que se reembolsa. |
 
 ---
 
 ## Qué ya está hecho y qué falta
 
-### Hecho (al 01/10/2026)
+### Hecho (al 21/10/2026)
 
 El sitio y el panel siguen **todas** las reglas de este documento **con datos
 reales en Supabase**: el servidor decide precio, lugar, hora y permisos. El
-cobro en línea va por Mercado Pago con una llave de prueba. La versión
+cobro en línea está conectado a Clip y espera la llave del negocio. La versión
 simulada (datos en el navegador) sigue existiendo para la demostración y las
 pruebas. Ver `BASE-DE-DATOS.md` y `CONTRATO-DE-DATOS.md`.
 
 | Tema | Estado |
 |---|---|
-| Horario por bloques, inicios cada 30 min, terminar antes del cierre | Hecho |
+| Horario por bloques, inicios en hora cerrada en línea, terminar antes del cierre | Hecho |
 | Ventana de 7 días, corte de 30 min, días cerrados | Hecho (la hora la decide el servidor) |
-| Precio por mesa, promo 5:00 / 5:30, Popdarts sin dividir | Hecho |
+| Precio por mesa, promo de las 5:00, Cornhole para 2 personas, palas extra | Hecho |
 | Disponibilidad por tramo completo (una reserva de 90 min ocupa la media hora siguiente) | Hecho |
-| Pago dividido: partes en pesos cerrados, apartado de 10 min, firme con el primer pago | Hecho (Mercado Pago con llave de prueba) |
-| Link privado `/r/…` y link de cobro `/c/…` ("mi parte" y "lo que falta") | Hecho |
-| Cancelación con devolución por revisar y reservas sin límite por WhatsApp, sujetas a disponibilidad | Hecho |
-| Botones de WhatsApp (compartir cobro, enviarme mi link, avisar al negocio) | Hecho ("Avisar al negocio" aparece cuando Hugo ponga el número) |
+| Pago completo al reservar, apartado de 10 min | Hecho (Clip conectado; falta la llave del negocio) |
+| Link privado `/r/…` con ticket, reglas del juego y políticas | Hecho |
+| Cancelaciones por recepción con reembolso por revisar | Hecho |
+| Botones de WhatsApp (enviarme mi link, avisar al negocio) | Hecho ("Avisar al negocio" aparece cuando Hugo ponga el número) |
+| Página de políticas y reglas `/politicas` | Hecho |
 | Panel: mesas ahora, sentar, cobrar en el local, extender, cambiar, cancelar, liberar | Hecho |
 | Panel: semana, caja del día | Hecho |
 | Panel: plano de mesas con el dibujo de cada juego, aviso de tiempo cumplido, reservas del día por hora | Hecho |
@@ -469,9 +428,9 @@ pruebas. Ver `BASE-DE-DATOS.md` y `CONTRATO-DE-DATOS.md`.
 
 ### Falta
 
-1. **Mercado Pago de producción**: cambiar la llave de prueba por la de la
-   cuenta del negocio. Espera que Hugo cree su cuenta. Las devoluciones no
-   pasan por Mercado Pago: el negocio transfiere.
+1. **Clip de producción**: Hugo crea su cuenta y pone su llave `CLIP_API_KEY`
+   en los secretos de Supabase; después se borra `PAGOS_SIMULADOS` (y el
+   secreto viejo `MP_ACCESS_TOKEN`). Se prueba con un pago real chico.
 2. **Registro de movimientos de dinero** (cada cobro y cada devolución con su
    fecha y su número de pago), antes de cobrar con dinero real. Ver la
    revisión de seguridad del 01/10/2026, prioridad 2.
@@ -481,12 +440,13 @@ pruebas. Ver `BASE-DE-DATOS.md` y `CONTRATO-DE-DATOS.md`.
 
 ## Pendientes de Hugo
 
-- [ ] **Crear la cuenta de Mercado Pago del negocio** y pasarnos las llaves de
-      la API (por un medio privado, nunca por el repositorio).
-- [ ] **Datos del titular** para el aviso de privacidad y Mercado Pago (el
+- [ ] **Crear la cuenta de Clip del negocio** y poner su llave de la API en los
+      secretos de Supabase (nunca por el repositorio ni por chat).
+- [ ] **Datos del titular** para el aviso de privacidad y Clip (el
       mismo en los dos y en las facturas): nombre legal o razón social, RFC,
       domicilio del local, correo y WhatsApp de contacto.
-- [ ] **Número de WhatsApp del negocio** para el botón "Avisar al negocio".
+- [ ] **Número de WhatsApp del negocio** para el botón "Avisar al negocio", y
+      el **Instagram** que mencionan las políticas para cambios y cancelaciones.
 - [ ] Confirmar cuántos tableros de Cornhole caben (hoy: 6).
 - [ ] Cuando toque, dar acceso o quitar `retasaca.com` de su sitio de Netlify
       para ligarlo al nuestro.
@@ -502,7 +462,8 @@ Salieron al construir el sistema. Hoy funcionan como dice la columna
 |---|---|
 | **Cuánto se cobra al extender** | La diferencia de la tabla: de 60 a 90 min en Ping Pong = $220 − $150 = **$70**. Si pasa de 2 horas, el precio de lo que se agrega por separado. |
 | **Cambiar a un horario más caro o más barato** | Si el nuevo cuesta más (por ejemplo, pierde la promo), la diferencia queda por cobrar en el local. Si cuesta menos, **no se devuelve nada**. |
-| **Promo para clientes sin reserva** | Cuenta la media hora en que llegan: si llegan a las 5:10 PM, entran en la promo de las 5:00. |
+| **Promo para clientes sin reserva** | Cuenta la hora en que llegan: si llegan a las 5:10 PM, entran en la promo de las 5:00. |
+| **Política 31: en el local se empieza con la mitad del pago** | El panel cobra el total al registrar a un cliente sin reserva. Si el negocio quiere cobrar la mitad al empezar, hay que cambiar la caja. |
 
 ## Para después
 
@@ -576,3 +537,12 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 01/10/2026 | Límite a lo apartado sin pagar (2 por WhatsApp; 20 cada 10 min por conexión) y cabeceras de seguridad en el sitio | Revisión de seguridad: sin freno, un script podía dejar todas las mesas apartadas, y el panel se podía meter en un iframe ajeno. |
 | 19/10/2026 | El organizador puede reintentar su pago aunque tenga un checkout abierto | Su propio intento lo bloqueaba hasta que vencía el apartado: si salía de Mercado Pago sin pagar, perdía la mesa aunque la pantalla le decía que lo intentara otra vez. |
 | 19/10/2026 | Cada pago de Mercado Pago se registra por su id; un segundo pago del mismo cobro queda por devolver | Si alguien pagaba dos veces el mismo cobro, el segundo pago se ignoraba: el dinero entraba y no quedaba en la reserva, en la caja ni en devoluciones. |
+| 21/10/2026 | Sale Popdarts | Lo decidió el negocio. Las reservas viejas de Popdarts se quedan en la base, pero no salen en las pantallas. |
+| 21/10/2026 | Horario: lunes a jueves 5–10 PM; viernes 5–11 PM; sábado 9–12 y 5–11 PM; domingo 9–12 y 5–10 PM | Horario nuevo del negocio. |
+| 21/10/2026 | Cornhole estándar $280 / $410 / $540 y para 2 personas $200 / $290 / $380, sin promo para 2 | Precios del negocio. La estándar es para 4; la promo ($240) costaría más que la de 2 personas. |
+| 21/10/2026 | Ping Pong: 2 palas extra por $50 | La mesa trae 2 palas; para dobles se rentan 2 más. |
+| 21/10/2026 | En línea solo 1 o 2 horas, empezando en hora cerrada | Lo decidió el negocio; media hora y hora y media se cobran en el local. La promo de las 5:30 deja de existir. |
+| 21/10/2026 | Se paga completo al reservar; sale el pago dividido | Política 03. Una sola comisión por reserva. |
+| 21/10/2026 | Clip en lugar de Mercado Pago | Clip cobra un porcentaje sin cuota fija por pago. |
+| 21/10/2026 | El cliente ya no cancela desde su link; cambios y cancelaciones con 24 h por WhatsApp o Instagram | Política 02. Los reembolsos autorizados van por el método de pago original o en efectivo en el local. |
+| 21/10/2026 | Al terminar de reservar: "¡Listo, ya se armó la reta!", reglas del juego y políticas | Lo pidió el negocio. Las políticas también están en `/politicas`. |

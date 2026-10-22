@@ -1,10 +1,11 @@
 // Qué página se abre en cada dirección.
 //
 //   /              reservar (sitio del cliente)
-//   /r/<token>     link privado del organizador: su reserva, pagos, cancelar
-//   /c/<token>     link de cobro para los amigos
-//   /pago/<id>     pago SIMULADO (solo mientras no hay Mercado Pago)
+//   /r/<token>     link privado del organizador: su ticket, sus pagos y las reglas
+//   /c/<token>     link de cobro de las reservas que se dividieron antes del 21/10/2026
+//   /pago/<id>     pago SIMULADO (solo mientras no hay Clip)
 //   /privacidad    aviso de privacidad
+//   /politicas     políticas del negocio y reglas de cada juego
 //   /panel/…       panel del negocio (recepción y dueño)
 //
 // Las páginas se cargan por separado (lazy): quien reserva desde el teléfono
@@ -21,6 +22,7 @@ const MiReserva = lazy(() => import('../pantallas/mi-reserva/MiReserva'))
 const Cobro = lazy(() => import('../pantallas/cobro/Cobro'))
 const PagoSimulado = lazy(() => import('../pantallas/pago-simulado/PagoSimulado'))
 const Privacidad = lazy(() => import('../pantallas/privacidad/Privacidad'))
+const Politicas = lazy(() => import('../pantallas/politicas/Politicas'))
 const Panel = lazy(() => import('../panel/Panel'))
 
 export default function App() {
@@ -35,6 +37,7 @@ export default function App() {
             <Route path="c/:token" element={<Cobro />} />
             <Route path="pago/:id" element={<PagoSimulado />} />
             <Route path="privacidad" element={<Privacidad />} />
+            <Route path="politicas" element={<Politicas />} />
             <Route path="*" element={<NoExiste />} />
           </Route>
           <Route path="panel/*" element={<Panel />} />

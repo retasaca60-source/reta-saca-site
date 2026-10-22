@@ -2,7 +2,7 @@
 // Viven aquí (y no en datos/contrato.ts) porque las reglas las necesitan y
 // las reglas no dependen de los datos: el contrato las toma de aquí.
 
-import type { DeporteId, Duracion, Partes } from '../configuracion'
+import type { DeporteId, Duracion, Modalidad } from '../configuracion'
 import type { MedioDePago, Reserva } from '../reserva'
 
 export interface HorarioDisponible {
@@ -14,12 +14,16 @@ export interface HorarioDisponible {
   conPromo: boolean
 }
 
+/** Una reserva en línea. Se paga siempre completa (desde el 21/10/2026 ya no se divide). */
 export interface SolicitudDeReserva {
   deporte: DeporteId
   fecha: string
   inicio: number
   duracion: Duracion
-  partes: Partes
+  /** Cornhole para 2 personas. Sin el campo = estándar. */
+  modalidad?: Modalidad
+  /** Ping Pong: 2 palas extra. */
+  palasExtra?: boolean
   organizador: { nombre: string; whatsapp: string }
 }
 
@@ -50,6 +54,10 @@ export interface ClienteSinReserva {
   mesa?: string
   /** Cómo pagó en el mostrador. El comprobante es el ticket de la terminal. */
   medio: Exclude<MedioDePago, 'en_linea'>
+  /** Cornhole para 2 personas. Sin el campo = estándar. */
+  modalidad?: Modalidad
+  /** Ping Pong: 2 palas extra. */
+  palasExtra?: boolean
   /**
    * El total que recepción vio en pantalla y cobró en mano. Si el servidor
    * calcula otro (cambió la tarifa, terminó la promo, el reloj de la laptop
@@ -61,7 +69,12 @@ export interface ClienteSinReserva {
 
 /** Lo que cuesta AHORA un grupo sin reserva, según la hora del servidor. */
 export interface CotizacionSinReserva {
+  /** De la mesa. */
   precio: number
+  /** De las palas extra (0 si no se pidieron). */
+  palasExtra: number
+  /** Lo que se cobra: mesa más palas. Es lo que se compara con `precioEsperado`. */
+  total: number
   conPromo: boolean
   /** Minuto (Sonora) en que empezarían: la hora del servidor, no la del aparato. */
   inicio: number

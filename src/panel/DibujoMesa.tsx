@@ -1,6 +1,6 @@
 // La mesa de cada juego vista desde arriba, para el plano del panel. El estado
 // se lee en el dibujo mismo: libre es el juego solo; en juego aparecen las
-// cosas de los jugadores (paletas y pelota, costales, dardos clavados). Así
+// cosas de los jugadores (paletas y pelota, costales). Así
 // recepción ve de un vistazo qué está ocupado sin leer texto.
 
 import type { DeporteId } from '../negocio/configuracion'
@@ -10,7 +10,6 @@ export function DibujoMesa({ deporte, enJuego }: { deporte: DeporteId; enJuego: 
     <svg className="dibujo-mesa" viewBox="0 0 200 116" aria-hidden>
       {deporte === 'pingpong' && <PingPong enJuego={enJuego} />}
       {deporte === 'cornhole' && <Cornhole enJuego={enJuego} />}
-      {deporte === 'popdarts' && <Popdarts enJuego={enJuego} />}
     </svg>
   )
 }
@@ -76,50 +75,6 @@ function Cornhole({ enJuego }: { enJuego: boolean }) {
           <rect x="100" y="70" width="13" height="13" rx="3" fill="#1f5fbf" transform="rotate(22 106 76)" />
         </g>
       )}
-    </g>
-  )
-}
-
-function Popdarts({ enJuego }: { enJuego: boolean }) {
-  return (
-    <g>
-      {/* La diana de anillos sobre su base. */}
-      <ellipse cx="103" cy="62" rx="48" ry="48" fill="#262a31" opacity=".12" />
-      <circle cx="100" cy="58" r="48" fill="#fff" stroke="#262a31" strokeWidth="3" />
-      <circle cx="100" cy="58" r="38" fill="#1f5fbf" />
-      <circle cx="100" cy="58" r="28" fill="#fff" />
-      <circle cx="100" cy="58" r="18" fill="#d92d20" />
-      <circle cx="100" cy="58" r="8" fill="#ffc53d" />
-      {enJuego && (
-        <g>
-          {/* Dos dardos clavados, inclinados hacia afuera como quedan al
-              lanzarlos: uno de cada equipo. */}
-          <Dardo x={90} y={52} angulo={45} color="#0e8f6e" claro="#6fd3b3" />
-          <Dardo x={113} y={66} angulo={135} color="#262a31" claro="#9aa1ac" />
-        </g>
-      )}
-    </g>
-  )
-}
-
-/**
- * Un dardo de ventosa visto de tres cuartos. Se dibuja con la punta en (0,0) y
- * la cola hacia -x; `angulo` lo gira para que la cola apunte hacia afuera.
- */
-function Dardo({ x, y, angulo, color, claro }: { x: number; y: number; angulo: number; color: string; claro: string }) {
-  return (
-    <g transform={`translate(${x} ${y}) rotate(${angulo}) scale(1.35)`}>
-      {/* Sombra donde se pegó. */}
-      <ellipse cx="1" cy="2.5" rx="5" ry="2.5" fill="#000" opacity=".22" />
-      {/* Aletas en V y su lomo. */}
-      <path d="M-24 0 L-35 -8.5 L-31 -1.2 Z" fill={claro} stroke={color} strokeWidth=".9" strokeLinejoin="round" />
-      <path d="M-24 0 L-35 8.5 L-31 1.2 Z" fill={color} stroke={color} strokeWidth=".9" strokeLinejoin="round" />
-      {/* Varilla y cuerpo. */}
-      <rect x="-27" y="-1" width="15" height="2" rx="1" fill="#3a3f48" />
-      <rect x="-14" y="-2.4" width="11" height="4.8" rx="2.4" fill={color} />
-      <rect x="-12.5" y="-1.6" width="8" height="1.2" rx=".6" fill="#fff" opacity=".35" />
-      {/* La ventosa naranja, pegada a la diana. */}
-      <ellipse cx="-1.5" cy="0" rx="2.6" ry="3.6" fill="#ff8a1e" stroke="#c45f00" strokeWidth=".7" />
     </g>
   )
 }

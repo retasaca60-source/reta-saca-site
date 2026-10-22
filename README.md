@@ -1,7 +1,7 @@
 # Reta Saca
 
-Sitio de reservas de Reta Saca: renta de mesas de Ping Pong, tableros de
-Cornhole y Popdarts, con pago dividido entre amigos y un panel para recepción.
+Sitio de reservas de Reta Saca: renta de mesas de Ping Pong y tableros de
+Cornhole, con pago en línea por Clip y un panel para recepción.
 
 ## Empieza aquí
 
@@ -10,7 +10,7 @@ Si eres nuevo en el proyecto, léelo en este orden:
 1. **Este README**: dónde vive todo, cómo trabajamos dos personas sin pisarnos
    y cómo correr el sitio en tu computadora.
 2. **[`RESERVAS.md`](RESERVAS.md)**: **las reglas del negocio**, completas:
-   horario, precios, promo, pago dividido, cancelaciones, panel, qué ya está
+   horario, precios, promo, pago, cancelaciones, panel, qué ya está
    hecho y qué falta, y el porqué de cada decisión. Si el código y ese documento
    no coinciden, manda el documento.
 3. **[`src/README.md`](src/README.md)**: el mapa del código. Qué hay en cada
@@ -18,7 +18,7 @@ Si eres nuevo en el proyecto, léelo en este orden:
 4. **[`BASE-DE-DATOS.md`](BASE-DE-DATOS.md)**: la base de datos en Supabase:
    el diagrama de las tablas, quién puede tocar qué y cómo se sube un cambio.
 5. **[`CONTRATO-DE-DATOS.md`](CONTRATO-DE-DATOS.md)**: el contrato entre las
-   pantallas y los datos, y lo que falta de Mercado Pago.
+   pantallas y los datos, y cómo se cobra con Clip.
 6. **[`COMO-TRABAJAMOS.md`](COMO-TRABAJAMOS.md)**: las reglas para escribir
    código aquí.
 
@@ -28,7 +28,7 @@ Si eres nuevo en el proyecto, léelo en este orden:
 |---|---|
 | `RESERVAS.md` | Las reglas del negocio y las decisiones tomadas. |
 | `BASE-DE-DATOS.md` | Las tablas de Supabase, permisos y cómo subir cambios. |
-| `CONTRATO-DE-DATOS.md` | El contrato entre pantallas y datos; Mercado Pago. |
+| `CONTRATO-DE-DATOS.md` | El contrato entre pantallas y datos; Clip. |
 | `supabase/` | Migraciones (`migrations/`) y el servidor (`fuentes/`), que se empaqueta para la Edge Function. |
 | `src/` | El sitio y el panel (Vite + React + TypeScript). Ver `src/README.md`. |
 | `public/imagenes/` | Logo e íconos; se sirven tal cual. |
@@ -40,18 +40,21 @@ Si eres nuevo en el proyecto, léelo en este orden:
 **Funciona con datos reales en Supabase** (con `VITE_DATOS=real`) o en modo
 demostración con datos en el navegador (sin esa variable):
 
-- **El sitio del cliente** (`/`): reservar con las reglas de `RESERVAS.md`,
-  pagar entre 1, 2 o 4, pago simulado de Mercado Pago, link privado (`/r/…`)
-  y link de cobro para los amigos (`/c/…`).
+- **El sitio del cliente** (`/`): reservar con las reglas de `RESERVAS.md`
+  (Cornhole para 4 o 2 personas, palas extra en Ping Pong, 1 o 2 horas en hora
+  cerrada), pago completo con Clip (simulado mientras no esté su llave), link
+  privado (`/r/…`) con el ticket, las reglas del juego y las políticas
+  (`/politicas`).
 - **El panel** (`/panel`): mesas ahora, clientes sin reserva, sentar, cobrar en
   el local, extender, cambiar horario, cancelar, liberar, semana, caja del día,
   y la configuración de Hugo (mesas, precios, promo, horario, días cerrados,
   usuarios).
 - **Datos reales:** Supabase (ver `BASE-DE-DATOS.md`). Probado contra el
-  proyecto real: reservar, pagar entre amigos, link de cobro, cancelar y que
-  no se venda una mesa dos veces. El panel entra con usuario y contraseña.
-- **Lo que falta para abrir al público:** Mercado Pago (hoy el pago en línea es
-  de prueba) y la cuenta de dueño, que se crea en la entrega.
+  proyecto real: reservar, pagar, cancelar desde el panel y que no se venda
+  una mesa dos veces. El panel entra con usuario y contraseña.
+- **Lo que falta para abrir al público:** la cuenta de Clip del negocio (hoy el
+  pago en línea es de prueba), el aviso de privacidad completo y la cuenta de
+  dueño, que se crea en la entrega.
 
 Lo que falta para abrir de verdad está en
 [`RESERVAS.md` → Qué ya está hecho y qué falta](RESERVAS.md#qué-ya-está-hecho-y-qué-falta).
@@ -61,7 +64,7 @@ Lo que falta para abrir de verdad está en
 | Frente | Archivos |
 |---|---|
 | Diseño del panel y del sitio | `src/panel/panel.css`, `src/pantallas/`, `src/estilos/` |
-| Base de datos (Supabase) y pagos (Mercado Pago) | `src/servidor/`, `supabase/`, `src/datos/real.ts`, siguiendo `BASE-DE-DATOS.md` |
+| Base de datos (Supabase) y pagos (Clip) | `src/servidor/`, `supabase/`, `src/datos/real.ts`, siguiendo `BASE-DE-DATOS.md` |
 
 Se puede trabajar en los dos a la vez: el diseño no toca `src/datos/` y la
 base no toca pantallas. Lo que los une es `src/datos/contrato.ts`: **quien lo
@@ -81,8 +84,8 @@ Se activan solas al abrir este proyecto:
 | `supabase` · `supabase-postgres-best-practices` | Auth, RLS, migraciones, índices y trampas de seguridad de Supabase (oficiales). | Toda la parte de la base de datos. |
 | `vercel-react-best-practices` | Patrones de React para que las pantallas no se vuelvan lentas ni enredadas. | Al tocar pantallas. Ojo: trae reglas de Next.js (componentes de servidor) que **no aplican** aquí: esto es Vite, todo corre en el navegador. |
 
-Para Mercado Pago existe el plugin **oficial** de Mercado Pago, `mp-integrate`.
-Es un plugin, no una skill suelta: se instala cuando haya cuenta del negocio.
+Los pagos en línea van por Clip (desde el 21/10/2026). Su documentación está en
+https://developer.clip.mx; el conector está en `supabase/fuentes/clip.ts`.
 
 Antes de agregar otra skill: leer su contenido, preferir fuentes oficiales o
 con más de 1,000 instalaciones, e instalarla con `--copy` (en Windows los

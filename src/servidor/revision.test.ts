@@ -27,7 +27,7 @@ describe('servidor', () => {
       ahora: Date.now,
       cuentaId: dueno.id,
       pagosSimulados: false,
-      mercadoPago: null,
+      pasarela: null,
       sitio: '',
       cliente: null,
       cuentas: {
@@ -69,7 +69,7 @@ describe('servidor', () => {
     await repo.guardarPerfil(recepcion)
     let ahora = instante('2026-10-19', 15 * 60)
     const entorno: Entorno = {
-      repo, ahora: () => ahora, cuentaId: null, pagosSimulados: true, mercadoPago: null, sitio: '', cliente: null,
+      repo, ahora: () => ahora, cuentaId: null, pagosSimulados: true, pasarela: null, sitio: '', cliente: null,
       cuentas: { crear: async () => '', borrar: async () => {} },
     }
     const llamar = async <T,>(accion: string, datos: Record<string, unknown>, cuentaId: string | null = null): Promise<T> => {
@@ -78,7 +78,7 @@ describe('servidor', () => {
       return r.resultado as T
     }
     const apartar = (fecha: string, inicio: number, whatsapp: string) =>
-      llamar<Reserva>('apartar', { solicitud: { deporte: 'popdarts', fecha, inicio, duracion: 60, partes: 1, organizador: { nombre: 'Grupo', whatsapp } } })
+      llamar<Reserva>('apartar', { solicitud: { deporte: 'cornhole', fecha, inicio, duracion: 60, organizador: { nombre: 'Grupo', whatsapp } } })
     const iniciar = async (r: Reserva) => (await llamar<{ url: string }>('iniciarPago', { token: r.tokenPrivado, parteIds: [r.partes[0].id], nombre: '' })).url.split('/').pop()!
     const mover = (r: Reserva, fecha: string) => llamar('cambiarHorario', { reservaId: r.id, fecha, inicio: 19 * 60 }, recepcion.id)
     const LEJOS = '2026-12-04' // a 46 días: fuera de la ventana de 30
@@ -87,10 +87,11 @@ describe('servidor', () => {
     const a = await apartar('2026-10-19', 19 * 60, '6620000001')
     const pagoDeA = await iniciar(a)
     await mover(a, LEJOS)
-    // Otros tres grupos pagan y recepción los pasa a ese mismo horario: Popdarts tiene 3 mesas.
+    // Otros grupos pagan y recepción los pasa a ese mismo horario: tantos como tableros hay.
+    const lugares = CONFIGURACION_INICIAL.deportes.cornhole.mesas
     const otros = []
-    for (const [i, inicio] of [17, 18, 19].entries()) {
-      const r = await apartar('2026-10-20', inicio * 60, `662000001${i}`)
+    for (let i = 0; i < lugares; i++) {
+      const r = await apartar('2026-10-20', (17 + (i % 5)) * 60, `66200001${String(i).padStart(2, '0')}`)
       await llamar('pagoSimuladoConfirmar', { id: await iniciar(r) })
       otros.push(r)
     }
@@ -100,5 +101,5 @@ describe('servidor', () => {
     // El pago tardío de A ya no tiene mesa: no se confirma.
     await expect(llamar('pagoSimuladoConfirmar', { id: pagoDeA })).rejects.toMatchObject({ codigo: 'apartado_vencido' })
     const confirmadas = (await repo.reservasEntre(LEJOS, LEJOS)).filter((r) => r.estado === 'confirmada')
-    expect(confirmadas).toHaveLength(3)
+    expect(confirmadas).toHaveLength(lugares)
   })

@@ -7,7 +7,7 @@ export interface ApartadoDeLaFicha {
   clave: string
   apartadaHasta: number | null
   tokenPrivado: string
-  /** Ya se abrió Mercado Pago para esta reserva: pudo pagarse. */
+  /** Ya se abrió Clip para esta reserva: pudo pagarse. */
   pagoAbierto: boolean
 }
 
@@ -20,7 +20,7 @@ export type QueHacer =
 export function queHacerConLoApartado(previa: ApartadoDeLaFicha | null, clave: string, ahoraMs: number): QueHacer {
   if (!previa) return { tipo: 'nueva', cancelar: null }
   if (previa.clave === clave && (previa.apartadaHasta ?? 0) > ahoraMs) return { tipo: 'reusar' }
-  // Si ya se abrió el pago, NO se cancela: pudo pagarse en Mercado Pago (el
+  // Si ya se abrió el pago, NO se cancela: pudo pagarse en Clip (el
   // navegador regresa la ficha con "atrás" aunque ya haya pagado), y
   // cancelarla le quitaría al cliente una mesa pagada sin avisarle. Sin pagar,
   // se libera sola al vencer el apartado.

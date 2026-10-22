@@ -1,0 +1,44 @@
+/* Reglas y políticas: número de dos cifras en el color de la casa, como en
+   los carteles del local. */
+
+.reglamento > li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 4px 10px;
+  padding: 14px 18px 14px 14px;
+  line-height: 1.4;
+}
+.reglamento-numero {
+  color: var(--acento-texto);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.reglamento strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.reglamento-texto {
+  display: block;
+  margin-top: 2px;
+  color: var(--tinta-2);
+  font-size: 14px;
+}
+
+.reglamento-plegado > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.reglamento-plegado > summary::-webkit-details-marker { display: none; }
+.reglamento-plegado > summary::after {
+  content: 'Ver';
+  color: var(--acento-texto);
+  font-size: 15px;
+  font-weight: 600;
+}
+.reglamento-plegado[open] > summary::after { content: 'Ocultar'; }
