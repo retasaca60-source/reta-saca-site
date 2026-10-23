@@ -68,8 +68,8 @@ negocio. Al final está el
   más deja a alguien que ya pagó sin tablero.
 - Hugo puede marcar una mesa **fuera de servicio** desde el panel (se
   descompuso, se está limpiando). Mientras esté así, cuenta como una mesa menos.
-- **En línea solo se reserva 1 hora o 2 horas.** Media hora (Ping Pong) y hora y
-  media se cobran solo en el local.
+- **En línea se reserva 1 hora, hora y media o 2 horas.** La media hora de Ping
+  Pong se cobra solo en el local.
 
 ---
 
@@ -92,7 +92,7 @@ negocio. Al final está el
 
 ### Horas de inicio
 
-- **En línea se empieza solo en hora cerrada**: 5:00, 6:00, 7:00… (no 5:30).
+- **En línea se empieza a la hora o a la media**: 5:00, 5:30, 6:00, 6:30…
 - **La reserva tiene que terminar antes del cierre de su bloque.** No se vende
   una mesa de 2 horas si faltan 90 minutos para cerrar. Una reserva nunca cruza
   de un bloque a otro (no existe "de 11 AM a 5 PM").
@@ -106,8 +106,9 @@ negocio. Al final está el
 
 ### Qué tan pronto y qué tan lejos
 
-- **Para hoy:** hasta **30 minutos antes** de la hora de inicio. A las 6:40 PM
-  ya no se puede reservar las 7:00 PM, pero sí las 8:00 PM.
+- **Para hoy:** hasta la **hora de inicio**. A las 6:40 PM ya no sale la de
+  6:30, pero sí la de 7:00. Los minutos de corte se ajustan en Ajustes del
+  panel.
 - **Hacia adelante:** **7 días**, y la ventana se va recorriendo un día a la
   vez. Si hoy es sábado 26, se puede reservar hasta el sábado 3 (incluido).
 
@@ -286,7 +287,7 @@ reintentar el suyo.
 - **Solo recepción** cambia el horario de una reserva, desde el panel, porque
   tiene que revisar que haya lugar y a veces cambia el precio. El cliente lo
   pide por WhatsApp o Instagram, con 24 horas de anticipación.
-- Las reservas se mueven a horas cerradas, igual que en línea.
+- Las reservas se mueven a la hora o a la media, igual que en línea.
 
 ---
 
@@ -410,8 +411,8 @@ pruebas. Ver `BASE-DE-DATOS.md` y `CONTRATO-DE-DATOS.md`.
 
 | Tema | Estado |
 |---|---|
-| Horario por bloques, inicios en hora cerrada en línea, terminar antes del cierre | Hecho |
-| Ventana de 7 días, corte de 30 min, días cerrados | Hecho (la hora la decide el servidor) |
+| Horario por bloques, inicios cada media hora en línea, terminar antes del cierre | Hecho |
+| Ventana de 7 días, corte para hoy, días cerrados | Hecho (la hora la decide el servidor) |
 | Precio por mesa, promo de las 5:00, Cornhole para 2 personas, palas extra | Hecho |
 | Disponibilidad por tramo completo (una reserva de 90 min ocupa la media hora siguiente) | Hecho |
 | Pago completo al reservar, apartado de 10 min | Hecho (Clip conectado; falta la llave del negocio) |
@@ -546,3 +547,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 21/10/2026 | Clip en lugar de Mercado Pago | Clip cobra un porcentaje sin cuota fija por pago. |
 | 21/10/2026 | El cliente ya no cancela desde su link; cambios y cancelaciones con 24 h por WhatsApp o Instagram | Política 02. Los reembolsos autorizados van por el método de pago original o en efectivo en el local. |
 | 21/10/2026 | Al terminar de reservar: "¡Listo, ya se armó la reta!", reglas del juego y políticas | Lo pidió el negocio. Las políticas también están en `/politicas`. |
+| 22/10/2026 | En línea: 1 h, hora y media o 2 h, empezando a la hora o a la media; para hoy, hasta la hora de inicio | Lo pidió Hugo. Lo que quería quitar el 21/10 era solo la media hora; las medias horas de inicio (5:30, 6:30…) y la hora y media regresan. El corte de 30 min escondía horarios que sí quería vender. |

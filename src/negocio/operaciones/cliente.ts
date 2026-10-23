@@ -16,8 +16,8 @@ import type { HorarioDisponible, SolicitudDeReserva, VistaDeCobro } from './tipo
 
 /**
  * Las horas que se ofrecen EN LÍNEA, con el precio de la mesa en esa
- * modalidad. Solo las duraciones de `reglas.duracionesEnLinea` (1 o 2 horas):
- * media hora y hora y media se cobran solo en el local.
+ * modalidad. Solo las duraciones de `reglas.duracionesEnLinea` (1 h, 90 min y
+ * 2 h): la media hora de Ping Pong se cobra solo en el local.
  */
 export function horariosDisponibles(
   ctx: Contexto,
@@ -50,7 +50,7 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   const modalidad = s.modalidad ?? 'estandar'
   if (!d || !d.duraciones.includes(s.duracion)) throw new ErrorDeDatos('datos_invalidos', 'Esa duración no existe para ese deporte.')
   if (!duracionesEnLinea(config, d).includes(s.duracion)) {
-    throw new ErrorDeDatos('datos_invalidos', 'En línea se reserva por 1 o 2 horas. Otros tiempos, en el local.')
+    throw new ErrorDeDatos('datos_invalidos', 'Ese tiempo no se reserva en línea. Pídelo en el local.')
   }
   if (!ofreceModalidad(d, modalidad)) throw new ErrorDeDatos('datos_invalidos', `${d.nombre} no tiene precio para 2 personas.`)
   if (s.palasExtra && d.precioPalasExtra === null) throw new ErrorDeDatos('datos_invalidos', `${d.nombre} no tiene palas extra.`)

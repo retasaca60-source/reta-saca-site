@@ -103,7 +103,7 @@ function Formulario({ cerrar }: { cerrar: () => void }) {
   const dias = Array.from({ length: config.reglas.diasDeAnticipacion + 1 }, (_, i) => sumarDias(hoy, i))
   const elegido = horarios?.find((h) => h.inicio === inicio)
 
-  // Lo mismo que se puede reservar en el sitio: 1 o 2 horas, en hora cerrada.
+  // Lo mismo que se puede reservar en el sitio: las duraciones en línea.
   const duraciones = duracionesEnLinea(config, d)
 
   const elegirDeporte = (id: DeporteId) => {

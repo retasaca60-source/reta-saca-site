@@ -70,7 +70,7 @@ describe.each(['simulado', 'real'] as const)('revisión, versión %s', (version)
     expect(await codigoDe(con((c) => void (c.reglas.minutosDeApartado = 0)))).toBe('datos_invalidos')
     expect(await codigoDe(con((c) => void c.horario[1].push({ ...c.horario[1][0] })))).toBe('datos_invalidos')
     expect(await codigoDe(con((c) => void (c.horario[1] = [{ desde: h(17), hasta: h(20) }, { desde: h(19), hasta: h(22) }])))).toBe('datos_invalidos')
-    expect((await s.configuracion()).reglas.pasoDeInicio).toBe(60)
+    expect((await s.configuracion()).reglas.pasoDeInicio).toBe(30)
   })
 
   it('3. no se guardan precios que bajan con más tiempo (la extensión saldría negativa)', async () => {

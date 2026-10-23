@@ -11,7 +11,7 @@ web
 - **Principal: grupos de amigos jóvenes (18 a 30 años) en Hermosillo, Sonora**,
   que buscan plan para la tarde o el fin de semana. Se organizan por WhatsApp
   y reservan desde el teléfono, muchas veces a última hora (se puede hasta
-  30 minutos antes).
+  la hora de inicio).
 - Quien reserva es el **organizador**: elige mesa y horario y paga el total
   al reservar (desde el 21/10/2026 ya no se divide el pago).
 - Aparte está el personal del local (recepción y el dueño), que usa el panel
@@ -35,7 +35,7 @@ palas más.
   grupo abierto al lado.
 - Horario del local: lunes a jueves de 5 a 10 PM; viernes de 5 a 11 PM;
   sábado de 9 AM a 12 PM y de 5 a 11 PM; domingo de 9 AM a 12 PM y de 5 a
-  10 PM. En línea, 1 o 2 horas empezando en hora cerrada; se reserva hasta 7
+  10 PM. En línea, 1 h, hora y media o 2 h, a la hora o a la media; hasta 7
   días adelante. Hora de Sonora.
 - Todo compartir pasa por WhatsApp (botones que abren el chat con el mensaje
   ya escrito).

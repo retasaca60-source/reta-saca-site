@@ -18,7 +18,7 @@ export const USUARIOS_DEMO: Usuario[] = [
  * Reservas de ejemplo alrededor de hoy, para que el sitio y el panel se vean
  * con vida: pagadas en línea, una de Cornhole para 2 personas, una de Ping
  * Pong con palas extra y un horario de Cornhole lleno mañana a las 7 PM. Todas
- * en hora cerrada y de 1 o 2 horas, como se reserva en línea.
+ * en hora cerrada y de 1 o 2 horas, que se pueden reservar en línea.
  */
 export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
   const hoy = ahora.fecha

@@ -107,7 +107,7 @@ el cliente o para recepción, en español.
 | Operación | Qué hace | Errores |
 |---|---|---|
 | `configuracion()` | La configuración vigente (mesas, precios, promo, horario, reglas, WhatsApp del negocio). Pública. | — |
-| `disponibilidad(deporte, fecha, duracion, modalidad?)` | Las horas de inicio **en línea** de ese día (solo duraciones de `reglas.duracionesEnLinea`, en hora cerrada) con mesas libres (`libres`, 0 = lleno), el precio de la mesa en esa modalidad (Cornhole para 2 personas) y si lleva promo. | — |
+| `disponibilidad(deporte, fecha, duracion, modalidad?)` | Las horas de inicio **en línea** de ese día (solo duraciones de `reglas.duracionesEnLinea`, cada `reglas.pasoDeInicio` minutos) con mesas libres (`libres`, 0 = lleno), el precio de la mesa en esa modalidad (Cornhole para 2 personas) y si lleva promo. | — |
 | `apartar(solicitud)` | Revalida TODO (horario, corte, ventana, duración en línea, modalidad, palas, límite de apartados sin pagar, lugar), calcula el precio y crea la reserva **apartada** 10 min con **una sola parte** (mesa + palas extra). Devuelve la reserva completa (con `tokenPrivado`). | `datos_invalidos`, `fuera_de_horario`, `demasiados_intentos`, `sin_lugar` |
 | `iniciarPago(token, parteIds, nombre)` | `token` es el privado o el de cobro (reservas divididas de antes del 21/10/2026). Crea el cobro en Clip por las partes elegidas y devuelve `{ url }` a donde mandar al cliente. Si es el link de cobro, `nombre` es de quien paga. Si el apartado ya se venció, falla (la reserva quedó cancelada): hay que apartar otra vez. Si el pago de un apartado vencido llega igual, se acepta solo si la mesa sigue libre; si no, queda como devolución por revisar. | `no_encontrada`, `no_permitido` (cancelada), `datos_invalidos` (parte ya pagada, nombre vacío) |
 | `reservaPorTokenPrivado(token)` | La reserva completa, o `null`. | — |
@@ -196,7 +196,7 @@ en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 - Aparta con precio por mesa, en un solo pago completo.
 - Cornhole para 2 personas cobra su tabla y no lleva promo; las palas extra
   se suman a la misma parte.
-- En línea solo 1 o 2 horas, en hora cerrada.
+- En línea 1 h, 90 min o 2 h, a la hora o a la media; la media hora, no.
 - Queda firme con el pago.
 - No vende una mesa de más, ni con dos personas al mismo tiempo.
 - Un apartado ocupa mesa 10 min y luego se libera solo.

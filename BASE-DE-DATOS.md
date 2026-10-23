@@ -182,6 +182,7 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 | `20261020003415_bloquear_partes_en_pago.sql` | `intentos_pago.vence_en`: hasta cuándo un checkout abierto bloquea sus partes. Sin ella, iniciar un pago falla. |
 | `20261020022000_pagos_en_linea.sql` | `pagos_en_linea`: cada cobro en línea ya registrado, por su id. Sin ella, ningún pago en línea se registra. |
 | `20261021180000_clip_y_cambios_del_negocio.sql` | `intentos_pago.cobro_id` (el cobro de Clip de cada intento) y la configuración nueva del negocio: sin Popdarts, Cornhole para 2 personas, palas extra, horario nuevo, en línea solo 1 o 2 horas en hora cerrada. Sin ella, iniciar un pago con Clip falla. |
+| `20261022230000_inicios_cada_media_hora.sql` | Reglas de la reserva en línea: inicios cada media hora, 1 h, 90 min o 2 h, y sin minutos de corte para hoy. Sin ella, el sitio sigue ofreciendo solo horas cerradas. |
 
 ### El servidor (la función `api`)
 

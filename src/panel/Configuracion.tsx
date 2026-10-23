@@ -8,7 +8,7 @@ import { servicio, type Conflicto, type Rol } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion as Config, type Duracion } from '../negocio/configuracion'
 import { RANGOS_DE_REGLAS } from '../negocio/operaciones'
-import { DIAS_LARGOS, etiquetaFecha, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
+import { DIAS_LARGOS, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
 const ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0]
 
@@ -190,7 +190,7 @@ export function Configuracion() {
         </table>
         <p className="nota">
           Cambiar un precio no toca las reservas ya hechas: cada una conserva el suyo. En línea solo se reserva{' '}
-          {c.reglas.duracionesEnLinea.map((m) => `${m / 60} h`).join(' o ')}, en hora cerrada; las demás duraciones se cobran en el local.
+          {c.reglas.duracionesEnLinea.map(formatoDuracion).join(', ')}, empezando cada {c.reglas.pasoDeInicio} minutos; las demás duraciones se cobran en el local.
         </p>
       </section>
 

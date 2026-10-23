@@ -30,8 +30,9 @@ describe('tiempo de Sonora', () => {
 })
 
 describe('horario (RESERVAS.md §2)', () => {
-  it('lunes a jueves: de 5 a 10 PM, en hora cerrada, terminando antes del cierre', () => {
-    expect(iniciosPosibles(C, '2026-09-28', 60, ahora)).toEqual([h(17), h(18), h(19), h(20), h(21)])
+  it('lunes a jueves: de 5 a 10 PM, cada media hora, terminando antes del cierre', () => {
+    expect(iniciosPosibles(C, '2026-09-28', 60, ahora)).toEqual([h(17), h(17, 30), h(18), h(18, 30), h(19), h(19, 30), h(20), h(20, 30), h(21)])
+    expect(iniciosPosibles(C, '2026-09-28', 90, ahora).at(-1)).toBe(h(20, 30))
     expect(iniciosPosibles(C, '2026-09-28', 120, ahora).at(-1)).toBe(h(20))
   })
   it('viernes y sábado cierran a las 11 PM; el domingo a las 10', () => {
@@ -41,14 +42,15 @@ describe('horario (RESERVAS.md §2)', () => {
   })
   it('sábado y domingo: también de 9 AM a 12 PM, sin cruzar de un bloque al otro', () => {
     const sabado = iniciosPosibles(C, '2026-09-26', 60, ahora)
-    expect(sabado.slice(0, 4)).toEqual([h(9), h(10), h(11), h(17)])
-    expect(iniciosPosibles(C, '2026-09-27', 120, ahora).slice(0, 2)).toEqual([h(9), h(10)])
+    expect(sabado.slice(0, 6)).toEqual([h(9), h(9, 30), h(10), h(10, 30), h(11), h(17)])
+    expect(iniciosPosibles(C, '2026-09-27', 120, ahora).slice(0, 3)).toEqual([h(9), h(9, 30), h(10)])
   })
-  it('para hoy, solo hasta 30 min antes', () => {
+  it('para hoy, hasta la hora de inicio: sin corte, lo que ya empezó no se ofrece', () => {
     const tarde = momentoDe(instante(VIERNES, h(18, 40)))
     const hoy = iniciosPosibles(C, VIERNES, 60, tarde)
-    expect(hoy).not.toContain(h(19))
-    expect(hoy[0]).toBe(h(20))
+    expect(hoy).not.toContain(h(18, 30))
+    expect(hoy[0]).toBe(h(19))
+    expect(iniciosPosibles(C, VIERNES, 60, momentoDe(instante(VIERNES, h(18, 30))))[0]).toBe(h(18, 30))
   })
   it('ventana de 7 días móvil: viernes → hasta el viernes siguiente', () => {
     const dias = diasReservables(C, ahora)

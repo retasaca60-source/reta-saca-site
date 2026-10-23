@@ -78,8 +78,8 @@ export function reducir(b: Borrador, a: Accion): Borrador {
     case 'irAPaso':
       if (a.paso === 2) {
         if (!b.deporte) return b
-        // En línea solo hay 1 o 2 horas: si venía con otra duración, se
-        // cambia a la primera que sí se reserva en línea.
+        // En línea no hay media hora: si venía con una duración que no se
+        // reserva en línea, se cambia a la primera que sí.
         const duraciones = duracionesEnLinea(a.config, a.config.deportes[b.deporte])
         const duracion = duraciones.includes(b.duracion) ? b.duracion : duraciones[0]
         return { ...b, paso: 2, duracion, inicio: duracion === b.duracion ? b.inicio : null }

@@ -78,12 +78,13 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(r.partes.map((p) => p.monto)).toEqual([200])
       expect(await codigoDe(s.apartar(pedido({ palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })))).toBe('datos_invalidos')
     })
-    it('en línea solo 1 o 2 horas, empezando en hora cerrada', async () => {
+    it('en línea 1 h, 90 min o 2 h, empezando a la hora o a la media; la media hora, no', async () => {
       expect(await codigoDe(s.apartar(pedido({ deporte: 'pingpong', duracion: 30 })))).toBe('datos_invalidos')
-      expect(await codigoDe(s.apartar(pedido({ duracion: 90 })))).toBe('datos_invalidos')
-      expect(await codigoDe(s.apartar(pedido({ inicio: h(18, 30) })))).toBe('fuera_de_horario')
       expect((await s.disponibilidad('pingpong', VIERNES, 30)).length).toBe(0)
-      expect((await s.disponibilidad('cornhole', VIERNES, 60)).map((x) => x.inicio)).toEqual([h(17), h(18), h(19), h(20), h(21), h(22)])
+      expect(await codigoDe(s.apartar(pedido({ inicio: h(18, 15) })))).toBe('fuera_de_horario')
+      expect((await s.apartar(pedido({ duracion: 90, inicio: h(18, 30) }))).precio).toBe(410)
+      expect((await s.disponibilidad('cornhole', VIERNES, 60)).map((x) => x.inicio)).toEqual([h(17), h(17, 30), h(18), h(18, 30), h(19), h(19, 30), h(20), h(20, 30), h(21), h(21, 30), h(22)])
+      expect((await s.disponibilidad('cornhole', VIERNES, 90)).at(-1)?.inicio).toBe(h(21, 30))
     })
     it('queda firme con el pago', async () => {
       const r = await reservarYPagar()
@@ -153,9 +154,9 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('sin_lugar')
     })
     it('no deja reservar fuera de horario, pasado el corte ni más allá de 7 días', async () => {
-      expect(await codigoDe(s.apartar(pedido({ inicio: h(22, 30) })))).toBe('fuera_de_horario') // no es hora cerrada y terminaría 11:30
+      expect(await codigoDe(s.apartar(pedido({ inicio: h(22, 30) })))).toBe('fuera_de_horario') // terminaría 11:30, después del cierre
       reloj = instante(VIERNES, h(18, 40))
-      expect(await codigoDe(s.apartar(pedido({ inicio: h(19) })))).toBe('fuera_de_horario') // menos de 30 min antes
+      expect(await codigoDe(s.apartar(pedido({ inicio: h(18, 30) })))).toBe('fuera_de_horario') // ya empezó
       expect(await codigoDe(s.apartar(pedido({ fecha: '2026-10-03' })))).toBe('fuera_de_horario')
     })
   })

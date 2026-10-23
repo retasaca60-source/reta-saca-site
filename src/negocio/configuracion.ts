@@ -72,7 +72,7 @@ export interface Configuracion {
     diasDeAnticipacion: number
     /** Para hoy: hasta cuántos minutos antes del inicio. */
     minutosDeCorte: number
-    /** Cada cuántos minutos se puede empezar en línea: 60 = solo horas cerradas (5:00, 6:00…). */
+    /** Cada cuántos minutos se puede empezar en línea: 30 = a la hora y a la media (5:00, 5:30…). */
     pasoDeInicio: number
     /** Cuánto se aparta la mesa mientras se paga. */
     minutosDeApartado: number
@@ -136,15 +136,16 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     6: [MANANA, TARDE_LARGA],
   },
   diasCerrados: [],
-  // En línea solo se empieza en hora cerrada: la promo de las 5:30 ya no existe.
+  // La promo es solo la hora de las 5:00. La de las 5:30 se quitó el 21/10 y no
+  // regresó cuando volvieron los inicios cada media hora.
   promo: { activa: true, inicios: [h(17)], duracion: 60 },
   reglas: {
     diasDeAnticipacion: 7,
-    minutosDeCorte: 30,
-    pasoDeInicio: 60,
+    minutosDeCorte: 0,
+    pasoDeInicio: 30,
     minutosDeApartado: 10,
     minutosDeTolerancia: 30,
-    duracionesEnLinea: [60, 120],
+    duracionesEnLinea: [60, 90, 120],
   },
   whatsappNegocio: '',
 }
