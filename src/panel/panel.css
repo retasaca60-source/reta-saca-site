@@ -55,10 +55,7 @@
   box-shadow:1px 0 0 var(--line);
   overflow-y:auto;
 }
-.panel-sello{
-  font-family:'Unbounded', system-ui, sans-serif; font-weight:700; font-size:1.3rem; letter-spacing:-.04em;
-}
-.panel-sello span{ color:var(--marca-texto); }
+.panel-sello img{ display:block; width:56px; height:auto; }
 .panel-nav{ display:flex; flex-direction:column; gap:6px; flex:1; }
 .panel-nav a, .panel-salir{
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
@@ -203,9 +200,12 @@
 .panel-entrar{ width:min(380px, 100%); display:flex; flex-direction:column; gap:14px; padding:28px; }
 .panel-entrar label{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--ink-soft); }
 .panel-entrar .panel-boton{ min-height:48px; }
-.panel-marca{ font-family:'Unbounded', system-ui, sans-serif; font-weight:700; font-size:1.2rem; margin-bottom:4px; }
-.panel-marca span{ color:var(--marca-texto); }
-.panel-marca small{ font-family:'Hanken Grotesk', sans-serif; font-weight:500; font-size:13px; color:var(--ink-faint); margin-left:6px; }
+.panel-marca{ display:flex; align-items:flex-end; gap:10px; margin-bottom:4px; }
+.panel-marca img{ display:block; width:auto; height:80px; }
+.panel-marca .logo-para-claro{ display:none; }
+:root[data-theme="light"] .panel-marca .logo-para-oscuro{ display:none; }
+:root[data-theme="light"] .panel-marca .logo-para-claro{ display:block; }
+.panel-marca small{ font-family:'Hanken Grotesk', sans-serif; font-weight:500; font-size:13px; color:var(--ink-faint); }
 .panel-demo-entrar{ border-top:1px dashed var(--line); padding-top:12px; display:flex; flex-wrap:wrap; gap:8px; }
 .panel-demo-entrar p{ width:100%; margin:0; font-size:13px; color:var(--warn); }
 
@@ -636,13 +636,7 @@
   background:var(--sobre-marca);
 }
 
-/* El logo y las acciones de peligro siguen en rojo,
-   como en el diseño claro original. */
-
-:root[data-theme="light"] .panel-sello span,
-:root[data-theme="light"] .panel-marca span{
-  color:var(--accent);
-}
+/* Las acciones de peligro siguen en rojo, como en el diseño claro original. */
 
 :root[data-theme="light"] .panel-boton.peligro-lleno{
   background:var(--accent);

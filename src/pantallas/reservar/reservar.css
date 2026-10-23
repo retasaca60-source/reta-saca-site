@@ -4,14 +4,8 @@
 /* ── Lista de juegos ──────────────────────────────────────────────────── */
 
 .inicio-marca { display: flex; align-items: center; gap: 10px; min-height: 44px; padding-top: 18px; }
-.inicio-marca img { width: auto; height: 32px; }
-.inicio-marca strong {
-  font-family: 'Montserrat', 'Hanken Grotesk', sans-serif;
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
+/* El logo completo ya trae el nombre: no se repite escrito al lado. */
+.inicio-marca img { width: auto; height: 72px; }
 
 /* "LA RETA?" va en contorno, y el Montserrat que sirve Google es variable: sus
    trazos se enciman y el contorno dibujaba líneas por dentro de la A y la R.

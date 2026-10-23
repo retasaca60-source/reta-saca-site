@@ -190,7 +190,8 @@ export function Configuracion() {
         </table>
         <p className="nota">
           Cambiar un precio no toca las reservas ya hechas: cada una conserva el suyo. En línea solo se reserva{' '}
-          {c.reglas.duracionesEnLinea.map(formatoDuracion).join(', ')}, empezando cada {c.reglas.pasoDeInicio} minutos; las demás duraciones se cobran en el local.
+          {new Intl.ListFormat('es', { type: 'disjunction' }).format(c.reglas.duracionesEnLinea.map(formatoDuracion))}, empezando cada{' '}
+          {c.reglas.pasoDeInicio} minutos; las demás duraciones se cobran en el local.
         </p>
       </section>
 

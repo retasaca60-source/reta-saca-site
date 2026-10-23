@@ -45,7 +45,7 @@ function Marco({ usuario }: { usuario: Usuario }) {
     <div className="panel">
       <aside className="panel-lateral">
         <div className="panel-sello" aria-label="Reta Saca">
-          R<span>S</span>
+          <img src="/imagenes/emblema.png" alt="" width="56" height="23" />
         </div>
         <nav className="panel-nav" aria-label="Secciones del panel">
           <NavLink to="/panel" end>
@@ -141,7 +141,10 @@ function Entrar() {
         }}
       >
         <div className="panel-marca">
-          Reta <span>Saca</span> <small>panel</small>
+          {/* El mismo logo que ve el cliente; con el tema claro, la versión de letras negras. */}
+          <img className="logo-para-oscuro" src="/imagenes/logo-completo.png" alt="Reta Saca" width="128" height="80" />
+          <img className="logo-para-claro" src="/imagenes/logo-completo-claro.png" alt="Reta Saca" width="128" height="80" />
+          <small>panel</small>
         </div>
         <label>
           Usuario

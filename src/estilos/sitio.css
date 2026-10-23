@@ -73,8 +73,8 @@ html:has(.sitio) { scrollbar-color: rgba(255, 190, 160, 0.28) #0f0908; }
 
 .barra-app { display: flex; align-items: center; padding: 16px 0 4px; }
 .barra-app a { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--tinta); text-decoration: none; }
-.barra-app img { width: auto; height: 30px; }
-.barra-app strong { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+/* El logo completo ya trae el nombre: no se repite escrito al lado. */
+.barra-app img { width: auto; height: 56px; }
 
 /* ── Títulos y texto ──────────────────────────────────────────────────── */
 
