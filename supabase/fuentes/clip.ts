@@ -34,8 +34,19 @@ export function vencimientoParaClip(venceEn: number | null, ahora: number): stri
   return new Date(vence).toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
-/** "Bearer <llave>" salvo que el secreto ya traiga su esquema (Basic o Bearer). */
-const autorizacion = (llave: string) => (/^(Basic|Bearer) /.test(llave) ? llave : `Bearer ${llave}`)
+/**
+ * Clip autentica con "Basic " + base64("API key:clave secreta") (su página
+ * "Token de autenticación"). Antes se mandaba "Bearer <llave>": con la API key
+ * tal como la da el panel de Clip, todos los cobros salían 401 y nadie podía
+ * pagar. El secreto CLIP_API_KEY se pone como "API_KEY:CLAVE_SECRETA"; también
+ * se acepta el token ya armado (con o sin "Basic ").
+ */
+export function autorizacion(llave: string): string {
+  const s = llave.trim()
+  if (/^(Basic|Bearer) /.test(s)) return s
+  if (s.includes(':')) return `Basic ${btoa(s)}`
+  return `Basic ${s}`
+}
 
 export function clipReal(llave: string, opciones: { avisoA: string }): Pasarela {
   const pedir = (ruta: string, init: RequestInit = {}) =>

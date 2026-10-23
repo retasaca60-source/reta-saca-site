@@ -3,7 +3,7 @@
 // se puede probar con llaves de prueba (Clip no las acepta en este checkout).
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { clipReal, vencimientoParaClip } from '../../supabase/fuentes/clip'
+import {autorizacion, clipReal, vencimientoParaClip } from '../../supabase/fuentes/clip'
 
 const MINUTO = 60_000
 /** Un instante en la Ciudad de México (UTC−6). */
@@ -26,7 +26,19 @@ describe('vencimiento del link de Clip', () => {
     expect(vencimientoParaClip(null, ahora)).toBeNull()
   })
 })
-
+describe('llave de Clip', () => {
+  it('arma Basic con base64 de "API key:clave secreta", como lo pide Clip', () => {
+    expect(autorizacion('mi-api-key:mi-clave-secreta')).toBe(`Basic ${btoa('mi-api-key:mi-clave-secreta')}`)
+    expect(autorizacion('  mi-api-key:mi-clave-secreta\n')).toBe(`Basic ${btoa('mi-api-key:mi-clave-secreta')}`)
+  })
+  it('acepta el token ya armado, con o sin "Basic "', () => {
+    expect(autorizacion('YWJjOmRlZg==')).toBe('Basic YWJjOmRlZg==')
+    expect(autorizacion('Basic YWJjOmRlZg==')).toBe('Basic YWJjOmRlZg==')
+  })
+  it('nunca manda "Bearer" a menos que el secreto lo diga', () => {
+    expect(autorizacion('llave')).not.toMatch(/^Bearer/)
+  })
+})
 describe('conector de Clip', () => {
   it('crea el link con el monto, la referencia del intento, el aviso y el regreso con el intento', async () => {
     const pedir = vi.fn(async () => new Response(JSON.stringify({ payment_request_id: 'pr-1', payment_request_url: 'https://pago.clip.mx/pr-1' }), { status: 200 }))
@@ -41,7 +53,7 @@ describe('conector de Clip', () => {
     expect(r).toEqual({ url: 'https://pago.clip.mx/pr-1', cobroId: 'pr-1' })
     const [url, init] = pedir.mock.calls[0] as unknown as [string, RequestInit]
     expect(url).toBe('https://api.payclip.com/v2/checkout')
-    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer llave')
+    expect((init.headers as Record<string, string>).Authorization).toBe('Basic llave')
     expect(JSON.parse(init.body as string)).toMatchObject({
       amount: 280,
       currency: 'MXN',

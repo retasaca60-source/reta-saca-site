@@ -204,7 +204,7 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 
 | Nombre | Valor | Para qué |
 |---|---|---|
-| `CLIP_API_KEY` | La clave de API de Clip de la cuenta del negocio | Con ella, el pago en línea va por Clip. Se manda como `Bearer <clave>`; si Clip la da como `Basic …`, se pone completa. Clip no acepta claves de prueba en este checkout. |
+| `CLIP_API_KEY` | La clave de API de Clip de la cuenta del negocio | Con ella, el pago en línea va por Clip. Se pone como API_KEY:CLAVE_SECRETA (las dos que da el panel de Clip, separadas por dos puntos); el servidor arma el Basic que pide Clip. Clip no acepta claves de prueba en este checkout. |
 | `PAGOS_SIMULADOS` | `si` | Sin `CLIP_API_KEY`, el pago en línea es la pantalla de prueba del sitio. Con la clave puesta se ignora. **Sin Clip no se debe abrir al público**: cualquiera "paga" sin pagar. |
 | `MP_ACCESS_TOKEN`, `MP_USAR_SANDBOX` | — | De Mercado Pago, que ya no se usa (21/10/2026). Se pueden borrar. |
 

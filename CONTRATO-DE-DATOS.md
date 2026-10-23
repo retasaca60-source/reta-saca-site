@@ -178,8 +178,7 @@ llamadas (`supabase/fuentes/clip.ts`). Reemplazó a Mercado Pago el 21/10/2026.
 5. **Reembolsos**: los decide el negocio y los hace por el método de pago
    original o en efectivo (`RESERVAS.md` §7).
 6. La llave va en los secretos de la función (`CLIP_API_KEY`), **nunca** en el
-   código ni con prefijo `VITE_`. Se manda como `Bearer <llave>` salvo que el
-   secreto ya traiga su esquema (`Basic …`). **Clip no acepta llaves de prueba
+   código ni con prefijo `VITE_`. Se pone como API_KEY:CLAVE_SECRETA; el servidor manda Basic + base64, como pide Clip. **Clip no acepta llaves de prueba
    en este checkout**: la primera prueba de verdad es un pago real chico.
 
 Sin `CLIP_API_KEY`, la pantalla `/pago/<id>` (`src/pantallas/pago-simulado`)
