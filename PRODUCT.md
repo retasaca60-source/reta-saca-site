@@ -35,7 +35,7 @@ palas más.
   grupo abierto al lado.
 - Horario del local: lunes a jueves de 5 a 10 PM; viernes de 5 a 11 PM;
   sábado de 9 AM a 12 PM y de 5 a 11 PM; domingo de 9 AM a 12 PM y de 5 a
-  10 PM. Ping Pong 30 min o 1 h; Cornhole 1 h o 90 min; a la hora o a la media; hasta 7
+  10 PM. Los dos juegos, 30 min o 1 h; a la hora o a la media; hasta 7
   días adelante. Hora de Sonora.
 - Todo compartir pasa por WhatsApp (botones que abren el chat con el mensaje
   ya escrito).
@@ -46,8 +46,9 @@ palas más.
 - Flujo: deporte (y en Cornhole, 4 o 2 personas) → día, duración y hora →
   palas extra en Ping Pong → datos y políticas → pago completo → ticket con
   "¡Listo, ya se armó la reta!", reglas del juego y políticas.
-- Precios por mesa (Ping Pong $100 / $150 por 30 min / 1 h; Cornhole estándar
-  $280 / $410 y para 2 personas $200 / $290 por 1 h / 90 min; palas extra $50).
+- Precios por mesa, por 30 min / 1 h (el volante del 25/10/2026): Ping Pong
+  $100 / $150; Cornhole estándar $160 / $280 y para 2 personas $120 / $180;
+  palas extra $50.
   Sin promociones desde el 25/10/2026 (apagada en Ajustes).
 - Pago con Clip (simulado mientras no esté la cuenta del negocio), sin cuentas
   de cliente. Cambios y cancelaciones por WhatsApp o Instagram, con 24 h.

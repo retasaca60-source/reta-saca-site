@@ -18,8 +18,7 @@ export const USUARIOS_DEMO: Usuario[] = [
  * Reservas de ejemplo alrededor de hoy, para que el sitio y el panel se vean
  * con vida: pagadas en línea, una de Cornhole para 2 personas, una de Ping
  * Pong con palas extra y un horario de Cornhole lleno mañana a las 7 PM. Todas
- * en hora cerrada y con tiempos que se venden hoy (Ping Pong 1 h, Cornhole 1 h
- * o 90 min).
+ * en hora cerrada y con tiempos que se venden hoy (30 min o 1 h).
  */
 export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
   const hoy = ahora.fecha
@@ -72,7 +71,7 @@ export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
   nueva('pingpong', hoy, h(17), 60)
   nueva('pingpong', hoy, h(18), 60, { palasExtra: true })
   nueva('cornhole', hoy, h(19), 60)
-  nueva('cornhole', hoy, h(20), 90, { modalidad: 'pareja' })
+  nueva('cornhole', hoy, h(20), 30, { modalidad: 'pareja' })
   // Mañana: Cornhole lleno a las 7 PM
   for (let i = 0; i < mesasEnServicio(config.deportes.cornhole); i++) nueva('cornhole', manana, h(19), 60)
   nueva('pingpong', manana, h(17), 60)

@@ -184,6 +184,7 @@ CLI, primero hay que marcarlas como aplicadas con `supabase migration repair`.
 | `20261021180000_clip_y_cambios_del_negocio.sql` | `intentos_pago.cobro_id` (el cobro de Clip de cada intento) y la configuración nueva del negocio: sin Popdarts, Cornhole para 2 personas, palas extra, horario nuevo, en línea solo 1 o 2 horas en hora cerrada. Sin ella, iniciar un pago con Clip falla. |
 | `20261022230000_inicios_cada_media_hora.sql` | Reglas de la reserva en línea: inicios cada media hora, 1 h, 90 min o 2 h, y sin minutos de corte para hoy. Sin ella, el sitio sigue ofreciendo solo horas cerradas. |
 | `20261025200000_tiempos_por_juego_sin_promo.sql` | Ping Pong solo 30 min o 1 h; Cornhole solo 1 h o 90 min (sin 2 horas); promo apagada. Sin ella, el sitio sigue vendiendo 2 horas y la promo de las 5:00. |
+| `20261025230000_cornhole_como_el_volante.sql` | Cornhole como el volante: 30 min o 1 h, $160 / $280 y para 2 personas $120 / $180; en línea solo 30 min o 1 h. Corrige la anterior, que lo había dejado en 1 h / 90 min. |
 
 ### El servidor (la función `api`)
 

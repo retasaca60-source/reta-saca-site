@@ -78,11 +78,11 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
     it('Cornhole para 2 personas cobra su propia tabla; aun con la promo prendida, no la lleva', async () => {
       await prenderPromo()
-      expect((await s.apartar(pedido({ modalidad: 'pareja' }))).precio).toBe(200)
-      expect((await s.apartar(pedido({ inicio: h(17), modalidad: 'pareja', organizador: { nombre: 'Eva', whatsapp: '6620000101' } }))).precio).toBe(200)
+      expect((await s.apartar(pedido({ modalidad: 'pareja' }))).precio).toBe(180)
+      expect((await s.apartar(pedido({ inicio: h(17), modalidad: 'pareja', organizador: { nombre: 'Eva', whatsapp: '6620000101' } }))).precio).toBe(180)
       expect((await s.apartar(pedido({ inicio: h(17), organizador: { nombre: 'Leo', whatsapp: '6620000102' } }))).precio).toBe(240)
-      const hora_y_media = await s.apartar(pedido({ duracion: 90, inicio: h(20), modalidad: 'pareja', organizador: { nombre: 'Ivo', whatsapp: '6620000103' } }))
-      expect(hora_y_media).toMatchObject({ precio: 290, modalidad: 'pareja' })
+      const media = await s.apartar(pedido({ duracion: 30, inicio: h(20), modalidad: 'pareja', organizador: { nombre: 'Ivo', whatsapp: '6620000103' } }))
+      expect(media).toMatchObject({ precio: 120, modalidad: 'pareja' })
     })
     it('sin promociones: a las 5:00 se cobra la tarifa normal', async () => {
       expect(await s.apartar(pedido({ inicio: h(17) }))).toMatchObject({ precio: 280, conPromo: false })
@@ -94,18 +94,19 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(r.partes.map((p) => p.monto)).toEqual([200])
       expect(await codigoDe(s.apartar(pedido({ palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })))).toBe('datos_invalidos')
     })
-    it('en línea: Ping Pong 30 min o 1 h, Cornhole 1 h o 90 min, a la hora o a la media', async () => {
+    it('en línea: 30 min o 1 h en los dos juegos, a la hora o a la media', async () => {
       expect((await s.apartar(pedido({ deporte: 'pingpong', duracion: 30, organizador: { nombre: 'Eva', whatsapp: '6620000101' } }))).precio).toBe(100)
       expect((await s.disponibilidad('pingpong', VIERNES, 30)).at(-1)?.inicio).toBe(h(22, 30))
       // Lo que ya no se vende no sale ni se aparta.
       expect((await s.disponibilidad('pingpong', VIERNES, 90)).length).toBe(0)
       expect(await codigoDe(s.apartar(pedido({ deporte: 'pingpong', duracion: 90 })))).toBe('datos_invalidos')
       expect(await codigoDe(s.apartar(pedido({ duracion: 120 })))).toBe('datos_invalidos')
-      expect(await codigoDe(s.apartar(pedido({ duracion: 30 })))).toBe('datos_invalidos')
+      expect(await codigoDe(s.apartar(pedido({ duracion: 90 })))).toBe('datos_invalidos')
+      expect((await s.disponibilidad('cornhole', VIERNES, 90)).length).toBe(0)
       expect(await codigoDe(s.apartar(pedido({ inicio: h(18, 15) })))).toBe('fuera_de_horario')
-      expect((await s.apartar(pedido({ duracion: 90, inicio: h(18, 30) }))).precio).toBe(410)
+      expect((await s.apartar(pedido({ duracion: 30, inicio: h(18, 30) }))).precio).toBe(160)
       expect((await s.disponibilidad('cornhole', VIERNES, 60)).map((x) => x.inicio)).toEqual([h(17), h(17, 30), h(18), h(18, 30), h(19), h(19, 30), h(20), h(20, 30), h(21), h(21, 30), h(22)])
-      expect((await s.disponibilidad('cornhole', VIERNES, 90)).at(-1)?.inicio).toBe(h(21, 30))
+      expect((await s.disponibilidad('cornhole', VIERNES, 30)).at(-1)?.inicio).toBe(h(22, 30))
     })
     it('queda firme con el pago', async () => {
       const r = await reservarYPagar()
@@ -332,9 +333,11 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       const extra = await s.extender(r.id, 30)
       expect(extra.duracion).toBe(90)
       expect(extra.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 100 })
-      // Cornhole no tiene media hora: se cobra la parte de la hora ($280 / 2).
-      const ch = await reservarYPagar({ inicio: h(19), duracion: 90, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
-      expect((await s.extender(ch.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 140 })
+      // Cornhole igual: de 30 min ($160) a 1 h ($280) es la diferencia, y pasando
+      // la hora se cobra la media hora ($160).
+      const ch = await reservarYPagar({ inicio: h(19), duracion: 30, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
+      expect((await s.extender(ch.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 120 })
+      expect((await s.extender(ch.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 160 })
     })
 
     it('cambiar de la promo de las 5 a las 7 cobra la diferencia y quita la etiqueta de promo', async () => {
@@ -347,11 +350,11 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
     it('mover una de 2 personas usa su tabla y las palas extra no se vuelven a cobrar', async () => {
       const pareja = await reservarYPagar({ inicio: h(17), modalidad: 'pareja' })
-      expect(total(await s.cambiarHorario(pareja.id, VIERNES, h(19)))).toBe(200)
+      expect(total(await s.cambiarHorario(pareja.id, VIERNES, h(19)))).toBe(180)
       const conPalas = await reservarYPagar({ deporte: 'pingpong', inicio: h(19), palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
       expect(total(await s.cambiarHorario(conPalas.id, VIERNES, h(20)))).toBe(200)
-      // La extensión de 2 personas también sale de su tabla: de 1 h ($200) a 1:30 ($290).
-      expect((await s.extender(pareja.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 90 })
+      // La extensión de 2 personas también sale de su tabla: pasando la hora, su media hora ($120).
+      expect((await s.extender(pareja.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 120 })
     })
 
     it('extender no deja a dos grupos en la misma mesa: si el siguiente ya está en ella, avisa', async () => {
@@ -552,7 +555,7 @@ describe('datos de ejemplo', () => {
 describe('datos guardados por otra versión', () => {
   it('si lo guardado no tiene la forma esperada, se empieza de cero en vez de romper', async () => {
     const almacen = almacenEnMemoria()
-    almacen.escribir(JSON.stringify({ version: 3, config: {}, reservas: [{ id: 3 }] }))
+    almacen.escribir(JSON.stringify({ version: 4, config: {}, reservas: [{ id: 3 }] }))
     const otro = crearServicioSimulado({ almacen, reloj: () => reloj, conEjemplos: false })
     expect((await otro.configuracion()).deportes.pingpong.mesas).toBe(6)
   })

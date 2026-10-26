@@ -119,10 +119,11 @@ export const CONFIGURACION_INICIAL: Configuracion = {
       // que ya pagó sin tablero. Él lo sube desde el panel.
       mesas: 6,
       fueraDeServicio: [],
-      // Desde el 25/10/2026 Cornhole es una hora o una hora y media, sin 2 horas.
-      duraciones: [60, 90],
-      precios: { 60: 280, 90: 410 },
-      preciosPareja: { 60: 200, 90: 290 },
+      // Desde el 25/10/2026, como el volante del negocio: media hora o una
+      // hora, también para 2 personas. Sin hora y media ni 2 horas.
+      duraciones: [30, 60],
+      precios: { 30: 160, 60: 280 },
+      preciosPareja: { 30: 120, 60: 180 },
       precioPromo: 240,
       precioPalasExtra: null,
       avisarDesde: 3,
@@ -147,7 +148,7 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     pasoDeInicio: 30,
     minutosDeApartado: 10,
     minutosDeTolerancia: 30,
-    duracionesEnLinea: [30, 60, 90],
+    duracionesEnLinea: [30, 60],
   },
   whatsappNegocio: '',
 }

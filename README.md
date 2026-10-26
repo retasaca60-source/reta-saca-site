@@ -41,8 +41,8 @@ Si eres nuevo en el proyecto, léelo en este orden:
 demostración con datos en el navegador (sin esa variable):
 
 - **El sitio del cliente** (`/`): reservar con las reglas de `RESERVAS.md`
-  (Ping Pong 30 min o 1 h con palas extra; Cornhole para 4 o 2 personas, 1 h o
-  90 min; a la hora o a la media), pago completo con Clip (simulado mientras no esté su llave), link
+  (30 min o 1 h en los dos juegos; palas extra en Ping Pong; Cornhole para 4 o 2
+  personas; a la hora o a la media), pago completo con Clip (simulado mientras no esté su llave), link
   privado (`/r/…`) con el ticket, las reglas del juego y las políticas
   (`/politicas`).
 - **El panel** (`/panel`): mesas ahora, clientes sin reserva, sentar, cobrar en

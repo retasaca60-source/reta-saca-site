@@ -59,7 +59,7 @@ negocio. Al final está el
 | Deporte | Mesas | En línea | En el local | Opciones |
 |---|---|---|---|---|
 | Ping Pong | **6** | 30 min o 1 h | 30 o 60 min | **2 palas extra** por $50 (la mesa trae 2) |
-| Cornhole | **6** (puede subir a 8) | 1 h o 90 min | 60 o 90 min | **Estándar (4 personas)** o **para 2 personas** |
+| Cornhole | **6** (puede subir a 8) | 30 min o 1 h | 30 o 60 min | **Estándar (4 personas)** o **para 2 personas** |
 
 - Popdarts **salió** el 21/10/2026. Las reservas viejas de Popdarts que haya en
   la base se quedan guardadas, pero no salen en ninguna pantalla.
@@ -68,8 +68,9 @@ negocio. Al final está el
   más deja a alguien que ya pagó sin tablero.
 - Hugo puede marcar una mesa **fuera de servicio** desde el panel (se
   descompuso, se está limpiando). Mientras esté así, cuenta como una mesa menos.
-- **Ping Pong se vende por 30 minutos o 1 hora; Cornhole, por 1 hora u hora y
-  media**, igual en línea que en el local. Ya no hay 2 horas en ningún juego.
+- **Los dos juegos se venden por 30 minutos o 1 hora**, igual en línea que en
+  el local (el volante del negocio del 25/10/2026). No hay hora y media ni 2
+  horas.
 - Más tiempo que eso es **tiempo extra**: se da en el local desde el panel y se
   cobra aparte (sección 6).
 
@@ -96,16 +97,15 @@ negocio. Al final está el
 
 - **En línea se empieza a la hora o a la media**: 5:00, 5:30, 6:00, 6:30…
 - **La reserva tiene que terminar antes del cierre de su bloque.** No se vende
-  una mesa de 90 minutos si falta 1 hora para cerrar. Una reserva nunca cruza
+  una mesa de 1 hora si faltan 30 minutos para cerrar. Una reserva nunca cruza
   de un bloque a otro (no existe "de 11 AM a 5 PM").
 
 Última hora de inicio en línea según la duración:
 
 | Duración | Cierra a las 10 PM | Cierra a las 11 PM | Cierra a las 12 PM |
 |---|---|---|---|
-| 30 min (Ping Pong) | 9:30 PM | 10:30 PM | 11:30 AM |
+| 30 min | 9:30 PM | 10:30 PM | 11:30 AM |
 | 1 hora | 9:00 PM | 10:00 PM | 11:00 AM |
-| 90 min (Cornhole) | 8:30 PM | 9:30 PM | 10:30 AM |
 
 ### Qué tan pronto y qué tan lejos
 
@@ -132,11 +132,11 @@ negocio. Al final está el
 
 **El precio es por mesa.** En Cornhole depende de la modalidad.
 
-| | 30 min | 1 h | 1:30 |
-|---|---|---|---|
-| Ping Pong | $100 | $150 | — |
-| Cornhole estándar (4 personas) | — | $280 | $410 |
-| Cornhole para 2 personas | — | $200 | $290 |
+| | 30 min | 1 h |
+|---|---|---|
+| Ping Pong (2 jugadores) | $100 | $150 |
+| Cornhole estándar (4 personas) | $160 | $280 |
+| Cornhole para 2 personas | $120 | $180 |
 
 - **Palas extra (Ping Pong):** $50 por 2 palas más. Se suman al total de la
   reserva.
@@ -160,7 +160,7 @@ conservan su precio.
 |---|---|---|
 | Ping Pong | $150 | **$120** |
 | Cornhole estándar | $280 | **$240** |
-| Cornhole para 2 personas | $200 | sin promo |
+| Cornhole para 2 personas | $180 | sin promo |
 
 **Cuándo aplica:** reservas de **1 hora** que **empiezan a las 5:00 PM**,
 **todos los días**.
@@ -176,7 +176,7 @@ conservan su precio.
 
 1. **Elige el deporte.**
 2. **En Cornhole, elige cuántos juegan:** 4 personas (estándar) o 2 personas.
-3. **Elige día, duración (Ping Pong 30 min o 1 h; Cornhole 1 h o 90 min) y hora.** Solo aparecen las horas en que
+3. **Elige día, duración (30 min o 1 h) y hora.** Solo aparecen las horas en que
    cabe la reserva (sección 2). Las llenas se ven como "Lleno".
 4. **En Ping Pong, puede agregar 2 palas extra** (+$50).
 5. **Escribe su nombre y su WhatsApp** (10 dígitos). Antes de pagar ve el total
@@ -469,7 +469,7 @@ Salieron al construir el sistema. Hoy funcionan como dice la columna
 
 | Tema | Propuesta que ya está funcionando |
 |---|---|
-| **Cuánto se cobra al extender** | Dentro de la tabla, la diferencia: de 30 a 60 min en Ping Pong = $150 − $100 = **$50**; de 1 h a 90 min en Cornhole = $410 − $280 = **$130**. Pasando el máximo del juego, lo que se agrega por separado: +30 min en Ping Pong = **$100**; +30 min en Cornhole = la mitad de la hora, **$140** (para 2 personas, $100). |
+| **Cuánto se cobra al extender** | Dentro de la tabla, la diferencia: de 30 a 60 min = **$50** en Ping Pong, **$120** en Cornhole y **$60** en Cornhole para 2. Pasando la hora, lo que se agrega por separado al precio de su tabla: +30 min = **$100** en Ping Pong, **$160** en Cornhole, **$120** para 2; +1 h = el precio de la hora. |
 | **Cambiar a un horario más caro o más barato** | Si el nuevo cuesta más (por ejemplo, pierde la promo), la diferencia queda por cobrar en el local. Si cuesta menos, **no se devuelve nada**. |
 | **Promo para clientes sin reserva** | Cuenta la hora en que llegan: si llegan a las 5:10 PM, entran en la promo de las 5:00. |
 | **Política 31: en el local se empieza con la mitad del pago** | El panel cobra el total al registrar a un cliente sin reserva. Si el negocio quiere cobrar la mitad al empezar, hay que cambiar la caja. |
@@ -555,6 +555,6 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 21/10/2026 | Clip en lugar de Mercado Pago | Clip cobra un porcentaje sin cuota fija por pago. |
 | 21/10/2026 | El cliente ya no cancela desde su link; cambios y cancelaciones con 24 h por WhatsApp o Instagram | Política 02. Los reembolsos autorizados van por el método de pago original o en efectivo en el local. |
 | 21/10/2026 | Al terminar de reservar: "¡Listo, ya se armó la reta!", reglas del juego y políticas | Lo pidió el negocio. Las políticas también están en `/politicas`. |
-| 25/10/2026 | Ping Pong solo 30 min ($100) o 1 h ($150); Cornhole solo 1 h o 90 min ($280 / $410; para 2 personas $200 / $290). Sin 2 horas | Lo decidió el negocio. Se venden igual en línea que en el local; más tiempo es tiempo extra y se cobra aparte en el local. |
+| 25/10/2026 | Los dos juegos solo 30 min o 1 h: Ping Pong $100 / $150; Cornhole $160 / $280 y para 2 personas $120 / $180. Sin hora y media ni 2 horas | El volante del negocio. Se venden igual en línea que en el local; más tiempo es tiempo extra y se cobra aparte en el local. Ese mismo día se había puesto Cornhole en 1 h / 90 min por un mensaje; el volante es lo que vale. |
 | 25/10/2026 | Sin promociones | Lo decidió el negocio. Se apaga en Ajustes en vez de borrarse, por si regresa; las reservas ya hechas con promo conservan su precio. |
 | 22/10/2026 | En línea: 1 h, hora y media o 2 h, empezando a la hora o a la media; para hoy, hasta la hora de inicio | Lo pidió Hugo. Lo que quería quitar el 21/10 era solo la media hora; las medias horas de inicio (5:30, 6:30…) y la hora y media regresan. El corte de 30 min escondía horarios que sí quería vender. |

@@ -64,19 +64,20 @@ describe('horario (RESERVAS.md §2)', () => {
 })
 
 describe('precios (RESERVAS.md §3 y §4)', () => {
-  it('precio por mesa: Ping Pong 30 min o 1 h; Cornhole 1 h o 90 min', () => {
+  it('precio por mesa, como el volante: 30 min o 1 h en los dos juegos', () => {
     expect(precioDe(C, 'pingpong', h(19), 30).precio).toBe(100)
     expect(precioDe(C, 'pingpong', h(19), 60).precio).toBe(150)
+    expect(precioDe(C, 'cornhole', h(19), 30).precio).toBe(160)
     expect(precioDe(C, 'cornhole', h(19), 60).precio).toBe(280)
-    expect(precioDe(C, 'cornhole', h(19), 90).precio).toBe(410)
     // Lo que ya no se vende no tiene precio: el sitio no lo ofrece y el servidor lo rechaza.
     expect(() => precioDe(C, 'pingpong', h(19), 90)).toThrow()
+    expect(() => precioDe(C, 'cornhole', h(19), 90)).toThrow()
     expect(() => precioDe(C, 'cornhole', h(19), 120)).toThrow()
   })
   it('Cornhole para 2 personas: su propia tabla', () => {
-    expect(precioDe(C, 'cornhole', h(19), 60, 'pareja').precio).toBe(200)
-    expect(precioDe(C, 'cornhole', h(19), 90, 'pareja').precio).toBe(290)
-    expect(precioDe(C, 'cornhole', h(17), 60, 'pareja')).toEqual({ precio: 200, conPromo: false })
+    expect(precioDe(C, 'cornhole', h(19), 30, 'pareja').precio).toBe(120)
+    expect(precioDe(C, 'cornhole', h(19), 60, 'pareja').precio).toBe(180)
+    expect(precioDe(C, 'cornhole', h(17), 60, 'pareja')).toEqual({ precio: 180, conPromo: false })
   })
   it('sin promociones: las 5:00 cuestan lo mismo que las demás horas', () => {
     expect(precioDe(C, 'pingpong', h(17), 60)).toEqual({ precio: 150, conPromo: false })

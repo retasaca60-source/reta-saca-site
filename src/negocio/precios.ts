@@ -19,7 +19,7 @@ export const ofreceModalidad = (d: ConfigDeporte, modalidad: Modalidad) => modal
  * una de sus horas (5:00 PM), todos los días, si está activa y el deporte
  * tiene precio de promo. Se cobra entera a precio de promo, no se prorratea.
  * La modalidad para 2 personas no lleva promo: ya es más barata, y la promo de
- * Cornhole ($240) costaría más que la pareja ($200).
+ * Cornhole ($240) costaría más que la hora para 2 ($180).
  */
 export function esPromo(config: Configuracion, deporte: DeporteId, inicio: number, duracion: number, modalidad: Modalidad = 'estandar'): boolean {
   const p = config.promo
@@ -52,11 +52,11 @@ export function precioSiExiste(config: Configuracion, deporte: DeporteId, inicio
 /**
  * Lo que se cobra al extender una reserva: la diferencia entre la duración
  * nueva y la anterior según la tabla de su modalidad (30 → 60 en Ping Pong =
- * $150 − $100 = $50). Si la duración nueva no está en la tabla (pasa del
- * máximo que vende el juego: más de 1 h en Ping Pong, más de 90 min en
- * Cornhole), se cobra lo que se agrega por separado: su precio si existe
- * (+30 en Ping Pong = $100) o la parte proporcional de la hora (+30 en
- * Cornhole = $140, para 2 personas $100).
+ * $150 − $100 = $50; en Cornhole $280 − $160 = $120). Si la duración nueva no
+ * está en la tabla (pasa de 1 h, lo máximo que se vende), se cobra lo que se
+ * agrega por separado: el precio de ese tiempo si existe (+30 en Ping Pong =
+ * $100, en Cornhole $160, para 2 personas $120) o, si no, la parte
+ * proporcional de la hora.
  *
  * PENDIENTE DE CONFIRMAR CON HUGO: la regla de cobro de extensiones no se
  * decidió; esta es la propuesta (RESERVAS.md → Pendientes).
