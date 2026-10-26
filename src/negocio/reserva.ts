@@ -1,7 +1,7 @@
 // Qué es una reserva y las reglas que dependen solo de ella: cuánto falta
 // pagar, si ocupa mesa, si se puede cancelar o liberar. Sin pantallas.
 
-import type { Configuracion, DeporteId, Duracion, Modalidad, Partes } from './configuracion'
+import type { Configuracion, DeporteId, Modalidad, Partes } from './configuracion'
 import { instante } from './tiempo'
 
 // Sin transferencia: el negocio cobra en el local solo en efectivo o con la terminal.
@@ -134,5 +134,3 @@ export function puedeLiberarPorRetraso(r: Reserva, config: Configuracion, ahoraM
 }
 
 
-/** Duraciones con que se puede extender una reserva: de 30 en 30, hasta 2 horas más. */
-export const EXTENSIONES: Duracion[] = [30, 60, 90, 120]

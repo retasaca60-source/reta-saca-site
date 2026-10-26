@@ -16,8 +16,8 @@ import type { HorarioDisponible, SolicitudDeReserva, VistaDeCobro } from './tipo
 
 /**
  * Las horas que se ofrecen EN LÍNEA, con el precio de la mesa en esa
- * modalidad. Solo las duraciones de `reglas.duracionesEnLinea` (1 h, 90 min y
- * 2 h): la media hora de Ping Pong se cobra solo en el local.
+ * modalidad. Solo las duraciones del juego que estén en
+ * `reglas.duracionesEnLinea`: hoy Ping Pong 30 min o 1 h y Cornhole 1 h o 90 min.
  */
 export function horariosDisponibles(
   ctx: Contexto,

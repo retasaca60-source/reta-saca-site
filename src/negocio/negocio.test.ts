@@ -64,27 +64,32 @@ describe('horario (RESERVAS.md §2)', () => {
 })
 
 describe('precios (RESERVAS.md §3 y §4)', () => {
-  it('precio por mesa', () => {
-    expect(precioDe(C, 'pingpong', h(19), 90).precio).toBe(220)
+  it('precio por mesa: Ping Pong 30 min o 1 h; Cornhole 1 h o 90 min', () => {
+    expect(precioDe(C, 'pingpong', h(19), 30).precio).toBe(100)
+    expect(precioDe(C, 'pingpong', h(19), 60).precio).toBe(150)
     expect(precioDe(C, 'cornhole', h(19), 60).precio).toBe(280)
     expect(precioDe(C, 'cornhole', h(19), 90).precio).toBe(410)
-    expect(precioDe(C, 'cornhole', h(19), 120).precio).toBe(540)
+    // Lo que ya no se vende no tiene precio: el sitio no lo ofrece y el servidor lo rechaza.
+    expect(() => precioDe(C, 'pingpong', h(19), 90)).toThrow()
+    expect(() => precioDe(C, 'cornhole', h(19), 120)).toThrow()
   })
-  it('Cornhole para 2 personas: su propia tabla, sin promo', () => {
+  it('Cornhole para 2 personas: su propia tabla', () => {
     expect(precioDe(C, 'cornhole', h(19), 60, 'pareja').precio).toBe(200)
     expect(precioDe(C, 'cornhole', h(19), 90, 'pareja').precio).toBe(290)
-    expect(precioDe(C, 'cornhole', h(19), 120, 'pareja').precio).toBe(380)
     expect(precioDe(C, 'cornhole', h(17), 60, 'pareja')).toEqual({ precio: 200, conPromo: false })
   })
-  it('promo: 60 min que empiezan a las 5:00, cualquier día', () => {
-    expect(precioDe(C, 'pingpong', h(17), 60)).toEqual({ precio: 120, conPromo: true })
-    expect(precioDe(C, 'cornhole', h(17), 60)).toEqual({ precio: 240, conPromo: true })
-    expect(esPromo(C, 'cornhole', h(17, 30), 60)).toBe(false)
-    expect(esPromo(C, 'pingpong', h(18), 60)).toBe(false)
-    expect(esPromo(C, 'pingpong', h(17), 90)).toBe(false)
+  it('sin promociones: las 5:00 cuestan lo mismo que las demás horas', () => {
+    expect(precioDe(C, 'pingpong', h(17), 60)).toEqual({ precio: 150, conPromo: false })
+    expect(precioDe(C, 'cornhole', h(17), 60)).toEqual({ precio: 280, conPromo: false })
   })
-  it('la promo se puede apagar', () => {
-    expect(esPromo({ ...C, promo: { ...C.promo, activa: false } }, 'pingpong', h(17), 60)).toBe(false)
+  it('si se vuelve a prender, la promo es de 60 min que empiezan a las 5:00, y nunca para 2 personas', () => {
+    const conPromo = { ...C, promo: { ...C.promo, activa: true } }
+    expect(precioDe(conPromo, 'pingpong', h(17), 60)).toEqual({ precio: 120, conPromo: true })
+    expect(precioDe(conPromo, 'cornhole', h(17), 60)).toEqual({ precio: 240, conPromo: true })
+    expect(esPromo(conPromo, 'cornhole', h(17), 60, 'pareja')).toBe(false)
+    expect(esPromo(conPromo, 'cornhole', h(17, 30), 60)).toBe(false)
+    expect(esPromo(conPromo, 'pingpong', h(18), 60)).toBe(false)
+    expect(esPromo(conPromo, 'pingpong', h(17), 30)).toBe(false)
   })
   it('partes en pesos cerrados; el organizador absorbe la diferencia', () => {
     expect(repartir(150, 4)).toEqual([39, 37, 37, 37])

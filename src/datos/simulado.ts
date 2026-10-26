@@ -73,12 +73,13 @@ export function almacenEnMemoria(): Almacen {
 
 interface Estado {
   /**
-   * 2 desde el 21/10/2026 (sin Popdarts, Cornhole para 2 personas, palas
-   * extra, horario nuevo). Lo guardado por la versión 1 se descarta y la
-   * demostración empieza de cero con la configuración nueva: es de pruebas,
-   * y arrastrar precios y horarios viejos confundiría al revisarla.
+   * 3 desde el 25/10/2026 (Ping Pong solo 30 min o 1 h; Cornhole 1 h o
+   * 90 min, sin 2 horas). Lo guardado por una versión anterior se descarta y
+   * la demostración empieza de cero con la configuración nueva: es de
+   * pruebas, y arrastrar precios y tiempos viejos confundiría al revisarla
+   * (los ejemplos de 2 horas ya no tendrían precio).
    */
-  version: 2
+  version: 3
   config: Configuracion
   reservas: Reserva[]
   intentos: IntentoDePago[]
@@ -93,7 +94,7 @@ interface Estado {
  */
 function esEstadoValido(x: unknown): x is Estado {
   const e = x as Estado
-  if (!e || e.version !== 2 || !e.config || !Array.isArray(e.reservas) || !Array.isArray(e.intentos) || !Array.isArray(e.usuarios)) return false
+  if (!e || e.version !== 3 || !e.config || !Array.isArray(e.reservas) || !Array.isArray(e.intentos) || !Array.isArray(e.usuarios)) return false
   // La configuración se revisa con la MISMA regla que usa el servidor al
   // guardarla. Antes se revisaban unos cuantos campos: sin promo.inicios la
   // consulta de horarios tronaba al llamar .includes.
@@ -182,7 +183,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
   function nuevoEstado(): Estado {
     const config = structuredClone(CONFIGURACION_INICIAL)
     const reservas = conEjemplos ? sembrar(config, momentoDe(reloj())) : []
-    return { version: 2, config, reservas, intentos: [], usuarios: [...USUARIOS_DEMO], sesion: null }
+    return { version: 3, config, reservas, intentos: [], usuarios: [...USUARIOS_DEMO], sesion: null }
   }
 
   function leer(): Estado {

@@ -62,7 +62,7 @@ export function SeccionHorario({ borrador, despachar, config, deporte }: Props) 
 
       <h2 className="titulo-seccion">Tiempo</h2>
       <div className="segmentado" role="group" aria-label="Cuánto tiempo">
-        {/* En línea, las de `reglas.duracionesEnLinea`; la media hora, en el local. */}
+        {/* Los tiempos de ese juego que se venden en línea (`duracionesEnLinea`). */}
         {duracionesEnLinea(config, d).map((m) => (
           <button key={m} type="button" aria-pressed={duracion === m} onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}>
             {formatoDuracion(m)}

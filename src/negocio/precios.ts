@@ -51,9 +51,12 @@ export function precioSiExiste(config: Configuracion, deporte: DeporteId, inicio
 
 /**
  * Lo que se cobra al extender una reserva: la diferencia entre la duración
- * nueva y la anterior según la tabla de su modalidad (60 → 90 en Ping Pong =
- * $220 − $150 = $70). Si la duración nueva no está en la tabla (más de 2
- * horas), se cobra el precio de lo que se agrega por separado.
+ * nueva y la anterior según la tabla de su modalidad (30 → 60 en Ping Pong =
+ * $150 − $100 = $50). Si la duración nueva no está en la tabla (pasa del
+ * máximo que vende el juego: más de 1 h en Ping Pong, más de 90 min en
+ * Cornhole), se cobra lo que se agrega por separado: su precio si existe
+ * (+30 en Ping Pong = $100) o la parte proporcional de la hora (+30 en
+ * Cornhole = $140, para 2 personas $100).
  *
  * PENDIENTE DE CONFIRMAR CON HUGO: la regla de cobro de extensiones no se
  * decidió; esta es la propuesta (RESERVAS.md → Pendientes).

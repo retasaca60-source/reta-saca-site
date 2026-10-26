@@ -78,8 +78,9 @@ export function reducir(b: Borrador, a: Accion): Borrador {
     case 'irAPaso':
       if (a.paso === 2) {
         if (!b.deporte) return b
-        // En línea no hay media hora: si venía con una duración que no se
-        // reserva en línea, se cambia a la primera que sí.
+        // Cada juego tiene sus tiempos: si venía con una duración que este no
+        // vende en línea (90 min al pasar de Cornhole a Ping Pong), se cambia
+        // a la primera que sí.
         const duraciones = duracionesEnLinea(a.config, a.config.deportes[b.deporte])
         const duracion = duraciones.includes(b.duracion) ? b.duracion : duraciones[0]
         return { ...b, paso: 2, duracion, inicio: duracion === b.duracion ? b.inicio : null }

@@ -32,7 +32,7 @@ export interface ConfigDeporte {
   mesas: number
   /** Números de las mesas fuera de servicio (1 = la primera). No se venden. */
   fueraDeServicio: number[]
-  /** Las que se pueden cobrar en el local. En línea, solo las de `reglas.duracionesEnLinea`. */
+  /** Las que vende ese juego, en el local y en línea (en línea, filtradas por `reglas.duracionesEnLinea`). */
   duraciones: Duracion[]
   /** Precio por mesa en la modalidad estándar. */
   precios: Partial<Record<Duracion, number>>
@@ -103,8 +103,9 @@ export const CONFIGURACION_INICIAL: Configuracion = {
       icono: 'paleta',
       mesas: 6,
       fueraDeServicio: [],
-      duraciones: [30, 60, 90, 120],
-      precios: { 30: 100, 60: 150, 90: 220, 120: 280 },
+      // Desde el 25/10/2026 Ping Pong es solo media hora o una hora.
+      duraciones: [30, 60],
+      precios: { 30: 100, 60: 150 },
       preciosPareja: null,
       precioPromo: 120,
       precioPalasExtra: 50,
@@ -118,9 +119,10 @@ export const CONFIGURACION_INICIAL: Configuracion = {
       // que ya pagó sin tablero. Él lo sube desde el panel.
       mesas: 6,
       fueraDeServicio: [],
-      duraciones: [60, 90, 120],
-      precios: { 60: 280, 90: 410, 120: 540 },
-      preciosPareja: { 60: 200, 90: 290, 120: 380 },
+      // Desde el 25/10/2026 Cornhole es una hora o una hora y media, sin 2 horas.
+      duraciones: [60, 90],
+      precios: { 60: 280, 90: 410 },
+      preciosPareja: { 60: 200, 90: 290 },
       precioPromo: 240,
       precioPalasExtra: null,
       avisarDesde: 3,
@@ -136,16 +138,16 @@ export const CONFIGURACION_INICIAL: Configuracion = {
     6: [MANANA, TARDE_LARGA],
   },
   diasCerrados: [],
-  // La promo es solo la hora de las 5:00. La de las 5:30 se quitó el 21/10 y no
-  // regresó cuando volvieron los inicios cada media hora.
-  promo: { activa: true, inicios: [h(17)], duracion: 60 },
+  // Sin promociones desde el 25/10/2026 (lo decidió el negocio). Se apaga en
+  // vez de borrarse: Hugo la puede volver a prender en Ajustes con sus precios.
+  promo: { activa: false, inicios: [h(17)], duracion: 60 },
   reglas: {
     diasDeAnticipacion: 7,
     minutosDeCorte: 0,
     pasoDeInicio: 30,
     minutosDeApartado: 10,
     minutosDeTolerancia: 30,
-    duracionesEnLinea: [60, 90, 120],
+    duracionesEnLinea: [30, 60, 90],
   },
   whatsappNegocio: '',
 }

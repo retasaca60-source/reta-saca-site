@@ -6,7 +6,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import { servicio, type Conflicto, type Rol } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
-import { ORDEN_DEPORTES, type Configuracion as Config, type Duracion } from '../negocio/configuracion'
+import { duracionesEnLinea, ORDEN_DEPORTES, type Configuracion as Config } from '../negocio/configuracion'
 import { RANGOS_DE_REGLAS } from '../negocio/operaciones'
 import { DIAS_LARGOS, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
@@ -27,6 +27,10 @@ export function Configuracion() {
 
   if (error) return <p className="panel-error">{error}</p>
   if (!c) return <p>Cargando…</p>
+
+  // Las columnas de la tabla son los tiempos que vende algún juego: si ninguno
+  // vende 2 horas, no se pinta una columna vacía de "—".
+  const columnas = [...new Set(ORDEN_DEPORTES.flatMap((id) => c.deportes[id].duraciones))].sort((x, y) => x - y)
 
   const cambiar = (f: (x: Config) => void) => {
     const copia = structuredClone(c)
@@ -87,10 +91,12 @@ export function Configuracion() {
               <th>Deporte</th>
               <th>Mesas</th>
               <th>Fuera de servicio</th>
-              {([30, 60, 90, 120] as Duracion[]).map((m) => (
+              {columnas.map((m) => (
                 <th key={m}>{m} min</th>
               ))}
-              <th>Promo 60 min</th>
+              <th>
+                Promo {c.promo.duracion} min{c.promo.activa ? '' : ' (apagada)'}
+              </th>
               <th>2 palas extra</th>
             </tr>
           </thead>
@@ -123,7 +129,7 @@ export function Configuracion() {
                       ))}
                     </div>
                   </td>
-                  {([30, 60, 90, 120] as Duracion[]).map((m) => (
+                  {columnas.map((m) => (
                     <td key={m}>
                       {d.duraciones.includes(m) ? (
                         <input className="corto" type="number" min={1} value={d.precios[m] ?? ''} onChange={(e) => cambiar((x) => void (x.deportes[id].precios[m] = numero(e.target.value)))} />
@@ -160,7 +166,7 @@ export function Configuracion() {
                     <td colSpan={2}>
                       <span className="nota">{id === 'cornhole' ? 'mismos tableros' : 'mismas mesas'}</span>
                     </td>
-                    {([30, 60, 90, 120] as Duracion[]).map((m) => (
+                    {columnas.map((m) => (
                       <td key={m}>
                         {d.duraciones.includes(m) ? (
                           <input
@@ -189,9 +195,9 @@ export function Configuracion() {
           </tbody>
         </table>
         <p className="nota">
-          Cambiar un precio no toca las reservas ya hechas: cada una conserva el suyo. En línea solo se reserva{' '}
-          {new Intl.ListFormat('es', { type: 'disjunction' }).format(c.reglas.duracionesEnLinea.map(formatoDuracion))}, empezando cada{' '}
-          {c.reglas.pasoDeInicio} minutos; las demás duraciones se cobran en el local.
+          Cambiar un precio no toca las reservas ya hechas: cada una conserva el suyo. En línea se reserva{' '}
+          {ORDEN_DEPORTES.map((id) => `${c.deportes[id].nombre} ${new Intl.ListFormat('es', { type: 'disjunction' }).format(duracionesEnLinea(c, c.deportes[id]).map(formatoDuracion))}`).join('; ')}
+          , empezando cada {c.reglas.pasoDeInicio} minutos. El tiempo extra se da en el local.
         </p>
       </section>
 

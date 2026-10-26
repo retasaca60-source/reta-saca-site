@@ -39,6 +39,17 @@ const codigoDe = async (p: Promise<unknown>) => {
   }
 }
 
+/**
+ * Desde el 25/10/2026 no hay promociones, pero la promo sigue en Ajustes por si
+ * Hugo la vuelve a prender: lo que depende de ella se prueba con ella prendida.
+ */
+async function prenderPromo() {
+  await s.iniciarSesion('hugo', '')
+  const c = await s.configuracion()
+  c.promo.activa = true
+  await s.guardarConfiguracion(c)
+}
+
 /** Aparta y paga la reserva completa, como hace el sitio. */
 async function reservarYPagar(extra: Partial<SolicitudDeReserva> = {}) {
   const r = await s.apartar(pedido(extra))
@@ -65,12 +76,17 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(r.partes.map((p) => p.monto)).toEqual([150])
       expect(r.folio).toMatch(/^RS-[2-9A-HJKMNP-Z]{5}$/)
     })
-    it('Cornhole para 2 personas cobra su propia tabla y no lleva promo', async () => {
+    it('Cornhole para 2 personas cobra su propia tabla; aun con la promo prendida, no la lleva', async () => {
+      await prenderPromo()
       expect((await s.apartar(pedido({ modalidad: 'pareja' }))).precio).toBe(200)
       expect((await s.apartar(pedido({ inicio: h(17), modalidad: 'pareja', organizador: { nombre: 'Eva', whatsapp: '6620000101' } }))).precio).toBe(200)
       expect((await s.apartar(pedido({ inicio: h(17), organizador: { nombre: 'Leo', whatsapp: '6620000102' } }))).precio).toBe(240)
-      const dos = await s.apartar(pedido({ duracion: 120, inicio: h(20), modalidad: 'pareja', organizador: { nombre: 'Ivo', whatsapp: '6620000103' } }))
-      expect(dos).toMatchObject({ precio: 380, modalidad: 'pareja' })
+      const hora_y_media = await s.apartar(pedido({ duracion: 90, inicio: h(20), modalidad: 'pareja', organizador: { nombre: 'Ivo', whatsapp: '6620000103' } }))
+      expect(hora_y_media).toMatchObject({ precio: 290, modalidad: 'pareja' })
+    })
+    it('sin promociones: a las 5:00 se cobra la tarifa normal', async () => {
+      expect(await s.apartar(pedido({ inicio: h(17) }))).toMatchObject({ precio: 280, conPromo: false })
+      expect((await s.disponibilidad('pingpong', VIERNES, 60)).every((x) => !x.conPromo)).toBe(true)
     })
     it('Ping Pong con 2 palas extra suma $50 a la misma parte; Cornhole no tiene palas', async () => {
       const r = await s.apartar(pedido({ deporte: 'pingpong', palasExtra: true }))
@@ -78,9 +94,14 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(r.partes.map((p) => p.monto)).toEqual([200])
       expect(await codigoDe(s.apartar(pedido({ palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })))).toBe('datos_invalidos')
     })
-    it('en línea 1 h, 90 min o 2 h, empezando a la hora o a la media; la media hora, no', async () => {
-      expect(await codigoDe(s.apartar(pedido({ deporte: 'pingpong', duracion: 30 })))).toBe('datos_invalidos')
-      expect((await s.disponibilidad('pingpong', VIERNES, 30)).length).toBe(0)
+    it('en línea: Ping Pong 30 min o 1 h, Cornhole 1 h o 90 min, a la hora o a la media', async () => {
+      expect((await s.apartar(pedido({ deporte: 'pingpong', duracion: 30, organizador: { nombre: 'Eva', whatsapp: '6620000101' } }))).precio).toBe(100)
+      expect((await s.disponibilidad('pingpong', VIERNES, 30)).at(-1)?.inicio).toBe(h(22, 30))
+      // Lo que ya no se vende no sale ni se aparta.
+      expect((await s.disponibilidad('pingpong', VIERNES, 90)).length).toBe(0)
+      expect(await codigoDe(s.apartar(pedido({ deporte: 'pingpong', duracion: 90 })))).toBe('datos_invalidos')
+      expect(await codigoDe(s.apartar(pedido({ duracion: 120 })))).toBe('datos_invalidos')
+      expect(await codigoDe(s.apartar(pedido({ duracion: 30 })))).toBe('datos_invalidos')
       expect(await codigoDe(s.apartar(pedido({ inicio: h(18, 15) })))).toBe('fuera_de_horario')
       expect((await s.apartar(pedido({ duracion: 90, inicio: h(18, 30) }))).precio).toBe(410)
       expect((await s.disponibilidad('cornhole', VIERNES, 60)).map((x) => x.inicio)).toEqual([h(17), h(17, 30), h(18), h(18, 30), h(19), h(19, 30), h(20), h(20, 30), h(21), h(21, 30), h(22)])
@@ -301,23 +322,23 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('CH 2')
     })
 
-    it('extender cobra la diferencia de la tabla y revisa que haya lugar', async () => {
-      const r = await reservarYPagar({
-        deporte: 'pingpong',
-        inicio: h(19),
-      })
-
-      const ext = await s.extender(r.id, 30)
-
-      expect(ext.duracion).toBe(90)
-      expect(ext.partes.at(-1)).toMatchObject({
-        concepto: 'extension',
-        monto: 70,
-        pago: null,
-      })
+    it('extender: dentro de la tabla cobra la diferencia; pasando el máximo, lo que se agrega', async () => {
+      const r = await reservarYPagar({ deporte: 'pingpong', inicio: h(19), duracion: 30 })
+      // De 30 min ($100) a 1 h ($150).
+      const hora = await s.extender(r.id, 30)
+      expect(hora.duracion).toBe(60)
+      expect(hora.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 50, pago: null })
+      // Ping Pong ya no vende 90 min: el tiempo extra se cobra como media hora ($100).
+      const extra = await s.extender(r.id, 30)
+      expect(extra.duracion).toBe(90)
+      expect(extra.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 100 })
+      // Cornhole no tiene media hora: se cobra la parte de la hora ($280 / 2).
+      const ch = await reservarYPagar({ inicio: h(19), duracion: 90, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
+      expect((await s.extender(ch.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 140 })
     })
 
     it('cambiar de la promo de las 5 a las 7 cobra la diferencia y quita la etiqueta de promo', async () => {
+      await prenderPromo()
       const r = await reservarYPagar({ deporte: 'cornhole', inicio: h(17) })
       expect(r.conPromo).toBe(true)
       const movida = await s.cambiarHorario(r.id, VIERNES, h(19))
@@ -470,6 +491,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
     })
 
     it('no cobra otra vez la diferencia al cambiar entre horarios del mismo precio', async () => {
+      await prenderPromo()
       const reserva = await reservarYPagar({
         deporte: 'pingpong',
         inicio: h(17),
@@ -502,9 +524,10 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
         duracion: 60,
       })
 
+      // 1 h ($150) + media hora extra ($100): Ping Pong ya no vende 90 min.
       const extendida = await s.extender(reserva.id, 30)
 
-      expect(total(extendida)).toBe(220)
+      expect(total(extendida)).toBe(250)
 
       const movida = await s.cambiarHorario(
         reserva.id,
@@ -512,7 +535,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
         h(20),
       )
 
-      expect(total(movida)).toBe(220)
+      expect(total(movida)).toBe(250)
     })
   })
 })
@@ -529,7 +552,7 @@ describe('datos de ejemplo', () => {
 describe('datos guardados por otra versión', () => {
   it('si lo guardado no tiene la forma esperada, se empieza de cero en vez de romper', async () => {
     const almacen = almacenEnMemoria()
-    almacen.escribir(JSON.stringify({ version: 2, config: {}, reservas: [{ id: 3 }] }))
+    almacen.escribir(JSON.stringify({ version: 3, config: {}, reservas: [{ id: 3 }] }))
     const otro = crearServicioSimulado({ almacen, reloj: () => reloj, conEjemplos: false })
     expect((await otro.configuracion()).deportes.pingpong.mesas).toBe(6)
   })

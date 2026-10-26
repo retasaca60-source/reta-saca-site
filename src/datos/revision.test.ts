@@ -76,8 +76,8 @@ describe.each(['simulado', 'real'] as const)('revisión, versión %s', (version)
   it('3. no se guardan precios que bajan con más tiempo (la extensión saldría negativa)', async () => {
     await s.iniciarSesion('hugo', '')
     const c = await s.configuracion()
+    c.deportes.pingpong.precios[30] = 200
     c.deportes.pingpong.precios[60] = 150
-    c.deportes.pingpong.precios[90] = 100
     expect(await codigoDe(s.guardarConfiguracion(c))).toBe('datos_invalidos')
   })
 
@@ -99,6 +99,11 @@ describe.each(['simulado', 'real'] as const)('revisión, versión %s', (version)
 
   it('5. el mostrador cotiza con la hora de los datos y no registra si el precio no es el que se vio', async () => {
     await s.iniciarSesion('hugo', '')
+    // La promo está apagada desde el 25/10; se prende aquí porque es lo que
+    // hace que el precio dependa de la hora.
+    const c = await s.configuracion()
+    c.promo.activa = true
+    await s.guardarConfiguracion(c)
     reloj = instante(VIERNES, h(17, 10))
     const cot = await s.cotizarSinReserva('pingpong', 60)
     expect(cot).toMatchObject({ precio: 120, conPromo: true, inicio: h(17, 10) })

@@ -195,7 +195,7 @@ en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 - Aparta con precio por mesa, en un solo pago completo.
 - Cornhole para 2 personas cobra su tabla y no lleva promo; las palas extra
   se suman a la misma parte.
-- En línea 1 h, 90 min o 2 h, a la hora o a la media; la media hora, no.
+- En línea, los tiempos de cada juego (Ping Pong 30 min o 1 h; Cornhole 1 h o 90 min), a la hora o a la media.
 - Queda firme con el pago.
 - No vende una mesa de más, ni con dos personas al mismo tiempo.
 - Un apartado ocupa mesa 10 min y luego se libera solo.
