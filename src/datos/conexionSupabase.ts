@@ -26,6 +26,34 @@ import { correoInterno } from './usuarios'
  */
 const REGION_DE_LA_BASE = 'ca-central-1'
 
+/**
+ * Lo que solo LEE. Si la plataforma falla al pedirlo (un 5xx que no es
+ * respuesta nuestra, o se cae la conexión), se pide otra vez una sola vez:
+ * repetir una lectura no hace nada dos veces. El 23/10 el panel recibió un
+ * 546 de Supabase (la función no alcanzó a arrancar) al preguntar quién tenía
+ * la sesión, y recepción vio "El servidor no respondió bien". Lo que escribe
+ * (apartar, cobrar, extender…) NO se repite solo: si la primera vez sí llegó,
+ * se haría dos veces.
+ */
+const SOLO_LEEN = new Set([
+  'configuracion',
+  'disponibilidad',
+  'reservaPorTokenPrivado',
+  'vistaDeCobro',
+  'pagoSimuladoObtener',
+  'yo',
+  'reservasEntre',
+  'pagosDelDia',
+  'cotizarSinReserva',
+  'devolucionesPorRevisar',
+  'usuarios',
+])
+
+/** ¿Se puede pedir otra vez? Solo lecturas, y solo si falló la plataforma (sin estado = no hubo conexión). */
+export function sePuedeReintentar(accion: string, estado: number | null): boolean {
+  return SOLO_LEEN.has(accion) && (estado === null || estado >= 500)
+}
+
 export function conexionSupabase(url: string, llavePublica: string): Conexion {
   const supabase = createClient(url, llavePublica)
   const oyentes = new Set<() => void>()
@@ -64,9 +92,8 @@ export function conexionSupabase(url: string, llavePublica: string): Conexion {
     llamar: async (accion, datos) => {
       const { data } = await supabase.auth.getSession()
       const token = data.session?.access_token
-      let respuesta: Response
-      try {
-        respuesta = await fetch(`${url}/functions/v1/api?forceFunctionRegion=${REGION_DE_LA_BASE}`, {
+      const pedir = () =>
+        fetch(`${url}/functions/v1/api?forceFunctionRegion=${REGION_DE_LA_BASE}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -75,9 +102,13 @@ export function conexionSupabase(url: string, llavePublica: string): Conexion {
           },
           body: JSON.stringify({ accion, datos }),
         })
-      } catch {
-        throw new ErrorDeDatos('datos_invalidos', 'No hay conexión. Revisa tu internet e intenta otra vez.')
+      let respuesta: Response | null = await pedir().catch(() => null)
+      if (sePuedeReintentar(accion, respuesta?.status ?? null) && (!respuesta || !respuesta.ok)) {
+        // Un respiro corto: el 546 de arranque suele pasar al segundo intento.
+        await new Promise((listo) => setTimeout(listo, 800))
+        respuesta = await pedir().catch(() => null)
       }
+      if (!respuesta) throw new ErrorDeDatos('datos_invalidos', 'No hay conexión. Revisa tu internet e intenta otra vez.')
       const cuerpo = await respuesta.json().catch(() => null)
       // Un error nuestro trae { error: { codigo, mensaje } } con un mensaje
       // para la persona. Cualquier otra cosa (un error de la plataforma con

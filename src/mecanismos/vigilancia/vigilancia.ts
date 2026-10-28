@@ -7,8 +7,9 @@
 //
 // Decisiones, con su porqué:
 //
-// - **Apagado si no hay llave.** Sin `VITE_SENTRY_DSN` no se carga nada. La
-//   demostración no la lleva: sus errores son de pruebas, no de clientes.
+// - **Solo en el sitio real publicado.** Sin `VITE_SENTRY_DSN`, en la
+//   demostración o en la compu (localhost) no se carga nada: esos errores son
+//   de pruebas, no de clientes (ver ENCENDIDA).
 // - **No le cuesta el arranque a nadie.** Sentry se carga cuando la página ya
 //   abrió y el navegador tiene un respiro. Lo que truene antes se guarda y se
 //   manda en cuanto carga.
@@ -31,6 +32,17 @@ let usuario: { id: string; rol: string } | null = null
 const DSN = import.meta.env.VITE_SENTRY_DSN
 
 /**
+ * Solo el sitio publicado con datos reales manda errores. El .env.local de la
+ * compu trae la llave y Vite la mete en CUALQUIER compilación, también en la
+ * de la demostración y en las pruebas locales: el 27/10 una prueba en
+ * localhost:5196 llenó Sentry con dos errores que no eran de clientes.
+ */
+const ENCENDIDA =
+  Boolean(DSN) &&
+  import.meta.env.VITE_DATOS === 'real' &&
+  !(typeof location !== 'undefined' && /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname))
+
+/**
  * Tapa lo que da acceso: el token de una reserva, de un cobro o de un pago, y
  * llaves en la URL. Se usa también sobre el reporte entero ya convertido a
  * texto: por eso el token termina en comillas, diagonal invertida o espacio.
@@ -44,13 +56,13 @@ export function limpiarUrl(url: string): string {
 }
 
 function cuandoCargue(f: (S: Sentry) => void) {
-  if (!DSN) return
+  if (!ENCENDIDA) return
   if (sentry) f(sentry)
   else pendientes.push(f)
 }
 
 export function iniciarVigilancia() {
-  if (!DSN) return
+  if (!ENCENDIDA) return
 
   const temprano = (e: ErrorEvent) => cuandoCargue((S) => S.captureException(e.error ?? e.message))
   const rechazoTemprano = (e: PromiseRejectionEvent) => cuandoCargue((S) => S.captureException(e.reason))

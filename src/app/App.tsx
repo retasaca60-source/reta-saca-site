@@ -15,15 +15,17 @@ import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { Cabecera } from '../vista/Cabecera'
 import { LimiteDeErrores } from './LimiteDeErrores'
+import { conRecarga } from '../mecanismos/recarga/recarga'
 import '../estilos/sitio.css'
 
-const Reservar = lazy(() => import('../pantallas/reservar/Reservar'))
-const MiReserva = lazy(() => import('../pantallas/mi-reserva/MiReserva'))
-const Cobro = lazy(() => import('../pantallas/cobro/Cobro'))
-const PagoSimulado = lazy(() => import('../pantallas/pago-simulado/PagoSimulado'))
-const Privacidad = lazy(() => import('../pantallas/privacidad/Privacidad'))
-const Politicas = lazy(() => import('../pantallas/politicas/Politicas'))
-const Panel = lazy(() => import('../panel/Panel'))
+// Cada pantalla se recarga sola una vez si su archivo no llega (mecanismos/recarga).
+const Reservar = lazy(conRecarga(() => import('../pantallas/reservar/Reservar')))
+const MiReserva = lazy(conRecarga(() => import('../pantallas/mi-reserva/MiReserva')))
+const Cobro = lazy(conRecarga(() => import('../pantallas/cobro/Cobro')))
+const PagoSimulado = lazy(conRecarga(() => import('../pantallas/pago-simulado/PagoSimulado')))
+const Privacidad = lazy(conRecarga(() => import('../pantallas/privacidad/Privacidad')))
+const Politicas = lazy(conRecarga(() => import('../pantallas/politicas/Politicas')))
+const Panel = lazy(conRecarga(() => import('../panel/Panel')))
 
 export default function App() {
   return (
