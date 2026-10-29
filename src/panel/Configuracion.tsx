@@ -284,7 +284,7 @@ export function Configuracion() {
           ))}
           <label>
             WhatsApp del negocio (10 dígitos)
-            <input type="tel" maxLength={10} value={c.whatsappNegocio} placeholder="Pendiente de Hugo" onChange={(e) => cambiar((x) => void (x.whatsappNegocio = e.target.value.replace(/\D/g, '')))} />
+            <input type="tel" maxLength={10} value={c.whatsappNegocio} placeholder="10 dígitos" onChange={(e) => cambiar((x) => void (x.whatsappNegocio = e.target.value.replace(/\D/g, '')))} />
           </label>
         </div>
       </section>
