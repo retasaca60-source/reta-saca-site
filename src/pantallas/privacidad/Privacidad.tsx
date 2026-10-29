@@ -1,7 +1,14 @@
 // Aviso de privacidad. Los datos del responsable los dio el negocio el
-// 28/10/2026. Tiene que decir lo que la página hace de verdad: si se agrega un
-// proveedor que reciba datos de la gente (otro de pagos, de mensajes, de
-// analítica), se agrega aquí y se cambia la fecha.
+// 28/10/2026. Tiene que decir lo que la página hace de verdad.
+//
+// Los proveedores que solo trabajan por encargo (hoy Supabase, Netlify y
+// Sentry) van por su función y no por su nombre: la ley pide decir que existen
+// y para qué, no quiénes son, y así cambiar de proveedor no obliga a cambiar el
+// aviso. Clip sí se nombra porque el cliente le da su tarjeta directo y tiene
+// su propio aviso. Si un proveedor nuevo usara los datos para SUS propios fines
+// (una transferencia), o la página empezara a juntar otros datos sola
+// (analítica, cookies de terceros), entonces sí se agrega aquí y se cambia la
+// fecha.
 
 import { Link } from 'react-router-dom'
 
@@ -34,8 +41,8 @@ export default function Privacidad() {
         </ul>
         <p>
           No usamos tus datos para publicidad ni los vendemos. Solo los manejan, por encargo nuestro, los proveedores que hacen
-          funcionar la página: Clip (cobra el pago), Supabase (guarda las reservas), Netlify (publica la página) y Sentry (nos avisa
-          de errores).
+          funcionar la página: el que procesa los pagos (Clip), el que guarda las reservas, el que publica la página y el que nos
+          avisa de errores.
         </p>
         <p>Guardamos los datos de cada reserva el tiempo necesario para atenderla y para las cuentas del negocio.</p>
         <h3>Tus derechos</h3>
