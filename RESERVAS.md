@@ -433,32 +433,28 @@ pruebas. Ver `BASE-DE-DATOS.md` y `CONTRATO-DE-DATOS.md`.
 | Panel: plano de mesas con el dibujo de cada juego, aviso de tiempo cumplido, reservas del día por hora | Hecho |
 | Usuarios del panel con usuario y contraseña (Supabase Auth) | Hecho |
 | Panel del dueño: mesas, fuera de servicio, precios, promo, horario, días cerrados, reglas, usuarios; aviso de conflictos | Hecho |
-| Aviso de privacidad | Borrador en `/privacidad`, faltan los datos del titular |
+| Aviso de privacidad | Hecho (28/10/2026), con los datos del responsable y los proveedores que reciben datos |
 
 ### Falta
 
-1. **Clip de producción**: Hugo crea su cuenta y pone su llave `CLIP_API_KEY`
-   en los secretos de Supabase; después se borra `PAGOS_SIMULADOS` (y el
-   secreto viejo `MP_ACCESS_TOKEN`). Se prueba con un pago real chico.
+1. **Limpiar los secretos viejos** de Supabase: `PAGOS_SIMULADOS` y
+   `MP_ACCESS_TOKEN`. Clip ya cobra de verdad desde el 22/10/2026 (llave
+   `CLIP_API_KEY`) y los primeros pagos de clientes entraron el 26/10.
 2. **Registro de movimientos de dinero** (cada cobro y cada devolución con su
    fecha y su número de pago), antes de cobrar con dinero real. Ver la
    revisión de seguridad del 01/10/2026, prioridad 2.
-3. **Aviso de privacidad completo** (espera los datos del titular).
-4. **La cuenta de dueño de Hugo** y quitar la cuenta `prueba`.
-5. Ligar **`retasaca.com`** y abrir el sitio al público.
+3. **La cuenta de dueño de Hugo** y quitar la cuenta `prueba`.
 
 ## Pendientes de Hugo
 
-- [ ] **Crear la cuenta de Clip del negocio** y poner su llave de la API en los
-      secretos de Supabase (nunca por el repositorio ni por chat).
-- [ ] **Datos del titular** para el aviso de privacidad y Clip (el
-      mismo en los dos y en las facturas): nombre legal o razón social, RFC,
-      domicilio del local, correo y WhatsApp de contacto.
-- [ ] **Número de WhatsApp del negocio** para el botón "Avisar al negocio", y
-      el **Instagram** que mencionan las políticas para cambios y cancelaciones.
+- [x] **Cuenta de Clip del negocio** con su llave en los secretos de Supabase.
+- [x] **Datos del responsable** para el aviso de privacidad (28/10/2026).
+- [x] **WhatsApp del negocio** (662 112 9285), para el aviso y el botón
+      "Avisar al negocio".
+- [ ] El **Instagram** que mencionan las políticas para cambios y
+      cancelaciones.
 - [ ] Confirmar cuántos tableros de Cornhole caben (hoy: 6).
-- [ ] Cuando toque, dar acceso o quitar `retasaca.com` de su sitio de Netlify
-      para ligarlo al nuestro.
+- [x] `retasaca.com` ligado al sitio (25/10/2026).
 
 ---
 

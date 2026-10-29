@@ -52,9 +52,9 @@ demostración con datos en el navegador (sin esa variable):
 - **Datos reales:** Supabase (ver `BASE-DE-DATOS.md`). Probado contra el
   proyecto real: reservar, pagar, cancelar desde el panel y que no se venda
   una mesa dos veces. El panel entra con usuario y contraseña.
-- **Lo que falta para abrir al público:** la cuenta de Clip del negocio (hoy el
-  pago en línea es de prueba), el aviso de privacidad completo y la cuenta de
-  dueño, que se crea en la entrega.
+- **Abierto al público** en `retasaca.com` con pagos de verdad por Clip y el
+  aviso de privacidad completo. Falta la cuenta de dueño de Hugo, que se crea
+  en la entrega.
 
 Lo que falta para abrir de verdad está en
 [`RESERVAS.md` → Qué ya está hecho y qué falta](RESERVAS.md#qué-ya-está-hecho-y-qué-falta).
