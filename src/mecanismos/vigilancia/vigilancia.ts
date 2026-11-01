@@ -84,6 +84,9 @@ export function iniciarVigilancia() {
           // Lo da el navegador al interrumpir una transición de pantalla (la
           // pestaña se ocultó a medio cambio): no es un fallo del sitio.
           'Transition was aborted because of invalid state',
+          // Lo lanza un script que el navegador de Instagram mete en la página
+          // en iPhone; nuestro código no lo usa (visto el 27/10, iOS 27).
+          'window._META',
         ],
         beforeBreadcrumb(miga) {
           const d = miga.data as Record<string, unknown> | undefined

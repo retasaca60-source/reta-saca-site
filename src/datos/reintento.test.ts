@@ -4,6 +4,7 @@ import { sePuedeReintentar } from './conexionSupabase'
 describe('pedir otra vez cuando falla la plataforma', () => {
   it('una lectura se repite si Supabase falló (546, 503) o no hubo conexión', () => {
     expect(sePuedeReintentar('yo', 546)).toBe(true)
+    expect(sePuedeReintentar('yo', 429)).toBe(true)
     expect(sePuedeReintentar('disponibilidad', 503)).toBe(true)
     expect(sePuedeReintentar('reservasEntre', null)).toBe(true)
   })

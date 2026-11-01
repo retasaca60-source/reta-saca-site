@@ -27,13 +27,15 @@ import { correoInterno } from './usuarios'
 const REGION_DE_LA_BASE = 'ca-central-1'
 
 /**
- * Lo que solo LEE. Si la plataforma falla al pedirlo (un 5xx que no es
- * respuesta nuestra, o se cae la conexión), se pide otra vez una sola vez:
+ * Lo que solo LEE. Si la plataforma falla al pedirlo (un 5xx o un 429 que no
+ * son respuesta nuestra, o se cae la conexión), se pide otra vez una sola vez:
  * repetir una lectura no hace nada dos veces. El 23/10 el panel recibió un
- * 546 de Supabase (la función no alcanzó a arrancar) al preguntar quién tenía
- * la sesión, y recepción vio "El servidor no respondió bien". Lo que escribe
- * (apartar, cobrar, extender…) NO se repite solo: si la primera vez sí llegó,
- * se haría dos veces.
+ * 546 de Supabase (la función no alcanzó a arrancar) y el 30/10 un 429, los
+ * dos al abrir, cuando salen tres peticiones en el mismo milisegundo. No era
+ * cuota: iban 613 de 500,000. Nuestro servidor nunca contesta 429: el límite
+ * de frecuencia propio viaja como { error } con 200. Lo que escribe (apartar,
+ * cobrar, extender…) NO se repite solo: si la primera vez sí llegó, se haría
+ * dos veces.
  */
 const SOLO_LEEN = new Set([
   'configuracion',
@@ -51,7 +53,7 @@ const SOLO_LEEN = new Set([
 
 /** ¿Se puede pedir otra vez? Solo lecturas, y solo si falló la plataforma (sin estado = no hubo conexión). */
 export function sePuedeReintentar(accion: string, estado: number | null): boolean {
-  return SOLO_LEEN.has(accion) && (estado === null || estado >= 500)
+  return SOLO_LEEN.has(accion) && (estado === null || estado === 429 || estado >= 500)
 }
 
 export function conexionSupabase(url: string, llavePublica: string): Conexion {
