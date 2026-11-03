@@ -286,8 +286,13 @@ function Plano({
         </p>
       </div>
 
-      <aside className="plano-lado">
+      {/* En el teléfono la mesa tocada sube como hoja desde abajo: en una sola
+          columna, sus datos quedaban debajo de todas las mesas y había que ir a
+          buscarlos. El fondo oscuro la cierra, como el botón de la hoja. */}
+      <aside className={'plano-lado' + (mesa ? ' con-mesa' : '')}>
+        {mesa && <button type="button" className="hoja-fondo" aria-label="Cerrar la mesa" onClick={() => setElegida(null)} />}
         <DatosDeMesa
+          cerrar={() => setElegida(null)}
           mesa={mesa}
           config={config}
           deporte={deporte}
@@ -305,6 +310,7 @@ function Plano({
 
 /** La columna derecha: lo de la mesa tocada, o el resumen si no hay ninguna. */
 function DatosDeMesa({
+  cerrar,
   mesa,
   config,
   deporte,
@@ -314,6 +320,7 @@ function DatosDeMesa({
   conTiempo,
   registrarAqui,
 }: {
+  cerrar: () => void
   mesa: Mesa | null
   config: Configuracion
   deporte: DeporteId
@@ -369,12 +376,17 @@ function DatosDeMesa({
 
   const r = mesa.quien
   return (
-    <section className="lado-tarjeta">
+    // La llave hace que sea otro elemento y no el del resumen con otra clase:
+    // así la hoja del teléfono entra deslizándose (@starting-style) al abrirla.
+    <section key={mesa.etiqueta} className="lado-tarjeta hoja" aria-label={`Mesa ${mesa.etiqueta}`}>
       <div className="lado-cabeza">
         <h2>{mesa.etiqueta}</h2>
         <span className={`estado ${mesa.estado}`}>
           {mesa.estado === 'en-juego' ? 'En juego' : mesa.estado === 'tiempo' ? 'Tiempo cumplido' : mesa.estado === 'fuera' ? 'Fuera de servicio' : 'Libre'}
         </span>
+        <button type="button" className="panel-boton icono hoja-cerrar" aria-label="Cerrar" onClick={cerrar}>
+          ×
+        </button>
       </div>
 
       {mesa.termino && <TiempoCumplido r={mesa.termino} config={config} />}

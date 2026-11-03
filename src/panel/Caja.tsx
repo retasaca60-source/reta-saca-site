@@ -47,7 +47,9 @@ export function Caja() {
             </div>
           </div>
           {devueltos.length > 0 && <p className="nota">Reembolsado tras cancelaciones: {formatoDinero(suma(devueltos))} (no cuenta en el total).</p>}
-          <table className="panel-tabla">
+          {/* En el teléfono cada pago se apila como tarjeta y cada dato lleva su
+              nombre (data-titulo): seis columnas no caben en 375 px. */}
+          <table className="panel-tabla apilable">
             <thead>
               <tr>
                 <th>Hora</th>
@@ -68,12 +70,12 @@ export function Caja() {
               )}
               {pagos.map((p) => (
                 <tr key={p.parteId} className={p.devuelto ? 'devuelto' : ''}>
-                  <td>{formatoHora(momentoDe(Date.parse(p.en)).minutos)}</td>
-                  <td>{p.folio}</td>
-                  <td>{p.nombre}</td>
-                  <td>{MEDIOS.find((m) => m.medio === p.medio)?.nombre}</td>
-                  <td>{p.marcadoPor ?? '—'}</td>
-                  <td className="derecha">
+                  <td data-titulo="Hora">{formatoHora(momentoDe(Date.parse(p.en)).minutos)}</td>
+                  <td data-titulo="Folio">{p.folio}</td>
+                  <td data-titulo="Quién pagó">{p.nombre}</td>
+                  <td data-titulo="Medio">{MEDIOS.find((m) => m.medio === p.medio)?.nombre}</td>
+                  <td data-titulo="Marcó">{p.marcadoPor ?? '—'}</td>
+                  <td data-titulo="Monto" className="derecha">
                     {formatoDinero(p.monto)}
                     {p.devuelto && ' (devuelto)'}
                   </td>

@@ -55,7 +55,9 @@ export function Configuracion() {
 
   return (
     <div className="panel-config">
-      <div className="panel-titulo">
+      {/* En el teléfono esta barra se queda arriba al bajar: Ajustes es largo y
+          el botón de guardar quedaba a varias pantallas del último campo. */}
+      <div className="panel-titulo guardar-fijo">
         <h1>Configuración</h1>
         <button type="button" className="panel-boton primario" onClick={() => guardar()}>
           Guardar cambios
@@ -85,7 +87,9 @@ export function Configuracion() {
 
       <section className="panel-seccion">
         <h2>Mesas y precios</h2>
-        <table className="panel-tabla">
+        {/* En el teléfono cada fila es una tarjeta por juego y cada campo dice
+            qué es (data-titulo); la tabla ancha se salía 450 px de la pantalla. */}
+        <table className="panel-tabla apilable precios">
           <thead>
             <tr>
               <th>Deporte</th>
@@ -106,11 +110,11 @@ export function Configuracion() {
               return (
                 <Fragment key={id}>
                 <tr>
-                  <td>{d.nombre}</td>
-                  <td>
+                  <td className="titulo-fila">{d.nombre}</td>
+                  <td data-titulo="Mesas">
                     <input className="corto" type="number" min={0} max={50} value={d.mesas} onChange={(e) => cambiar((x) => void (x.deportes[id].mesas = numero(e.target.value)))} />
                   </td>
-                  <td>
+                  <td data-titulo="Fuera de servicio">
                     <div className="mesas-casillas">
                       {Array.from({ length: d.mesas }, (_, i) => i + 1).map((n) => (
                         <label key={n} title={`${d.clave} ${n}`}>
@@ -130,7 +134,7 @@ export function Configuracion() {
                     </div>
                   </td>
                   {columnas.map((m) => (
-                    <td key={m}>
+                    <td key={m} data-titulo={`${m} min`}>
                       {d.duraciones.includes(m) ? (
                         <input className="corto" type="number" min={1} value={d.precios[m] ?? ''} onChange={(e) => cambiar((x) => void (x.deportes[id].precios[m] = numero(e.target.value)))} />
                       ) : (
@@ -138,14 +142,14 @@ export function Configuracion() {
                       )}
                     </td>
                   ))}
-                  <td>
+                  <td data-titulo={`Promo ${c.promo.duracion} min${c.promo.activa ? '' : ' (apagada)'}`}>
                     {d.precioPromo === null ? (
                       <span className="nota">sin promo</span>
                     ) : (
                       <input className="corto" type="number" min={1} value={d.precioPromo} onChange={(e) => cambiar((x) => void (x.deportes[id].precioPromo = numero(e.target.value)))} />
                     )}
                   </td>
-                  <td>
+                  <td data-titulo="2 palas extra">
                     {d.precioPalasExtra === null ? (
                       <span className="nota">—</span>
                     ) : (
@@ -162,12 +166,12 @@ export function Configuracion() {
                 {/* Cornhole para 2 personas: mismas mesas, su propia tabla de precios. Sin promo. */}
                 {d.preciosPareja && (
                   <tr className="fila-pareja">
-                    <td>{d.nombre} · 2 personas</td>
-                    <td colSpan={2}>
+                    <td className="titulo-fila">{d.nombre} · 2 personas</td>
+                    <td colSpan={2} data-titulo="Mesas">
                       <span className="nota">{id === 'cornhole' ? 'mismos tableros' : 'mismas mesas'}</span>
                     </td>
                     {columnas.map((m) => (
-                      <td key={m}>
+                      <td key={m} data-titulo={`${m} min`}>
                         {d.duraciones.includes(m) ? (
                           <input
                             className="corto"
@@ -181,10 +185,10 @@ export function Configuracion() {
                         )}
                       </td>
                     ))}
-                    <td>
+                    <td className="sobra-en-telefono">
                       <span className="nota">sin promo</span>
                     </td>
-                    <td>
+                    <td className="sobra-en-telefono">
                       <span className="nota">—</span>
                     </td>
                   </tr>
@@ -211,13 +215,13 @@ export function Configuracion() {
 
       <section className="panel-seccion">
         <h2>Horario</h2>
-        <table className="panel-tabla horario">
+        <table className="panel-tabla apilable horario">
           <tbody>
             {ORDEN_DIAS.map((dia) => {
               const bloques = c.horario[dia] ?? []
               return (
                 <tr key={dia}>
-                  <td className="capital">{DIAS_LARGOS[dia]}</td>
+                  <td className="capital titulo-fila">{DIAS_LARGOS[dia]}</td>
                   <td>
                     {bloques.length === 0 && <span className="nota">Cerrado</span>}
                     {bloques.map((b, i) => (
@@ -315,13 +319,13 @@ function Usuarios() {
     <section className="panel-seccion">
       <h2>Quién entra al panel</h2>
       {error && <p className="panel-error">{error}</p>}
-      <table className="panel-tabla">
+      <table className="panel-tabla apilable">
         <tbody>
           {usuarios?.map((u) => (
             <tr key={u.id}>
-              <td>{u.nombre}</td>
-              <td>{u.usuario}</td>
-              <td>{u.rol === 'dueno' ? 'Dueño' : 'Recepción'}</td>
+              <td className="titulo-fila">{u.nombre}</td>
+              <td data-titulo="Usuario">{u.usuario}</td>
+              <td data-titulo="Puesto">{u.rol === 'dueno' ? 'Dueño' : 'Recepción'}</td>
               <td className="derecha">
                 <button type="button" className="panel-boton discreto" onClick={() => confirm(`¿Quitarle el acceso a ${u.nombre}?`) && hacer(() => servicio.quitarUsuario(u.id))}>
                   Quitar acceso

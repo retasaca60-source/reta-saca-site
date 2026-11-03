@@ -1,5 +1,7 @@
-// El panel del negocio (/panel): recepción y el dueño. Pensado para la laptop
-// del mostrador: barra lateral de íconos y el contenido a todo lo ancho.
+// El panel del negocio (/panel): recepción y el dueño. En la laptop del
+// mostrador, barra lateral de íconos y el contenido a todo lo ancho; en el
+// teléfono la misma barra pasa abajo y todo lo demás se puede hacer igual
+// (ver "Teléfono" en panel.css).
 //
 // El DISEÑO de estas pantallas se puede cambiar libremente: los estilos viven
 // en panel.css y los datos llegan del servicio (contrato.ts). Lo que no se

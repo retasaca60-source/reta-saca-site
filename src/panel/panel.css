@@ -672,3 +672,128 @@
 :root[data-theme="light"] .panel .segmentado button.activo{
   box-shadow:0 6px 14px -10px rgba(255,170,0,.9);
 }
+/* ── Teléfono ──────────────────────────────────────────────────────────── */
+
+/* La hoja de la mesa solo existe en el teléfono; en la laptop la mesa tocada
+   se ve en la columna derecha. */
+.hoja-fondo, .hoja-cerrar{ display:none; }
+
+/* Todo lo de la laptop se puede hacer aquí, con el pulgar. Decisiones:
+   - La barra lateral pasa abajo, como en cualquier app del teléfono: de lado
+     se comía 76 de 375 px y el contenido quedaba en una tira.
+   - Las tablas anchas se apilan en tarjetas con el nombre de cada dato
+     (data-titulo) en vez de desplazarse de lado: un precio que se edita a
+     ciegas, sin ver de qué columna es, es un precio mal puesto.
+   - La mesa tocada sube como hoja desde abajo (ver Hoy.tsx). */
+@media (max-width:720px){
+  .panel{ grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; }
+  .panel-principal{ grid-row:1; }
+  .panel-lateral{
+    grid-row:2; flex-direction:row; align-items:stretch; gap:8px;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    overflow:visible; box-shadow:0 -1px 0 var(--line);
+  }
+  .panel-sello{ display:none; }
+  .panel-nav{ flex-direction:row; gap:8px; }
+  .panel-nav a{ flex:1 1 0; width:auto; min-width:0; min-height:56px; }
+  .panel-salir{ flex:0 0 60px; width:60px; min-height:56px; }
+  .hoy-dias, .panel-dias{ gap:8px; }
+  .reloj-prueba{ gap:8px; }
+  .casilla-panel{ min-height:44px; }
+
+  .panel-barra{ flex-wrap:wrap; gap:10px; padding:12px 16px 0; }
+  .panel-demo{ margin:12px 16px 0; }
+  .panel-contenido{ padding:8px 16px 32px; }
+  .reloj-prueba{ order:10; width:100%; margin-right:0; }
+  .reloj-hora{ min-width:0; width:100%; }
+  .panel-tarjeta{ padding:16px; }
+  .panel-titulo h1{ font-size:1.6rem; }
+
+  .pestanas{ gap:18px; margin-bottom:18px; }
+  .pestanas button{ font-size:14px; }
+
+  /* Dos mesas por renglón: de una en una había que bajar seis pantallas. */
+  .plano-mesas{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; padding:0; }
+  .mesa-tabla{ padding:12px 10px; border-radius:18px; }
+  .mesa-tabla strong{ font-size:16px; }
+  .mesa-tabla small{ font-size:12px; }
+  .plano-leyenda{ gap:10px 16px; margin-top:20px; }
+  .lado-tarjeta{ padding:16px; }
+
+  .panel-principal:has(.plano-lado.con-mesa){ overflow:hidden; }
+  .hoja-fondo{
+    display:block; position:fixed; inset:0; z-index:30;
+    border:0; padding:0; background:rgba(0,0,0,.5); cursor:default;
+  }
+  .lado-tarjeta.hoja{
+    position:fixed; left:0; right:0; bottom:0; z-index:31;
+    max-height:calc(100% - 56px); overflow-y:auto; overscroll-behavior:contain;
+    border-radius:24px 24px 0 0; padding:10px 16px calc(20px + env(safe-area-inset-bottom));
+    box-shadow:0 -18px 48px -12px rgba(0,0,0,.55);
+    transition:translate .28s cubic-bezier(.2,.8,.2,1);
+  }
+  /* Entra con @starting-style y no con fotogramas: si el navegador congela la
+     animación, la hoja igual queda a la vista. En reposo no lleva translate. */
+  @starting-style{ .lado-tarjeta.hoja{ translate:0 100%; } }
+  .lado-tarjeta.hoja::before{ content:''; display:block; width:40px; height:5px; border-radius:999px; background:var(--line); margin:0 auto 10px; }
+  .lado-tarjeta.hoja .lado-cabeza .estado{ margin-left:auto; }
+  .hoja-cerrar{ display:inline-flex; font-size:24px; line-height:1; }
+
+  /* La gráfica de la semana: cada día abarca su séptimo completo para que el
+     dedo le atine (con espacios entre barras quedaban de 17 px). */
+  .semana-barras{ gap:0; }
+  .semana-barras button{ width:100%; min-height:44px; }
+
+  .fila-principal{ grid-template-columns:64px minmax(0,1fr) auto; gap:6px 12px; }
+  .fila-etiquetas{ grid-column:1 / -1; grid-row:2; justify-content:flex-start; }
+  .fila-dinero{ grid-column:3; grid-row:1; }
+
+  .caja-totales{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+  .caja-total strong{ font-size:1.35rem; }
+  .caja-total-grande strong{ font-size:1.9rem; }
+
+  .panel-tabla.apilable,
+  .panel-tabla.apilable tbody,
+  .panel-tabla.apilable tr,
+  .panel-tabla.apilable td{ display:block; width:auto; }
+  .panel-tabla.apilable thead{ display:none; }
+  .panel-tabla.apilable tr{ padding:12px 16px; border-bottom:1px solid var(--line); }
+  .panel-tabla.apilable tr:last-child{ border-bottom:0; }
+  .panel-tabla.apilable td{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border:0; padding:4px 0; min-height:36px; text-align:right;
+  }
+  .panel-tabla.apilable td[data-titulo]::before{ content:attr(data-titulo); color:var(--ink-soft); font-size:13px; text-align:left; }
+  .panel-tabla.apilable td.titulo-fila{ font-size:16px; font-weight:700; width:auto; }
+  .panel-tabla.apilable .sobra-en-telefono{ display:none; }
+  .panel-tabla.apilable td:has(.mesas-casillas){ flex-direction:column; align-items:stretch; }
+  .panel-tabla.horario td:not(.titulo-fila){ flex-wrap:wrap; justify-content:flex-start; }
+  /* Las dos horas en un renglón y "quitar" debajo: los tres juntos cortaban
+     la hora en "05:00 p". */
+  .bloque{ display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; width:100%; margin:0; }
+  .bloque .panel-boton{ grid-column:1 / -1; justify-self:end; }
+
+  .guardar-fijo{
+    position:sticky; top:0; z-index:6;
+    margin:0 -16px 12px; padding:10px 16px; background:var(--bg); box-shadow:0 1px 0 var(--line);
+  }
+  .panel-tabla.apilable td.derecha{ justify-content:flex-end; }
+  .fila-detalle.sin-borde > input, .fila-detalle.sin-borde > select{ flex:1 1 100%; }
+  .caja-fila > label:not(.caja-efectivo){ flex:1 1 100%; }
+  .caja-fila > label:not(.caja-efectivo) :is(input, select){ width:100%; }
+  .caja-efectivo{ flex-wrap:wrap; }
+}
+
+@media (max-width:720px) and (pointer:coarse){
+  .reloj-prueba .panel-boton, .panel .reloj-ir input{ min-height:44px; }
+  .panel-boton.icono{ width:44px; }
+  .mesas-casillas label{
+    min-height:44px; min-width:44px; padding:0 10px; justify-content:center;
+    border:1px solid var(--line); border-radius:12px;
+  }
+  .mesas-casillas input[type='checkbox']{ width:18px; height:18px; }
+}
+
+@media (max-width:720px) and (prefers-reduced-motion:reduce){
+  .lado-tarjeta.hoja{ transition:none; }
+}
