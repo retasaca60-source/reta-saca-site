@@ -6,7 +6,7 @@
 // El orden es el del mostrador: lo primero que se mira es qué mesa está libre;
 // por eso el plano va primero y la lista y la caja quedan a una pestaña.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { servicio } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
@@ -17,6 +17,7 @@ import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, formatoDuracion,
 import { DibujoMesa } from './DibujoMesa'
 import { FilaReserva } from './FilaReserva'
 import { escucharLevantadas, levantadas, marcarLevantada } from '../mecanismos/panel/mesasLevantadas'
+import { prepararAlarma, seAcabaronEntre, sonarAlarma } from '../mecanismos/panel/alarma'
 import { IconoAnterior, IconoSiguiente } from './iconos'
 import { ListaDelDia } from './ListaDelDia'
 import { RegistrarEnMostrador } from './RegistrarEnMostrador'
@@ -43,6 +44,21 @@ export function Hoy() {
     const t = setInterval(() => setTic((n) => n + 1), 30_000)
     return () => clearInterval(t)
   }, [])
+
+  // La alarma de tiempo cumplido: cada vez que se pinta (al menos cada 30 s)
+  // se compara con la lectura anterior del reloj y suena si a algún grupo
+  // sentado se le acabó la hora entre las dos (ver mecanismos/panel/alarma.ts).
+  useEffect(() => prepararAlarma(), [])
+  const lecturaAnterior = useRef<{ fecha: string; minutos: number } | null>(null)
+  useEffect(() => {
+    if (!datos) return
+    const reloj = ahoraEnSonora()
+    const antes = lecturaAnterior.current
+    lecturaAnterior.current = { fecha: reloj.fecha, minutos: reloj.minutos }
+    if (!antes || antes.fecha !== reloj.fecha) return
+    const deHoy = datos[1].filter((r) => r.fecha === reloj.fecha)
+    if (seAcabaronEntre(deHoy, antes.minutos, reloj.minutos, levantadas()).length > 0) sonarAlarma()
+  })
 
   if (error) return <p className="panel-error">{error}</p>
   if (!datos) return <p className="nota">Cargando…</p>

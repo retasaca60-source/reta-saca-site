@@ -24,12 +24,37 @@ import { BotonTema } from './BotonTema'
 
 export default function Panel() {
   const { datos: usuario, cargando } = usarDatos(() => servicio.sesion(), [])
+  useEffect(() => abrirComoApp(), [])
   // Un error del panel llega a Sentry con quién estaba (id y rol, sin nombre).
   useEffect(() => identificarUsuario(usuario ? { id: usuario.id, rol: usuario.rol } : null), [usuario])
 
   if (cargando && usuario === undefined) return <div className="panel-entrada">Cargando…</div>
   if (!usuario) return <Entrar />
   return <Marco usuario={usuario} />
+}
+
+/**
+ * Al agregar el panel a la pantalla de inicio del iPhone, que abra como app
+ * (sin la barra de Safari) y directo en /panel. Solo el panel: el sitio de
+ * reservas sigue abriendo en el navegador, porque el pago va a la página de
+ * Clip y regresa, y ese ir y venir no se ha probado dentro de una app de
+ * inicio. Barra de estado "black": el contenido empieza debajo de ella y no
+ * se mete bajo la hora y la batería.
+ */
+function abrirComoApp() {
+  const etiquetas = [
+    ['apple-mobile-web-app-capable', 'yes'],
+    ['mobile-web-app-capable', 'yes'],
+    ['apple-mobile-web-app-status-bar-style', 'black'],
+    ['apple-mobile-web-app-title', 'Panel RS'],
+  ].map(([name, content]) => {
+    const meta = document.createElement('meta')
+    meta.name = name
+    meta.content = content
+    document.head.append(meta)
+    return meta
+  })
+  return () => etiquetas.forEach((meta) => meta.remove())
 }
 
 function Marco({ usuario }: { usuario: Usuario }) {
