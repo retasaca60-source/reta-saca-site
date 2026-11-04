@@ -207,7 +207,7 @@ en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 - Sin sesión no se ven reservas; recepción no cambia configuración.
 - Marcar pago guarda quién lo marcó.
 - No asigna una mesa que ya tiene otro grupo.
-- Extender cobra la diferencia de la tabla y revisa lugar.
+- Extender cobra el tiempo extra a precio regular de su tabla y revisa lugar.
 - Liberar por retraso solo pasada la tolerancia.
 - Quitar mesas con reservas encima avisa y no guarda, salvo confirmación; y
   nunca cancela nada.

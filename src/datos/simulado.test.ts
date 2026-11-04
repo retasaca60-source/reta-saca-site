@@ -323,21 +323,20 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       ).toBe('CH 2')
     })
 
-    it('extender: dentro de la tabla cobra la diferencia; pasando el máximo, lo que se agrega', async () => {
+    it('extender cobra el tiempo extra a precio regular, sin importar cuánto tenían', async () => {
       const r = await reservarYPagar({ deporte: 'pingpong', inicio: h(19), duracion: 30 })
-      // De 30 min ($100) a 1 h ($150).
+      // 30 min ($100) + 30 extra a precio regular ($100): ya no la diferencia de $50.
       const hora = await s.extender(r.id, 30)
       expect(hora.duracion).toBe(60)
-      expect(hora.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 50, pago: null })
-      // Ping Pong ya no vende 90 min: el tiempo extra se cobra como media hora ($100).
+      expect(hora.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 100, pago: null })
+      expect(total(hora)).toBe(200)
       const extra = await s.extender(r.id, 30)
       expect(extra.duracion).toBe(90)
       expect(extra.partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 100 })
-      // Cornhole igual: de 30 min ($160) a 1 h ($280) es la diferencia, y pasando
-      // la hora se cobra la media hora ($160).
+      // Cornhole igual: cada media hora extra, $160; una hora extra, $280.
       const ch = await reservarYPagar({ inicio: h(19), duracion: 30, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
-      expect((await s.extender(ch.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 120 })
       expect((await s.extender(ch.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 160 })
+      expect((await s.extender(ch.id, 60)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 280 })
     })
 
     it('cambiar de la promo de las 5 a las 7 cobra la diferencia y quita la etiqueta de promo', async () => {
@@ -353,7 +352,7 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       expect(total(await s.cambiarHorario(pareja.id, VIERNES, h(19)))).toBe(180)
       const conPalas = await reservarYPagar({ deporte: 'pingpong', inicio: h(19), palasExtra: true, organizador: { nombre: 'Eva', whatsapp: '6620000101' } })
       expect(total(await s.cambiarHorario(conPalas.id, VIERNES, h(20)))).toBe(200)
-      // La extensión de 2 personas también sale de su tabla: pasando la hora, su media hora ($120).
+      // La extensión de 2 personas sale de su tabla: su media hora ($120).
       expect((await s.extender(pareja.id, 30)).partes.at(-1)).toMatchObject({ concepto: 'extension', monto: 120 })
     })
 

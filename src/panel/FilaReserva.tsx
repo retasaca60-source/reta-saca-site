@@ -8,6 +8,7 @@ import { mensajeDeError } from '../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../mecanismos/whatsapp/enlaces'
 import type { Configuracion, Duracion } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
+import { precioDeExtension } from '../negocio/precios'
 import { fin, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
@@ -135,9 +136,12 @@ export function FilaReserva({
       {abierto === 'extender' && (
         <div className="fila-detalle">
           <span>Agregar tiempo (se cobra en el local):</span>
+          {/* Con el precio a la vista: sin él, recepción se enteraba de cuánto
+              era hasta después de extender. Sale de la misma regla que usa el
+              servidor al cobrar. */}
           {([30, 60] as Duracion[]).map((m) => (
             <button key={m} type="button" className="panel-boton" disabled={ocupado} onClick={() => hacer(() => servicio.extender(r.id, m))}>
-              +{m} min
+              +{m} min · {formatoDinero(precioDeExtension(config, r.deporte, m, r.modalidad))}
             </button>
           ))}
         </div>

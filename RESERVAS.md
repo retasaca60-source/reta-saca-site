@@ -285,6 +285,10 @@ reintentar el suyo.
 - Recepción **extiende** la reserva desde el panel **si la mesa sigue libre**, y
   cobra ahí mismo (efectivo o tarjeta). En Cornhole para 2 personas, el tiempo
   extra sale de su tabla.
+- El tiempo extra se cobra a **precio regular**, sin importar cuánto tenían:
+  +30 min = **$100** en Ping Pong, **$160** en Cornhole, **$120** para 2; +1 h =
+  el precio de la hora. El panel muestra el precio en el botón antes de
+  extender.
 - "Libre" quiere decir dos cosas: que haya mesa en el inventario para ese
   tiempo extra **y** que la mesa donde ya están sentados no se la hayan dado
   a otro grupo. Si el grupo de las 8 ya está en su mesa, el panel avisa quién
@@ -465,7 +469,6 @@ Salieron al construir el sistema. Hoy funcionan como dice la columna
 
 | Tema | Propuesta que ya está funcionando |
 |---|---|
-| **Cuánto se cobra al extender** | Dentro de la tabla, la diferencia: de 30 a 60 min = **$50** en Ping Pong, **$120** en Cornhole y **$60** en Cornhole para 2. Pasando la hora, lo que se agrega por separado al precio de su tabla: +30 min = **$100** en Ping Pong, **$160** en Cornhole, **$120** para 2; +1 h = el precio de la hora. |
 | **Cambiar a un horario más caro o más barato** | Si el nuevo cuesta más (por ejemplo, pierde la promo), la diferencia queda por cobrar en el local. Si cuesta menos, **no se devuelve nada**. |
 | **Promo para clientes sin reserva** | Cuenta la hora en que llegan: si llegan a las 5:10 PM, entran en la promo de las 5:00. |
 | **Política 31: en el local se empieza con la mitad del pago** | El panel cobra el total al registrar a un cliente sin reserva. Si el negocio quiere cobrar la mitad al empezar, hay que cambiar la caja. |
@@ -554,3 +557,4 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 25/10/2026 | Los dos juegos solo 30 min o 1 h: Ping Pong $100 / $150; Cornhole $160 / $280 y para 2 personas $120 / $180. Sin hora y media ni 2 horas | El volante del negocio. Se venden igual en línea que en el local; más tiempo es tiempo extra y se cobra aparte en el local. Ese mismo día se había puesto Cornhole en 1 h / 90 min por un mensaje; el volante es lo que vale. |
 | 25/10/2026 | Sin promociones | Lo decidió el negocio. Se apaga en Ajustes en vez de borrarse, por si regresa; las reservas ya hechas con promo conservan su precio. |
 | 22/10/2026 | En línea: 1 h, hora y media o 2 h, empezando a la hora o a la media; para hoy, hasta la hora de inicio | Lo pidió Hugo. Lo que quería quitar el 21/10 era solo la media hora; las medias horas de inicio (5:30, 6:30…) y la hora y media regresan. El corte de 30 min escondía horarios que sí quería vender. |
+| 03/11/2026 | El tiempo extra se cobra a precio regular: +30 min Ping Pong $100, Cornhole $160, para 2 $120; +1 h el precio de la hora | Lo decidió el negocio. Antes, de 30 min a 1 h se cobraba solo la diferencia (Ping Pong $50) para que costara igual que reservar la hora. |

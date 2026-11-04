@@ -50,22 +50,16 @@ export function precioSiExiste(config: Configuracion, deporte: DeporteId, inicio
 }
 
 /**
- * Lo que se cobra al extender una reserva: la diferencia entre la duración
- * nueva y la anterior según la tabla de su modalidad (30 → 60 en Ping Pong =
- * $150 − $100 = $50; en Cornhole $280 − $160 = $120). Si la duración nueva no
- * está en la tabla (pasa de 1 h, lo máximo que se vende), se cobra lo que se
- * agrega por separado: el precio de ese tiempo si existe (+30 en Ping Pong =
- * $100, en Cornhole $160, para 2 personas $120) o, si no, la parte
- * proporcional de la hora.
+ * Lo que se cobra al extender una reserva: el tiempo extra a precio regular,
+ * el de su tabla y su modalidad, sin importar cuánto tenían. +30 min en Ping
+ * Pong = $100, en Cornhole $160, para 2 personas $120; +1 h = el precio de la
+ * hora. Si ese tiempo no está en la tabla, la parte proporcional de la hora.
  *
- * PENDIENTE DE CONFIRMAR CON HUGO: la regla de cobro de extensiones no se
- * decidió; esta es la propuesta (RESERVAS.md → Pendientes).
+ * Decidido el 03/11/2026: antes, de 30 a 60 min se cobraba solo la diferencia
+ * (Ping Pong $150 − $100 = $50) para que costara igual que reservar la hora.
+ * El negocio prefirió cobrar el extra a precio regular.
  */
-export function precioDeExtension(config: Configuracion, deporte: DeporteId, duracionActual: number, extra: Duracion, modalidad: Modalidad = 'estandar'): number {
+export function precioDeExtension(config: Configuracion, deporte: DeporteId, extra: Duracion, modalidad: Modalidad = 'estandar'): number {
   const tabla = tablaDe(config.deportes[deporte], modalidad) as Record<number, number | undefined>
-  const antes = tabla[duracionActual]
-  const despues = tabla[duracionActual + extra]
-  if (antes !== undefined && despues !== undefined) return despues - antes
-  const suelto = tabla[extra] ?? Math.round(((tabla[60] ?? 0) * extra) / 60)
-  return suelto
+  return tabla[extra] ?? Math.round(((tabla[60] ?? 0) * extra) / 60)
 }

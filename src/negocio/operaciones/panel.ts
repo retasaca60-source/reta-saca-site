@@ -226,10 +226,9 @@ export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva 
       `${r.mesa} la tiene ${siguiente.organizador.nombre} desde las ${formatoHora(siguiente.inicio)}. Para extender, primero cámbialos a otra mesa libre.`,
     )
   }
-  const monto = precioDeExtension(ctx.config, r.deporte, r.duracion, minutos, r.modalidad)
-  // Con precios incoherentes (90 min más barato que 60) la resta salía
-  // negativa y la "parte" bajaba lo que se debía. Ajustes ya no lo permite;
-  // esto cuida una configuración vieja.
+  const monto = precioDeExtension(ctx.config, r.deporte, minutos, r.modalidad)
+  // Un precio en 0 en Ajustes dejaría una "parte" de $0 por cobrar; esto cuida
+  // una configuración vieja o mal puesta.
   if (!(monto > 0)) throw new ErrorDeDatos('no_permitido', 'Los precios de ese deporte no permiten cobrar esa extensión. Revisa los precios en Ajustes.')
   const nueva = copia(r)
   nueva.partes.push({ id: nuevoId(), monto, delOrganizador: true, concepto: 'extension', pago: null })
