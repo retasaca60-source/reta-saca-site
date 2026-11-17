@@ -2,6 +2,10 @@
 // cobrarle en el mismo paso (RESERVAS.md §10). Deporte, tiempo y mesa → se ve
 // el total → cómo paga → cobrado y sentado. El comprobante es el ticket de la
 // terminal; con efectivo, la caja calcula el cambio.
+//
+// El combo se cobra aquí igual: en vez de deporte y tiempo se elige qué juego
+// va primero; la mesa es la del primer juego (la del segundo se asigna cuando
+// les toque).
 
 import { useState } from 'react'
 import { servicio } from '../datos'
@@ -11,6 +15,7 @@ import { formatoDinero } from '../negocio/formato'
 import { bloqueEn, estaCerrado } from '../negocio/horario'
 import { fin, ocupaMesa, total, type MedioDePago, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, diaDeLaSemana, formatoHora } from '../negocio/tiempo'
+import { TURNO_DEL_COMBO } from '../negocio/operaciones/combo'
 
 type Medio = Exclude<MedioDePago, 'en_linea'>
 const MEDIOS: { medio: Medio; nombre: string }[] = [
@@ -29,6 +34,8 @@ export function RegistrarEnMostrador({
   inicial?: { deporte: DeporteId; mesa: string }
 }) {
   const [deporte, setDeporte] = useState<DeporteId>(inicial?.deporte ?? 'pingpong')
+  // Combo: `deporte` es el juego que va primero.
+  const [combo, setCombo] = useState(false)
   const [duracion, setDuracion] = useState<Duracion>(60)
   // Cornhole 2 vs 2 o 1 vs 1 (otro precio); Ping Pong con 2 palas más.
   const [modalidad, setModalidad] = useState<Modalidad>('estandar')
@@ -43,19 +50,27 @@ export function RegistrarEnMostrador({
   const [ocupado, setOcupado] = useState(false)
 
   const d = config.deportes[deporte]
+  // Las palas extra son de Ping Pong, también en el combo aunque empiece con Cornhole.
+  const conPalas = combo ? config.deportes.pingpong : d
   const ahora = ahoraEnSonora()
   // El total lo da el servidor con SU hora y SU tarifa: antes se calculaba
   // aquí con el reloj de la laptop, y si iba desfasado (o terminaba la promo)
   // la pantalla decía un precio y se guardaba otro.
-  const cotizacion = usarDatos(() => servicio.cotizarSinReserva(deporte, duracion, modalidad, palasExtra), [deporte, duracion, modalidad, palasExtra])
+  const cotizacion = usarDatos(
+    () => (combo ? servicio.cotizarCombo(palasExtra) : servicio.cotizarSinReserva(deporte, duracion, modalidad, palasExtra)),
+    [combo, deporte, duracion, modalidad, palasExtra],
+  )
   // Lo que se cobra: la mesa en su modalidad más las palas, si las pidieron.
   const precio = cotizacion.datos?.total
   const conPromo = cotizacion.datos?.conPromo ?? false
-  const termina = (cotizacion.datos?.inicio ?? ahora.minutos) + duracion
-  // Mesas que se ven libres en todo el tiempo que van a jugar. La revisión
-  // que vale la hace la operación al cobrar; esto es para elegir rápido.
+  const empieza = cotizacion.datos?.inicio ?? ahora.minutos
+  const termina = empieza + (combo ? 2 * TURNO_DEL_COMBO : duracion)
+  // Mesas que se ven libres en todo el tiempo que van a jugar (en el combo, su
+  // media hora del primer juego). La revisión que vale la hace la operación al
+  // cobrar; esto es para elegir rápido.
+  const hastaEnEstaMesa = combo ? empieza + TURNO_DEL_COMBO : termina
   const ocupadas = reservas
-    .filter((r) => r.deporte === deporte && r.mesa && ocupaMesa(r, ahora.ms) && r.inicio < termina && fin(r) > ahora.minutos)
+    .filter((r) => r.deporte === deporte && r.mesa && ocupaMesa(r, ahora.ms) && r.inicio < hastaEnEstaMesa && fin(r) > ahora.minutos)
     .map((r) => r.mesa)
   const libres = Array.from({ length: d.mesas }, (_, i) => `${d.clave} ${i + 1}`).filter(
     (m, i) => !d.fueraDeServicio.includes(i + 1) && !ocupadas.includes(m),
@@ -74,16 +89,24 @@ export function RegistrarEnMostrador({
       ? `El local está cerrado: abre a las ${formatoHora(abreHoy.desde)}. La caja cobra solo en horario.`
       : 'El local ya cerró por hoy. La caja cobra solo en horario.'
     : termina > bloque.hasta
-      ? `No alcanza: se cierra a las ${formatoHora(bloque.hasta)}. Elige menos tiempo.`
+      ? `No alcanza: se cierra a las ${formatoHora(bloque.hasta)}.${combo ? '' : ' Elige menos tiempo.'}`
       : null
   const listo = precio !== undefined && !impedimento && nombre.trim().length > 1 && !ocupado && (medio !== 'efectivo' || !pagaCon || cambio >= 0)
 
   const elegirDeporte = (nuevo: DeporteId) => {
+    setCombo(false)
     setDeporte(nuevo)
     setMesa('')
     setModalidad('estandar')
     setPalasExtra(false)
     if (!config.deportes[nuevo].duraciones.includes(duracion)) setDuracion(config.deportes[nuevo].duraciones[0])
+  }
+
+  const elegirCombo = () => {
+    setCombo(true)
+    setMesa('')
+    setModalidad('estandar')
+    setPalasExtra(false)
   }
 
   const cobrar = async () => {
@@ -93,23 +116,28 @@ export function RegistrarEnMostrador({
     setHecho(null)
     try {
       // Con el precio que se vio: si el servidor calcula otro, no registra nada.
-      const r = await servicio.anotarSinReserva({
-        deporte,
-        duracion,
-        modalidad,
-        palasExtra,
-        nombre,
-        whatsapp,
-        mesa: mesa || undefined,
-        medio,
-        precioEsperado: precio,
-      })
+      const r = combo
+        ? await servicio.anotarComboSinReserva({ primero: deporte, palasExtra, nombre, whatsapp, mesa: mesa || undefined, medio, precioEsperado: precio })
+        : await servicio.anotarSinReserva({
+            deporte,
+            duracion,
+            modalidad,
+            palasExtra,
+            nombre,
+            whatsapp,
+            mesa: mesa || undefined,
+            medio,
+            precioEsperado: precio,
+          })
       // Lo que se muestra sale de lo GUARDADO, no de lo que se calculó antes.
       const cobrado = total(r)
+      const que = combo
+        ? `combo (${d.nombre} hasta las ${formatoHora(fin(r))}, luego ${config.deportes[deporte === 'pingpong' ? 'cornhole' : 'pingpong'].nombre})${palasExtra ? ' con 2 palas extra' : ''}`
+        : `${d.nombre}${r.modalidad === 'pareja' ? ' (2 personas)' : ''}${r.palasExtra ? ' con 2 palas extra' : ''}`
       setHecho(
-        `${r.organizador.nombre}: ${d.nombre}${r.modalidad === 'pareja' ? ' (2 personas)' : ''}${r.palasExtra ? ' con 2 palas extra' : ''} ${formatoDinero(cobrado)} cobrado en ${medio}` +
+        `${r.organizador.nombre}: ${que} ${formatoDinero(cobrado)} cobrado en ${medio}` +
           (r.mesa ? `, sentados en ${r.mesa}` : ', falta sentarlos') +
-          ` hasta las ${formatoHora(fin(r))}.` +
+          ` hasta las ${formatoHora(combo ? r.inicio + 2 * TURNO_DEL_COMBO : fin(r))}.` +
           (medio === 'efectivo' && recibido > cobrado ? ` Cambio: ${formatoDinero(recibido - cobrado)}.` : ''),
       )
       setNombre('')
@@ -133,19 +161,43 @@ export function RegistrarEnMostrador({
       <div className="caja-fila">
         <div className="segmentado" role="group" aria-label="Deporte">
           {ORDEN_DEPORTES.map((id) => (
-            <button key={id} type="button" className={deporte === id ? 'activo' : ''} aria-pressed={deporte === id} onClick={() => elegirDeporte(id)}>
+            <button key={id} type="button" className={!combo && deporte === id ? 'activo' : ''} aria-pressed={!combo && deporte === id} onClick={() => elegirDeporte(id)}>
               {config.deportes[id].nombre}
             </button>
           ))}
-        </div>
-        <div className="segmentado" role="group" aria-label="Tiempo">
-          {d.duraciones.map((m) => (
-            <button key={m} type="button" className={duracion === m ? 'activo' : ''} aria-pressed={duracion === m} onClick={() => setDuracion(m)}>
-              {m} min
+          {config.combo.activa && (
+            <button type="button" className={combo ? 'activo' : ''} aria-pressed={combo} onClick={elegirCombo}>
+              Combo · {formatoDinero(config.combo.precio)}
             </button>
-          ))}
+          )}
         </div>
-        {d.preciosPareja && (
+        {combo ? (
+          <div className="segmentado" role="group" aria-label="Qué juego va primero">
+            {(['cornhole', 'pingpong'] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                className={deporte === id ? 'activo' : ''}
+                aria-pressed={deporte === id}
+                onClick={() => {
+                  setDeporte(id)
+                  setMesa('')
+                }}
+              >
+                {config.deportes[id].nombre} primero
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="segmentado" role="group" aria-label="Tiempo">
+            {d.duraciones.map((m) => (
+              <button key={m} type="button" className={duracion === m ? 'activo' : ''} aria-pressed={duracion === m} onClick={() => setDuracion(m)}>
+                {m} min
+              </button>
+            ))}
+          </div>
+        )}
+        {!combo && d.preciosPareja && (
           <div className="segmentado" role="group" aria-label="Cuántos juegan">
             {(
               [
@@ -159,13 +211,13 @@ export function RegistrarEnMostrador({
             ))}
           </div>
         )}
-        {d.precioPalasExtra !== null && (
+        {conPalas.precioPalasExtra !== null && (
           <div className="segmentado" role="group" aria-label="Palas">
             <button type="button" className={!palasExtra ? 'activo' : ''} aria-pressed={!palasExtra} onClick={() => setPalasExtra(false)}>
               2 palas
             </button>
             <button type="button" className={palasExtra ? 'activo' : ''} aria-pressed={palasExtra} onClick={() => setPalasExtra(true)}>
-              +2 palas · {formatoDinero(d.precioPalasExtra)}
+              +2 palas · {formatoDinero(conPalas.precioPalasExtra)}
             </button>
           </div>
         )}
@@ -173,7 +225,7 @@ export function RegistrarEnMostrador({
 
       <div className="caja-fila">
         <label>
-          Mesa
+          {combo ? `Mesa de ${d.nombre}` : 'Mesa'}
           <select value={mesa} onChange={(e) => setMesa(e.target.value)}>
             <option value="">Sentar después</option>
             {libres.map((m) => (
@@ -194,7 +246,7 @@ export function RegistrarEnMostrador({
       <div className="caja-fila caja-cobro">
         <div className="caja-total-grande">
           <small>
-            Total{conPromo && ' · promo'} · hasta las {formatoHora(termina)}
+            Total{conPromo && ' · promo'}{combo && ' · combo'} · hasta las {formatoHora(termina)}
           </small>
           <strong>{precio === undefined ? '…' : formatoDinero(precio)}</strong>
           {cotizacion.error && <small className="panel-error">{cotizacion.error}</small>}

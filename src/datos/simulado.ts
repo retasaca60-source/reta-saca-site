@@ -12,7 +12,7 @@
 // - Cualquiera entra al panel con los usuarios de demostración: la contraseña no
 //   se revisa.
 
-import { CONFIGURACION_INICIAL, ORDEN_DEPORTES, type Configuracion } from '../negocio/configuracion'
+import { CONFIGURACION_INICIAL, normalizarConfiguracion, ORDEN_DEPORTES, type Configuracion } from '../negocio/configuracion'
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
 import type { Reserva } from '../negocio/reserva'
@@ -138,6 +138,7 @@ function esReservaValida(r: Reserva): boolean {
     (r.llegaronEn === null || typeof r.llegaronEn === 'string') &&
     (r.cancelacion === null || (typeof r.cancelacion === 'object' && typeof r.cancelacion.en === 'string')) &&
     (r.devolucion == null || (typeof r.devolucion === 'object' && typeof r.devolucion.monto === 'number')) &&
+    (r.combo === undefined || (typeof r.combo === 'object' && r.combo !== null && typeof r.combo.con === 'string' && (r.combo.turno === 1 || r.combo.turno === 2))) &&
     typeof r.creadaEn === 'string' &&
     Array.isArray(r.partes) &&
     r.partes.every(
@@ -195,6 +196,8 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
           // Un apartado vencido deja de ocupar mesa en cuanto se lee.
           const ahora = reloj()
           e.reservas = e.reservas.map((r) => op.vencerApartado(r, ahora) ?? r)
+          // Lo guardó otra versión: los campos nuevos (el combo) llegan con su valor por omisión.
+          e.config = normalizarConfiguracion(e.config)
           return e
         }
         console.warn('[simulado] Los datos guardados no tienen la forma esperada (¿otra versión?). Se empieza de cero.')
@@ -244,6 +247,29 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     return r
   }
 
+  /** Los dos turnos de un combo nuevo, con el mismo folio (el segundo con "-2"). */
+  function ponerCombo(e: Estado, [t1, t2]: [Reserva, Reserva]): Reserva {
+    while (e.reservas.some((x) => x.folio === t1.folio || x.folio === t2.folio)) {
+      t1.folio = nuevoFolio()
+      t2.folio = `${t1.folio}-2`
+    }
+    e.reservas.push(t1, t2)
+    return t1
+  }
+
+  /**
+   * Guarda lo que dejó una operación y, si es un turno de combo, lleva al
+   * otro turno con él (op.seguirAlCombo). Si el otro no tiene lugar, lanza y
+   * no se guarda ninguna de las dos.
+   */
+  function ponerConCombo(e: Estado, antes: Reserva, nueva: Reserva): Reserva {
+    const otra = antes.combo ? e.reservas.find((x) => x.id === antes.combo!.con) : undefined
+    const sigue = otra ? op.seguirAlCombo(contexto(e), antes, nueva, op.vencerApartado(otra, reloj()) ?? otra) : null
+    poner(e, nueva)
+    if (sigue) poner(e, sigue)
+    return nueva
+  }
+
   const existe = (encontrada: Reserva | undefined) => {
     if (!encontrada) throw new ErrorDeDatos('no_encontrada', 'No se encontró la reserva.')
     return encontrada
@@ -266,7 +292,8 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
   const enPanel = (id: string, f: (ctx: op.Contexto, r: Reserva, quien: Usuario) => Reserva) =>
     cambiar((e) => {
       const quien = usuarioActual(e)
-      return poner(e, f(contexto(e), porId(e, id), quien))
+      const r = porId(e, id)
+      return ponerConCombo(e, r, f(contexto(e), r, quien))
     })
 
   const servicio: ServicioSimulado = {
@@ -275,6 +302,8 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     configuracion: () => consultar((e) => e.config),
     disponibilidad: (deporte, fecha, duracion, modalidad) => consultar((e) => op.horariosDisponibles(contexto(e), deporte, fecha, duracion, modalidad)),
     apartar: (s) => cambiar((e) => poner(e, op.apartar(contexto(e), s))),
+    disponibilidadCombo: (fecha, primero) => consultar((e) => op.horariosDelCombo(contexto(e), fecha, primero)),
+    apartarCombo: (s) => cambiar((e) => ponerCombo(e, op.apartarCombo(contexto(e), s))),
 
     iniciarPago: (token, parteIds, nombre) =>
       cambiar((e) => {
@@ -303,7 +332,10 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     // En la simulación no hay Clip: el pago ya quedó al confirmar la pantalla simulada.
     verificarPagoEnLinea: async () => {},
     cancelarComoCliente: (token) =>
-      cambiar((e) => poner(e, op.cancelarComoCliente(contexto(e), existe(e.reservas.find((x) => x.tokenPrivado === token))))),
+      cambiar((e) => {
+        const r = existe(e.reservas.find((x) => x.tokenPrivado === token))
+        return ponerConCombo(e, r, op.cancelarComoCliente(contexto(e), r))
+      }),
 
     // ── Panel ──
 
@@ -341,6 +373,16 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
       cambiar((e) => {
         const quien = usuarioActual(e)
         return poner(e, op.anotarSinReserva(contexto(e), c, quien.nombre))
+      }),
+    cotizarCombo: (palasExtra) =>
+      consultar((e) => {
+        usuarioActual(e)
+        return op.cotizarCombo(contexto(e), palasExtra)
+      }),
+    anotarComboSinReserva: (c) =>
+      cambiar((e) => {
+        const quien = usuarioActual(e)
+        return ponerCombo(e, op.anotarComboSinReserva(contexto(e), c, quien.nombre))
       }),
     asignarMesa: (id, mesa) => enPanel(id, (ctx, r) => op.asignarMesa(ctx, r, mesa)),
     marcarPago: (id, parteIds, medio, nombre) => enPanel(id, (ctx, r, quien) => op.marcarPago(ctx, r, parteIds, medio, nombre, quien.nombre)),
@@ -432,7 +474,8 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
           const intento = e.intentos.find((i) => i.id === id)
           if (!intento) throw new ErrorDeDatos('no_encontrada', 'Ese pago no existe.')
           if (intento.resultado) return intento.volverA
-          poner(e, op.confirmarPagoEnLinea(contexto(e), porId(e, intento.reservaId), intento.parteIds, intento.nombre))
+          const r = porId(e, intento.reservaId)
+          ponerConCombo(e, r, op.confirmarPagoEnLinea(contexto(e), r, intento.parteIds, intento.nombre))
           intento.resultado = 'pagado'
           return intento.volverA + '?pago=aprobado'
         }),

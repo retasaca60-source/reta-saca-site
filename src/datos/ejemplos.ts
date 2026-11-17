@@ -5,6 +5,7 @@
 import { mesasEnServicio, type Configuracion, type DeporteId, type Duracion, type Modalidad } from '../negocio/configuracion'
 import { nuevoFolio, nuevoId, nuevoToken } from '../negocio/identificadores'
 import { precioDe, precioDePalas } from '../negocio/precios'
+import { armarCombo } from '../negocio/operaciones/combo'
 import type { Reserva } from '../negocio/reserva'
 import { sumarDias, type Momento } from '../negocio/tiempo'
 import type { Usuario } from './contrato'
@@ -17,7 +18,7 @@ export const USUARIOS_DEMO: Usuario[] = [
 /**
  * Reservas de ejemplo alrededor de hoy, para que el sitio y el panel se vean
  * con vida: pagadas en línea, una de Cornhole para 2 personas, una de Ping
- * Pong con palas extra y un horario de Cornhole lleno mañana a las 7 PM. Todas
+ * Pong con palas extra, un combo y un horario de Cornhole lleno mañana a las 7 PM. Todas
  * en hora cerrada y con tiempos que se venden hoy (30 min o 1 h).
  */
 export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
@@ -72,6 +73,29 @@ export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
   nueva('pingpong', hoy, h(18), 60, { palasExtra: true })
   nueva('cornhole', hoy, h(19), 60)
   nueva('cornhole', hoy, h(20), 30, { modalidad: 'pareja' })
+  // Un combo pagado en línea: Cornhole a las 6:00 y Ping Pong a las 6:30.
+  const ayer = new Date(ahora.ms - 86400_000).toISOString()
+  reservas.push(
+    ...armarCombo(
+      config,
+      {
+        fecha: hoy,
+        partesElegidas: 1,
+        organizador: { nombre: 'Combo de prueba', whatsapp: '6620000099' },
+        origen: 'sitio',
+        estado: 'confirmada',
+        apartadaHasta: null,
+        mesa: null,
+        llegaronEn: null,
+        cancelacion: null,
+        creadaEn: ayer,
+      },
+      'cornhole',
+      h(18),
+      false,
+      { medio: 'en_linea', nombre: 'Combo de prueba', en: ayer },
+    ),
+  )
   // Mañana: Cornhole lleno a las 7 PM
   for (let i = 0; i < mesasEnServicio(config.deportes.cornhole); i++) nueva('cornhole', manana, h(19), 60)
   nueva('pingpong', manana, h(17), 60)

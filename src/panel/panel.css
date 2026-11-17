@@ -525,6 +525,9 @@
 .etiqueta.mal{ background:var(--accent-soft); color:var(--accent); }
 .etiqueta.neutra{ background:var(--surface-2); color:var(--ink-soft); }
 .etiqueta.apagada{ background:var(--busy); color:var(--ink-soft); }
+/* El combo: borde en el color de la casa, para que se lea de un vistazo que
+   ese grupo juega los dos juegos. */
+.etiqueta.combo{ background:var(--surface-2); color:var(--ink); box-shadow:inset 0 0 0 1px var(--oro); }
 
 .panel-canceladas summary{ cursor:pointer; color:var(--ink-soft); margin:16px 0 12px; font-weight:600; }
 

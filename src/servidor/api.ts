@@ -15,7 +15,7 @@ import { ErrorDeDatos, MENSAJE_INESPERADO, type CodigoDeError } from '../negocio
 import { formatoDinero } from '../negocio/formato'
 import { nuevoFolio, nuevoId } from '../negocio/identificadores'
 import * as op from '../negocio/operaciones'
-import type { ClienteSinReserva, SolicitudDeReserva } from '../negocio/operaciones'
+import type { ClienteSinReserva, ComboSinReserva, SolicitudDeCombo, SolicitudDeReserva } from '../negocio/operaciones'
 import type { MedioDePago, Reserva } from '../negocio/reserva'
 import { esFechaValida, instante, momentoDe, sumarDias } from '../negocio/tiempo'
 import { FolioRepetido, type Repositorio } from './repositorio'
@@ -220,6 +220,41 @@ async function guardarNueva(repo: Repositorio, r: Reserva): Promise<Reserva> {
   throw new Error('No se pudo generar un folio único')
 }
 
+/** Guarda los dos turnos de un combo nuevo; si el folio ya existe (muy raro), saca otro para los dos. */
+async function guardarCombo(repo: Repositorio, [t1, t2]: [Reserva, Reserva]): Promise<Reserva> {
+  for (let intento = 0; intento < 5; intento++) {
+    try {
+      await repo.guardar(t1)
+      await repo.guardar(t2)
+      return t1
+    } catch (e) {
+      if (!(e instanceof FolioRepetido)) throw e
+      t1.folio = nuevoFolio()
+      t2.folio = `${t1.folio}-2`
+    }
+  }
+  throw new Error('No se pudo generar un folio único')
+}
+
+/**
+ * Guarda lo que dejó una operación y, si es un turno de combo, lleva al otro
+ * turno con él (op.seguirAlCombo): estado, apartado, cancelación y horario.
+ * Si el otro juego no tiene lugar, lanza antes de guardar nada y la
+ * transacción no deja ninguna de las dos a medias.
+ */
+async function guardarConCombo(repo: Repositorio, ctx: op.Contexto, antes: Reserva, nueva: Reserva): Promise<void> {
+  const otra = antes.combo ? await repo.reservaPor('id', antes.combo.con) : null
+  const sigue = otra ? op.seguirAlCombo(ctx, antes, nueva, op.vencerApartado(otra, ctx.ahora) ?? otra) : null
+  await repo.guardar(nueva)
+  if (sigue) await repo.guardar(sigue)
+}
+
+function primero(d: Datos): DeporteId {
+  const p = d.primero
+  if (p !== 'pingpong' && p !== 'cornhole') throw invalido('primero')
+  return p
+}
+
 async function usuarioDe(entorno: Entorno): Promise<Usuario> {
   const u = entorno.cuentaId ? await entorno.repo.perfil(entorno.cuentaId) : null
   if (!u) throw new ErrorDeDatos('sin_sesion', 'Tu sesión terminó. Vuelve a entrar.')
@@ -252,7 +287,7 @@ function enPanel(
       const r = op.vencerApartado(guardada, ctx.ahora) ?? guardada
 
       const nueva = f(d, ctx, r, quien)
-      await repo.guardar(nueva)
+      await guardarConCombo(repo, ctx, r, nueva)
 
       return nueva
     })
@@ -312,7 +347,7 @@ export async function registrarPagoEnLinea(cobroId: string, e: Entorno): Promise
     const ctx = await contexto(e, repo, guardada.fecha)
     const r = op.vencerApartado(guardada, ctx.ahora) ?? guardada
     try {
-      await repo.guardar(op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
+      await guardarConCombo(repo, ctx, r, op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
     } catch (error) {
       if (!(error instanceof ErrorDeDatos)) throw error
       // La pasarela ya cobró, pero la mesa se fue o alguien pagó esas partes
@@ -393,6 +428,24 @@ const ACCIONES: Record<string, Accion> = {
     return e.repo.enTransaccion(async (repo) => guardarNueva(repo, op.apartar(await contexto(e, repo), solicitud)))
   },
 
+  disponibilidadCombo: async (d, e) => op.horariosDelCombo(await contexto(e), fecha(d, 'fecha'), primero(d)),
+
+  apartarCombo: async (d, e) => {
+    await frenar(e, 'apartar')
+    const s = d.solicitud as Datos | undefined
+    if (!s || typeof s !== 'object') throw invalido('solicitud')
+    const org = s.organizador as Datos | undefined
+    if (!org || typeof org !== 'object') throw invalido('organizador')
+    const solicitud: SolicitudDeCombo = {
+      fecha: fecha(s, 'fecha'),
+      inicio: numero(s, 'inicio'),
+      primero: primero(s),
+      palasExtra: siONo(s, 'palasExtra'),
+      organizador: { nombre: texto(org, 'nombre'), whatsapp: texto(org, 'whatsapp') },
+    }
+    return e.repo.enTransaccion(async (repo) => guardarCombo(repo, op.apartarCombo(await contexto(e, repo), solicitud)))
+  },
+
   iniciarPago: async (d, e) => {
     const token = texto(d, 'token')
     const parteIds = textos(d, 'parteIds')
@@ -430,7 +483,7 @@ const ACCIONES: Record<string, Accion> = {
     // qué esperar el candado de las mesas.
     const { url, cobroId } = await e.pasarela.crearCobro({
       intentoId: intento.id,
-      titulo: `Reta Saca · ${config.deportes[reserva.deporte]?.nombre ?? 'Reserva'} · ${reserva.folio}`,
+      titulo: `Reta Saca · ${reserva.combo ? 'Combo' : (config.deportes[reserva.deporte]?.nombre ?? 'Reserva')} · ${reserva.folio}`,
       monto: intento.monto,
       volverA: e.sitio + intento.volverA,
       venceEn: intento.venceEn!,
@@ -468,8 +521,9 @@ const ACCIONES: Record<string, Accion> = {
     const token = texto(d, 'token')
     return e.repo.enTransaccion(async (repo) => {
       const ctx = await contexto(e, repo)
-      const nueva = op.cancelarComoCliente(ctx, await reservaPor(repo, 'tokenPrivado', token, ctx.ahora))
-      await repo.guardar(nueva)
+      const r = await reservaPor(repo, 'tokenPrivado', token, ctx.ahora)
+      const nueva = op.cancelarComoCliente(ctx, r)
+      await guardarConCombo(repo, ctx, r, nueva)
       return nueva
     })
   },
@@ -513,7 +567,7 @@ const ACCIONES: Record<string, Accion> = {
       if (!guardada) throw noEncontrada()
       const ctx = await contexto(e, repo, guardada.fecha)
       const r = op.vencerApartado(guardada, ctx.ahora) ?? guardada
-      await repo.guardar(op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
+      await guardarConCombo(repo, ctx, r, op.confirmarPagoEnLinea(ctx, r, intento.parteIds, intento.nombre))
       await repo.cerrarIntento(id, 'pagado')
       return intento.volverA + '?pago=aprobado'
     })
@@ -573,6 +627,27 @@ const ACCIONES: Record<string, Accion> = {
       palasExtra: siONo(c, 'palasExtra'),
     }
     return e.repo.enTransaccion(async (repo) => guardarNueva(repo, op.anotarSinReserva(await contexto(e, repo), cliente, quien.nombre)))
+  },
+
+  cotizarCombo: async (d, e) => {
+    await usuarioDe(e)
+    return op.cotizarCombo({ config: await e.repo.config(), reservas: [], ahora: e.ahora() }, siONo(d, 'palasExtra'))
+  },
+
+  anotarComboSinReserva: async (d, e) => {
+    const quien = await usuarioDe(e)
+    const c = d.combo as Datos | undefined
+    if (!c || typeof c !== 'object') throw invalido('combo')
+    const combo: ComboSinReserva = {
+      primero: primero(c),
+      nombre: texto(c, 'nombre'),
+      whatsapp: texto(c, 'whatsapp', true) || undefined,
+      mesa: texto(c, 'mesa', true) || undefined,
+      medio: medioDelLocal(c),
+      palasExtra: siONo(c, 'palasExtra'),
+      precioEsperado: c.precioEsperado === undefined ? undefined : numero(c, 'precioEsperado'),
+    }
+    return e.repo.enTransaccion(async (repo) => guardarCombo(repo, op.anotarComboSinReserva(await contexto(e, repo), combo, quien.nombre)))
   },
 
   asignarMesa: enPanel((d, ctx, r) => op.asignarMesa(ctx, r, d.mesa === null ? null : texto(d, 'mesa'))),

@@ -211,6 +211,8 @@ export function marcarPago(
  */
 export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva {
   if (r.estado !== 'confirmada') throw new ErrorDeDatos('no_permitido', 'Solo se extienden reservas confirmadas.')
+  // El primer juego del combo termina justo cuando empieza el otro.
+  if (r.combo?.turno === 1) throw new ErrorDeDatos('no_permitido', 'En el combo el tiempo extra se agrega al segundo juego.')
   const duracion = r.duracion + minutos
   // cabeEnUnBloque solo mira el horario de la semana: un día cerrado a mano
   // (un festivo) seguía dejando extender.
@@ -266,7 +268,8 @@ export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio:
     throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre en ese horario.')
   }
   const nueva = copia(r)
-  const nuevo = precioSiExiste(ctx.config, r.deporte, inicio, r.duracion, r.modalidad)
+  // El combo cuesta lo mismo a cualquier hora: moverlo no cobra diferencia.
+  const nuevo = r.combo ? null : precioSiExiste(ctx.config, r.deporte, inicio, r.duracion, r.modalidad)
   if (nuevo) {
     // Las palas extra no cambian con el horario: se suman a lo que vale la mesa nueva.
     const diferencia = nuevo.precio + (r.palasExtra ?? 0) - total(r)

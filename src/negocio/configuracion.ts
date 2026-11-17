@@ -67,6 +67,15 @@ export interface Configuracion {
     inicios: number[]
     duracion: Duracion
   }
+  /**
+   * Combo: media hora de cada juego, uno después del otro (1 hora en total),
+   * por un solo precio. El cliente escoge cuál va primero. Las palas extra de
+   * Ping Pong se cobran aparte. Ver negocio/operaciones/combo.ts.
+   */
+  combo: {
+    activa: boolean
+    precio: number
+  }
   reglas: {
     /** Cuántos días hacia adelante se puede reservar (ventana móvil). */
     diasDeAnticipacion: number
@@ -142,6 +151,9 @@ export const CONFIGURACION_INICIAL: Configuracion = {
   // Sin promociones desde el 25/10/2026 (lo decidió el negocio). Se apaga en
   // vez de borrarse: Hugo la puede volver a prender en Ajustes con sus precios.
   promo: { activa: false, inicios: [h(17)], duracion: 60 },
+  // El combo que puso Hugo el 17/11/2026: 30 min de Cornhole y 30 de Ping
+  // Pong por $200, todos los días.
+  combo: { activa: true, precio: 200 },
   reglas: {
     diasDeAnticipacion: 7,
     minutosDeCorte: 0,
@@ -194,6 +206,8 @@ export function normalizarConfiguracion(c: Configuracion): Configuracion {
     delete d.seDivide
   }
   if (!Array.isArray(x.reglas.duracionesEnLinea)) x.reglas.duracionesEnLinea = [...CONFIGURACION_INICIAL.reglas.duracionesEnLinea]
+  // Lo guardado antes del 17/11/2026 no trae combo: entra con el que decidió el negocio.
+  if (!x.combo || typeof x.combo !== 'object') x.combo = { ...CONFIGURACION_INICIAL.combo }
   delete (x.reglas as Record<string, unknown>).horasParaCancelar
   return x
 }

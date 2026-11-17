@@ -1,5 +1,6 @@
 // La lista de juegos: una tarjeta-foto por deporte con su nombre gigante, las
-// mesas que hay y el precio por hora. Tocar una abre su ficha.
+// mesas que hay y el precio por hora, y la del combo si está prendido. Tocar
+// una abre su ficha.
 
 import type { Dispatch } from 'react'
 import type { Accion, Borrador } from '../../mecanismos/reserva/estado'
@@ -20,6 +21,11 @@ export function ElegirJuego({ despachar, config }: Props) {
       // Tocar la foto lleva directo a elegir horario. Si es el mismo juego que
       // ya traía, se queda lo que había elegido (modalidad, palas, hora).
       despachar({ tipo: 'elegirDeporte', deporte: id, config })
+      despachar({ tipo: 'irAPaso', paso: 2, config })
+    })
+  const abrirCombo = () =>
+    cambiarDePantalla(() => {
+      despachar({ tipo: 'elegirCombo' })
       despachar({ tipo: 'irAPaso', paso: 2, config })
     })
 
@@ -83,6 +89,27 @@ export function ElegirJuego({ despachar, config }: Props) {
             </li>
           )
         })}
+        {/* El combo: las dos fotos partidas en diagonal, porque son los dos juegos. */}
+        {config.combo.activa && (
+          <li>
+            <button type="button" className="juego juego-combo" onClick={abrirCombo}>
+              <img className="juego-foto mitad-uno" src={FOTO_DE.cornhole.src} alt="" style={{ objectPosition: FOTO_DE.cornhole.enfoque }} />
+              <img className="juego-foto mitad-dos" src={FOTO_DE.pingpong.src} alt="" style={{ objectPosition: FOTO_DE.pingpong.enfoque }} />
+              <span className="juego-palabra" aria-hidden="true">
+                Combo
+              </span>
+              <span className="juego-pie">
+                <span>
+                  <strong className="juego-nombre">Combo</strong>
+                  <span className="juego-detalle">30 min de cada juego</span>
+                </span>
+                <span className="juego-precio numeros">
+                  <b>{formatoDinero(config.combo.precio)}</b>
+                </span>
+              </span>
+            </button>
+          </li>
+        )}
       </ul>
 
     </>

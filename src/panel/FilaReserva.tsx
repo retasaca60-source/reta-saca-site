@@ -1,6 +1,11 @@
 // Una reserva en el panel, con todo lo que recepción puede hacer con ella:
 // sentar (asignar mesa), cobrar, extender, cambiar horario, cancelar, liberar
 // y mandarle al organizador su link por WhatsApp (RESERVAS.md §10).
+//
+// Un turno de combo es una reserva más con la etiqueta "Combo": se sienta y se
+// extiende como cualquiera. Lo que cambia: el cobro del combo va en el turno 1
+// (el 2 solo lleva su tiempo extra), el 1 no se extiende, y cancelar o mover
+// cualquiera de los dos se lleva al otro.
 
 import { useState } from 'react'
 import { servicio } from '../datos'
@@ -9,7 +14,7 @@ import { direccion, enlaceWhatsApp } from '../mecanismos/whatsapp/enlaces'
 import type { Configuracion, Duracion } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
 import { precioDeExtension } from '../negocio/precios'
-import { fin, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
+import { cuentaComoReserva, fin, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
 type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar'
@@ -70,8 +75,14 @@ export function FilaReserva({
           <Etiquetas r={r} config={config} />
         </div>
         <div className="fila-dinero">
-          <strong>{formatoDinero(total(r))}</strong>
-          <small>{falta > 0 && !cancelada ? `faltan ${formatoDinero(falta)}` : `pagado ${formatoDinero(pagado(r))}`}</small>
+          <strong>{r.combo?.turno === 2 && total(r) === 0 ? 'Combo' : formatoDinero(total(r))}</strong>
+          <small>
+            {falta > 0 && !cancelada
+              ? `faltan ${formatoDinero(falta)}`
+              : r.combo?.turno === 2 && total(r) === 0
+                ? 'se cobra en el otro juego'
+                : `pagado ${formatoDinero(pagado(r))}`}
+          </small>
         </div>
       </div>}
 
@@ -85,7 +96,8 @@ export function FilaReserva({
               Cobrar {formatoDinero(falta)}
             </button>
           )}
-          {r.estado === 'confirmada' && (
+          {/* El primer juego del combo termina cuando empieza el otro: el tiempo extra va en el segundo. */}
+          {r.estado === 'confirmada' && r.combo?.turno !== 1 && (
             <button type="button" className={'panel-boton' + (abierto === 'extender' ? ' activo' : '')} onClick={() => alternar('extender')}>
               Extender
             </button>
@@ -98,7 +110,8 @@ export function FilaReserva({
               Liberar (no llegaron)
             </button>
           )}
-          {r.organizador.whatsapp && r.origen === 'sitio' && (
+          {/* El link del combo es el del turno 1: el del turno 2 no lo conoce el cliente. */}
+          {r.organizador.whatsapp && r.origen === 'sitio' && cuentaComoReserva(r) && (
             <a
               className="panel-boton"
               href={enlaceWhatsApp(`Hola ${r.organizador.nombre}, este es el link de tu reserva en Reta Saca (${r.folio}): ${direccion(`/r/${r.tokenPrivado}`)}`, r.organizador.whatsapp)}
@@ -151,6 +164,7 @@ export function FilaReserva({
         <div className="fila-detalle">
           <span>
             Cancelación del negocio.
+            {r.combo && ' Se cancelan los dos juegos del combo.'}
             {pagadoEnLinea(r) > 0 && ` Pagaron ${formatoDinero(pagadoEnLinea(r))} en línea: queda por revisar en Caja (se reembolsa por Clip o en efectivo).`} Avísale al organizador por WhatsApp.
           </span>
           <button type="button" className="panel-boton peligro" disabled={ocupado} onClick={() => hacer(() => servicio.cancelarComoNegocio(r.id))}>
@@ -165,6 +179,7 @@ export function FilaReserva({
 
 function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   const e: [string, string][] = []
+  if (r.combo) e.push(['combo', `Combo · ${r.combo.turno === 1 ? '1.º' : '2.º'} juego`])
   if (r.estado === 'apartada') e.push(['aviso', 'Pagando…'])
   if (r.estado === 'cancelada') {
     const motivo = { cliente: 'Canceló el cliente', negocio: 'Cancelada por el negocio', no_llego: 'No llegaron', apartado_vencido: 'No pagó a tiempo' }
@@ -264,7 +279,11 @@ function Cambiar({ r, ocupado, hacer }: { r: Reserva; ocupado: boolean; hacer: H
       <button type="button" className="panel-boton primario" disabled={ocupado || !hora || !fecha || igual} onClick={() => hacer(() => servicio.cambiarHorario(r.id, fecha, minutosDe(hora)))}>
         Mover
       </button>
-      <span className="nota">Misma duración. Si pierde la promo, la diferencia queda por cobrar.</span>
+      <span className="nota">
+        {r.combo
+          ? 'El otro juego del combo se mueve con este y conserva su orden. El combo no cambia de precio.'
+          : 'Misma duración. Si pierde la promo, la diferencia queda por cobrar.'}
+      </span>
     </div>
   )
 }

@@ -93,8 +93,19 @@ export interface Reserva {
   cancelacion: { motivo: MotivoCancelacion; en: string; por?: string } | null
   /** Solo en canceladas que tenían pagos en línea. Falta en las guardadas antes de que existiera. */
   devolucion?: Devolucion | null
+  /**
+   * Un turno de un combo (30 min de cada juego, uno tras otro). Cada turno es
+   * una reserva de su juego, para que el plano, las mesas, la alarma y el
+   * tiempo extra funcionen igual; las dos se apartan, pagan, mueven y
+   * cancelan juntas. El turno 1 es el primero en la hora y lleva el cobro del
+   * combo; el 2 solo lleva lo que se le agregue (tiempo extra).
+   */
+  combo?: { con: string; turno: 1 | 2 }
   creadaEn: string
 }
+
+/** El segundo turno de un combo no cuenta como otra reserva: es la misma. */
+export const cuentaComoReserva = (r: Pick<Reserva, 'combo'>) => r.combo?.turno !== 2
 
 export const fin = (r: Pick<Reserva, 'inicio' | 'duracion'>) => r.inicio + r.duracion
 

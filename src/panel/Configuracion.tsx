@@ -1,4 +1,4 @@
-// Configuración (solo el dueño): mesas y fuera de servicio, precios, promo,
+// Configuración (solo el dueño): mesas y fuera de servicio, precios, promo, combo,
 // horario semanal, días cerrados, reglas, WhatsApp del negocio y usuarios.
 // Si al guardar alguna reserva futura se queda sin mesa, se avisa y NO se
 // guarda hasta que Hugo lo confirme. Nunca se cancela nada solo.
@@ -211,6 +211,24 @@ export function Configuracion() {
           <input type="checkbox" checked={c.promo.activa} onChange={(e) => cambiar((x) => void (x.promo.activa = e.target.checked))} />
           Promo activa: reservas de {c.promo.duracion} min que empiezan a las {c.promo.inicios.map(formatoHora).join(' o ')}, todos los días.
         </label>
+      </section>
+
+      <section className="panel-seccion">
+        <h2>Combo</h2>
+        <div className="reglas-panel">
+          <label className="casilla-panel">
+            <input type="checkbox" checked={c.combo.activa} onChange={(e) => cambiar((x) => void (x.combo.activa = e.target.checked))} />
+            Combo activo, en línea y en el local
+          </label>
+          <label>
+            Precio del combo
+            <input className="corto" type="number" min={1} value={c.combo.precio} onChange={(e) => cambiar((x) => void (x.combo.precio = numero(e.target.value)))} />
+          </label>
+        </div>
+        <p className="nota">
+          30 min de {c.deportes.cornhole.nombre} y 30 min de {c.deportes.pingpong.nombre}, uno después del otro; el cliente escoge cuál va primero. Las palas
+          extra se cobran aparte. Apagarlo no toca los combos ya reservados.
+        </p>
       </section>
 
       <section className="panel-seccion">

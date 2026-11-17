@@ -12,12 +12,13 @@ import { servicio } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion, type DeporteId } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
-import { fin, ocupaMesa, pagado, pendiente, total, type Reserva } from '../negocio/reserva'
+import { fin, ocupaMesa, pagado, pendiente, total, type Reserva, cuentaComoReserva } from '../negocio/reserva'
 import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, formatoDuracion, formatoHora, sumarDias } from '../negocio/tiempo'
 import { DibujoMesa } from './DibujoMesa'
 import { FilaReserva } from './FilaReserva'
 import { escucharLevantadas, levantadas, marcarLevantada } from '../mecanismos/panel/mesasLevantadas'
 import { prepararAlarma, seAcabaronEntre, sonarAlarma } from '../mecanismos/panel/alarma'
+import { otroJuego, TURNO_DEL_COMBO } from '../negocio/operaciones/combo'
 import { IconoAnterior, IconoSiguiente } from './iconos'
 import { ListaDelDia } from './ListaDelDia'
 import { RegistrarEnMostrador } from './RegistrarEnMostrador'
@@ -105,7 +106,7 @@ export function Hoy() {
           </button>
         )}
         <button type="button" aria-pressed={vista === 'reservas'} onClick={() => setPestana('reservas')}>
-          Reservas del día <span className="pestana-cuenta">{activas.length}</span>
+          Reservas del día <span className="pestana-cuenta">{activas.filter(cuentaComoReserva).length}</span>
         </button>
         {esHoy && (
           <button
@@ -424,14 +425,34 @@ function DatosDeMesa({
               <dt>Le quedan</dt>
               <dd>{formatoDuracion(Math.max(0, fin(r) - ahora.minutos))}</dd>
             </div>
-            <div>
-              <dt>Total</dt>
-              <dd>{formatoDinero(total(r))}</dd>
-            </div>
-            <div>
-              <dt>{pendiente(r) > 0 ? 'Falta cobrar' : 'Pagado'}</dt>
-              <dd className={pendiente(r) > 0 ? 'falta' : 'bien'}>{formatoDinero(pendiente(r) > 0 ? pendiente(r) : pagado(r))}</dd>
-            </div>
+            {/* En el combo, a recepción le sirve saber qué sigue para ir a cambiarlos de juego. */}
+            {r.combo && (
+              <div>
+                <dt>Combo</dt>
+                <dd>
+                  {r.combo.turno === 1
+                    ? `Luego ${config.deportes[otroJuego(r.deporte)].nombre} a las ${formatoHora(r.inicio + TURNO_DEL_COMBO)}`
+                    : `Antes jugaron ${config.deportes[otroJuego(r.deporte)].nombre}`}
+                </dd>
+              </div>
+            )}
+            {r.combo?.turno === 2 && total(r) === 0 ? (
+              <div>
+                <dt>Cobro</dt>
+                <dd>Va en el otro juego</dd>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <dt>Total</dt>
+                  <dd>{formatoDinero(total(r))}</dd>
+                </div>
+                <div>
+                  <dt>{pendiente(r) > 0 ? 'Falta cobrar' : 'Pagado'}</dt>
+                  <dd className={pendiente(r) > 0 ? 'falta' : 'bien'}>{formatoDinero(pendiente(r) > 0 ? pendiente(r) : pagado(r))}</dd>
+                </div>
+              </>
+            )}
             {r.organizador.whatsapp && (
               <div>
                 <dt>WhatsApp</dt>
@@ -507,7 +528,7 @@ function TiempoCumplido({ r, config }: { r: Reserva; config: Configuracion }) {
 function ReservasDeLaSemana({ semana, lunes, hoy }: { semana: Reserva[]; lunes: string; hoy: string }) {
   const navegar = useNavigate()
   const dias = Array.from({ length: 7 }, (_, i) => sumarDias(lunes, i))
-  const cuenta = dias.map((f) => semana.filter((r) => r.fecha === f && r.estado !== 'cancelada').length)
+  const cuenta = dias.map((f) => semana.filter((r) => r.fecha === f && r.estado !== 'cancelada' && cuentaComoReserva(r)).length)
   const mayor = Math.max(1, ...cuenta)
   const totalSemana = cuenta.reduce((s, n) => s + n, 0)
   return (

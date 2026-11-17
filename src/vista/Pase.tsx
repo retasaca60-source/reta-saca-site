@@ -14,6 +14,8 @@ import './pase.css'
 export interface DatosDelPase {
   deporteId: DeporteId
   deporte: string
+  /** Combo: el total es del combo, no de una mesa. */
+  combo?: boolean
   /** "Hoy", "Mañana" o "Sáb 3/10". */
   dia: string
   /** Minutos desde medianoche. */
@@ -89,9 +91,7 @@ export function Pase({ datos: d, config }: { datos: DatosDelPase; config: Config
         </div>
         <div className="pase-campo derecha">
           <span className="pase-etiqueta">
-  {d.deporteId === 'cornhole'
-    ? 'Total por el tablero'
-    : 'Total por la mesa'}
+  {d.combo ? 'Total' : d.deporteId === 'cornhole' ? 'Total por el tablero' : 'Total por la mesa'}
 </span>
           <span className="pase-total numeros">{formatoDinero(d.total)}</span>
         </div>

@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import type { Configuracion } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
-import { fin, pagado, pendiente, puedeLiberarPorRetraso, total, type Reserva } from '../negocio/reserva'
+import { cuentaComoReserva, fin, pagado, pendiente, puedeLiberarPorRetraso, total, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, formatoDuracion, formatoHora } from '../negocio/tiempo'
 import { FilaReserva } from './FilaReserva'
 
@@ -22,6 +22,8 @@ export function ListaDelDia({ reservas, config }: { reservas: Reserva[]; config:
   const enLinea = vigentes.filter((r) => r.origen === 'sitio')
   const sinReserva = vigentes.filter((r) => r.origen === 'mostrador')
   const visibles = filtro === 'sitio' ? enLinea : filtro === 'mostrador' ? sinReserva : vigentes
+  // Los dos juegos de un combo salen cada uno a su hora, pero se cuentan como una reserva.
+  const cuantas = (lista: Reserva[]) => lista.filter(cuentaComoReserva).length
 
   // Una hora por grupo: todo lo que empieza entre las 5:00 y las 5:59 va junto.
   const porHora = new Map<number, Reserva[]>()
@@ -34,13 +36,13 @@ export function ListaDelDia({ reservas, config }: { reservas: Reserva[]; config:
     <section className="lista-dia">
       <div className="dia-filtros" role="group" aria-label="Quién">
         <button type="button" className="pastilla" aria-pressed={filtro === 'todas'} onClick={() => setFiltro('todas')}>
-          Todas <span className="pastilla-cuenta">{vigentes.length}</span>
+          Todas <span className="pastilla-cuenta">{cuantas(vigentes)}</span>
         </button>
         <button type="button" className="pastilla" aria-pressed={filtro === 'sitio'} onClick={() => setFiltro('sitio')}>
-          Reservaron en línea <span className="pastilla-cuenta">{enLinea.length}</span>
+          Reservaron en línea <span className="pastilla-cuenta">{cuantas(enLinea)}</span>
         </button>
         <button type="button" className="pastilla" aria-pressed={filtro === 'mostrador'} onClick={() => setFiltro('mostrador')}>
-          Llegaron sin reserva <span className="pastilla-cuenta">{sinReserva.length}</span>
+          Llegaron sin reserva <span className="pastilla-cuenta">{cuantas(sinReserva)}</span>
         </button>
       </div>
 
@@ -76,7 +78,7 @@ export function ListaDelDia({ reservas, config }: { reservas: Reserva[]; config:
 
       {canceladas.length > 0 && (
         <details className="panel-canceladas">
-          <summary>Canceladas · {canceladas.length}</summary>
+          <summary>Canceladas · {cuantas(canceladas)}</summary>
           {canceladas.map((r) => (
             <FilaReserva key={r.id} r={r} config={config} />
           ))}
@@ -116,6 +118,8 @@ function Fila({
   const d = config.deportes[r.deporte]
   const l = llegada(r, config)
   const falta = pendiente(r)
+  // El segundo juego del combo no lleva el cobro: va en el primero.
+  const sinCobroPropio = r.combo?.turno === 2 && total(r) === 0
   return (
     <article className={'dia-fila' + (abierta ? ' abierta' : '')}>
       <button type="button" className="dia-fila-resumen" aria-expanded={abierta} onClick={alternar}>
@@ -128,12 +132,15 @@ function Fila({
           </small>
         </span>
         <span className="dia-etiquetas">
+          {r.combo && <span className="etiqueta combo">Combo · {r.combo.turno === 1 ? '1.º' : '2.º'} juego</span>}
           <span className={'etiqueta ' + (r.origen === 'sitio' ? 'en-linea' : 'local')}>{r.origen === 'sitio' ? 'Reservó en línea' : 'Sin reserva'}</span>
           <span className={'etiqueta ' + l.tono}>{l.texto}</span>
         </span>
         <span className="dia-dinero">
-          <strong>{formatoDinero(total(r))}</strong>
-          <small className={falta > 0 ? 'falta' : 'bien'}>{falta > 0 ? `faltan ${formatoDinero(falta)}` : `pagado ${formatoDinero(pagado(r))}`}</small>
+          <strong>{sinCobroPropio ? 'Combo' : formatoDinero(total(r))}</strong>
+          <small className={falta > 0 ? 'falta' : 'bien'}>
+            {falta > 0 ? `faltan ${formatoDinero(falta)}` : sinCobroPropio ? 'se cobra en el otro juego' : `pagado ${formatoDinero(pagado(r))}`}
+          </small>
         </span>
         <span className="dia-flecha" aria-hidden>
           ›

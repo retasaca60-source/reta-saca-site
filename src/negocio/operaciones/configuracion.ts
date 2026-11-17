@@ -64,6 +64,11 @@ export function validarConfiguracion(c: Configuracion): void {
     throw mal('La configuración está incompleta.')
   }
 
+  // Sin combo (lo guardado antes del 17/11/2026) se acepta: normalizarConfiguracion lo agrega.
+  if (x.combo !== undefined) {
+    if (!esObjeto(x.combo) || typeof x.combo.activa !== 'boolean' || !entero(x.combo.precio, 1, 100_000)) throw mal('El precio del combo no es válido.')
+  }
+
   for (const id of ORDEN_DEPORTES) {
     const d = c.deportes[id] as unknown
     if (!esObjeto(d)) throw mal('Falta un deporte en la configuración.')

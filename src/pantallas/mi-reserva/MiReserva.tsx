@@ -11,6 +11,7 @@ import { mensajeDeError, usarDatos } from '../../mecanismos/datos/usarDatos'
 import { direccion, enlaceWhatsApp } from '../../mecanismos/whatsapp/enlaces'
 import { formatoDinero } from '../../negocio/formato'
 import { pagado, pendiente, total, type Reserva } from '../../negocio/reserva'
+import { TURNO_DEL_COMBO, turnosDelCombo } from '../../negocio/operaciones/combo'
 import { fechaLarga, formatoHora, momentoDe, nombreDelDia } from '../../negocio/tiempo'
 import { Pase } from '../../vista/Pase'
 import { Politicas, ReglasDelJuego } from '../../vista/Reglamento'
@@ -50,6 +51,12 @@ export default function MiReserva() {
   }
 
   const d = config.deportes[r.deporte]
+  // El link del cliente es el del turno 1 del combo: de ahí salen los dos turnos.
+  const turnos = r.combo ? turnosDelCombo(r.deporte, r.inicio) : null
+  const queReservo = turnos ? 'el combo' : d.nombre
+  // En el combo las palas se anotan en el turno de Ping Pong, que puede ser el
+  // otro; lo que se cobró de más sobre el combo es lo de las palas.
+  const palasExtra = turnos ? Math.max(0, (r.partes.find((p) => p.concepto === 'reserva')?.monto ?? 0) - r.precio) : (r.palasExtra ?? 0)
   const falta = pendiente(r)
   const miParte = r.partes.find((p) => p.delOrganizador && p.concepto === 'reserva')
   const linkPrivado = direccion(`/r/${r.tokenPrivado}`)
@@ -94,10 +101,11 @@ export default function MiReserva() {
           config={config}
           datos={{
             deporteId: r.deporte,
-            deporte: r.modalidad === 'pareja' ? `${d.nombre} · 2 personas` : d.nombre,
+            deporte: turnos ? 'Combo' : r.modalidad === 'pareja' ? `${d.nombre} · 2 personas` : d.nombre,
+            combo: Boolean(turnos),
             dia: nombreDelDia(r.fecha),
             inicio: r.inicio,
-            duracion: r.duracion,
+            duracion: turnos ? 2 * TURNO_DEL_COMBO : r.duracion,
             titular: r.organizador.nombre,
             total: total(r),
             folio: r.folio,
@@ -107,7 +115,15 @@ export default function MiReserva() {
         />
       </div>
 
-      {r.palasExtra ? <p className="nota">Incluye 2 palas extra ({formatoDinero(r.palasExtra)}).</p> : null}
+      {turnos && (
+        <p className="nota numeros">
+          {turnos
+            .map((t, i) => `${i === 0 ? 'Primero' : 'luego'} ${config.deportes[t.deporte].nombre} de ${formatoHora(t.inicio)} a ${formatoHora(t.inicio + TURNO_DEL_COMBO)}`)
+            .join(', ')}
+          .
+        </p>
+      )}
+      {palasExtra ? <p className="nota">Incluye 2 palas extra para Ping Pong ({formatoDinero(palasExtra)}).</p> : null}
 
       <h2 className="titulo-seccion">Pagos</h2>
       <ListaDePagos r={r} />
@@ -135,7 +151,7 @@ export default function MiReserva() {
           {config.whatsappNegocio && (
             <a
               className="boton boton-secundario"
-              href={enlaceWhatsApp(`Hola, reservé ${d.nombre} para el ${cuando}. Folio ${r.folio}, a nombre de ${r.organizador.nombre}.`, config.whatsappNegocio)}
+              href={enlaceWhatsApp(`Hola, reservé ${queReservo} para el ${cuando}. Folio ${r.folio}, a nombre de ${r.organizador.nombre}.`, config.whatsappNegocio)}
               target="_blank"
               rel="noreferrer"
             >
@@ -145,7 +161,7 @@ export default function MiReserva() {
         </div>
       )}
 
-      {r.devolucion && <AvisoDeDevolucion r={r} whatsappNegocio={config.whatsappNegocio} cuando={cuando} deporte={d.nombre} />}
+      {r.devolucion && <AvisoDeDevolucion r={r} whatsappNegocio={config.whatsappNegocio} cuando={cuando} deporte={turnos ? 'Combo' : d.nombre} />}
 
       {r.estado !== 'cancelada' && (
         <p className="nota">
@@ -157,7 +173,9 @@ export default function MiReserva() {
           políticas plegadas, que son largas. */}
       {r.estado === 'confirmada' && (
         <>
-          <ReglasDelJuego deporte={r.deporte} nombre={d.nombre} />
+          {(turnos ?? [r]).map((t) => (
+            <ReglasDelJuego key={t.deporte} deporte={t.deporte} nombre={config.deportes[t.deporte].nombre} />
+          ))}
           <Politicas plegadas />
         </>
       )}

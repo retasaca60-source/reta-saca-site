@@ -108,6 +108,8 @@ el cliente o para recepción, en español.
 |---|---|---|
 | `configuracion()` | La configuración vigente (mesas, precios, promo, horario, reglas, WhatsApp del negocio). Pública. | — |
 | `disponibilidad(deporte, fecha, duracion, modalidad?)` | Las horas de inicio **en línea** de ese día (solo duraciones de `reglas.duracionesEnLinea`, cada `reglas.pasoDeInicio` minutos) con mesas libres (`libres`, 0 = lleno), el precio de la mesa en esa modalidad (Cornhole para 2 personas) y si lleva promo. | — |
+| `disponibilidadCombo(fecha, primero)` | Las horas del combo (1 hora completa dentro de un bloque) con `libres` = lo que queda en el juego más lleno de los dos, cada uno a su media hora. Vacío si el combo está apagado. | — |
+| `apartarCombo(solicitud)` | Como `apartar`, para el combo: crea **dos reservas apartadas y amarradas** (`combo: { con, turno }`), una por juego. El turno 1 lleva el cobro completo (combo + palas); el 2 no lleva partes. Devuelve el turno 1, que es el que se paga. | `datos_invalidos`, `fuera_de_horario`, `demasiados_intentos`, `sin_lugar` |
 | `apartar(solicitud)` | Revalida TODO (horario, corte, ventana, duración en línea, modalidad, palas, límite de apartados sin pagar, lugar), calcula el precio y crea la reserva **apartada** 10 min con **una sola parte** (mesa + palas extra). Devuelve la reserva completa (con `tokenPrivado`). | `datos_invalidos`, `fuera_de_horario`, `demasiados_intentos`, `sin_lugar` |
 | `iniciarPago(token, parteIds, nombre)` | `token` es el privado o el de cobro (reservas divididas de antes del 21/10/2026). Crea el cobro en Clip por las partes elegidas y devuelve `{ url }` a donde mandar al cliente. Si es el link de cobro, `nombre` es de quien paga. Si el apartado ya se venció, falla (la reserva quedó cancelada): hay que apartar otra vez. Si el pago de un apartado vencido llega igual, se acepta solo si la mesa sigue libre; si no, queda como devolución por revisar. | `no_encontrada`, `no_permitido` (cancelada), `datos_invalidos` (parte ya pagada, nombre vacío) |
 | `reservaPorTokenPrivado(token)` | La reserva completa, o `null`. | — |
@@ -123,6 +125,8 @@ el cliente o para recepción, en español.
 | `pagosDelDia(fecha)` | ambos | Pagos **hechos** ese día (en línea y en el local), para el cierre de caja. Se buscan por la fecha del **pago**, no de la reserva: un cobro de hoy de una reserva movida a otro mes sigue saliendo hoy. |
 | `cotizarSinReserva(deporte, duracion)` | ambos | Lo que cuesta un grupo que empieza **ahora**, con la hora y la tarifa del servidor. Es lo que la caja enseña antes de cobrar. |
 | `anotarSinReserva(cliente)` | ambos | La caja del mostrador: registra **y cobra** (efectivo o tarjeta, en `cliente.medio`) a un grupo que empieza **ahora**. Revisa horario, lugar y mesa. Guarda quién cobró. Con `cliente.precioEsperado` (el total que se vio y se cobró en mano), si el servidor calcula otro **no registra nada**. |
+| `cotizarCombo(palasExtra?)` | ambos | Lo que cuesta un combo que empieza **ahora**. |
+| `anotarComboSinReserva(combo)` | ambos | Como `anotarSinReserva`, para el combo: los dos turnos, confirmados y cobrados en un solo pago. Devuelve el turno 1. |
 | `asignarMesa(id, mesa \| null)` | ambos | Mesa concreta ("CH 3"): que exista, funcione y no la tenga otro grupo a esa hora. Marca que llegaron. |
 | `marcarPago(id, parteIds, medio, nombre?)` | ambos | Efectivo o tarjeta. Guarda quién lo marcó. |
 | `extender(id, minutos)` | ambos | Revisa cierre y lugar; agrega una parte "extension" por cobrar. |
@@ -208,6 +212,10 @@ en memoria, `src/servidor/conexionEnMemoria.ts`). `npm test` las corre todas.
 - Marcar pago guarda quién lo marcó.
 - No asigna una mesa que ya tiene otro grupo.
 - Extender cobra el tiempo extra a precio regular de su tabla y revisa lugar.
+- Un turno de combo nunca queda separado del otro: toda operación sobre uno
+  (pagar, vencer, cancelar, liberar, mover) se le aplica también al otro en la
+  misma transacción (`seguirAlCombo`), y si el otro juego no tiene lugar no se
+  guarda ninguno.
 - Liberar por retraso solo pasada la tolerancia.
 - Quitar mesas con reservas encima avisa y no guarda, salvo confirmación; y
   nunca cancela nada.

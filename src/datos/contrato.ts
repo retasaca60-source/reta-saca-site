@@ -12,10 +12,12 @@
 import type { Configuracion, DeporteId, Duracion, Modalidad } from '../negocio/configuracion'
 import type {
   ClienteSinReserva,
+  ComboSinReserva,
   Conflicto,
   CotizacionSinReserva,
   HorarioDisponible,
   PagoDelDia,
+  SolicitudDeCombo,
   SolicitudDeReserva,
   VistaDeCobro,
 } from '../negocio/operaciones/tipos'
@@ -26,10 +28,12 @@ import type { MedioDePago, Reserva } from '../negocio/reserva'
 export { ErrorDeDatos, type CodigoDeError } from '../negocio/errores'
 export type {
   ClienteSinReserva,
+  ComboSinReserva,
   Conflicto,
   CotizacionSinReserva,
   HorarioDisponible,
   PagoDelDia,
+  SolicitudDeCombo,
   SolicitudDeReserva,
   VistaDeCobro,
 } from '../negocio/operaciones/tipos'
@@ -93,6 +97,10 @@ export interface ServicioDeDatos {
   disponibilidad(deporte: DeporteId, fecha: string, duracion: Duracion, modalidad?: Modalidad): Promise<HorarioDisponible[]>
   /** Crea la reserva APARTADA (10 min) con sus partes. Revalida todo del lado de los datos. */
   apartar(solicitud: SolicitudDeReserva): Promise<Reserva>
+  /** Horas del combo en línea: que quepa la hora completa y haya lugar en los dos juegos. */
+  disponibilidadCombo(fecha: string, primero: DeporteId): Promise<HorarioDisponible[]>
+  /** Aparta los dos turnos del combo. Devuelve el turno 1, que es el que se paga. */
+  apartarCombo(solicitud: SolicitudDeCombo): Promise<Reserva>
   /**
    * Empieza un pago en línea de una o varias partes. Devuelve la URL a la que
    * hay que mandar al cliente (Clip, o la pantalla simulada).
@@ -118,6 +126,10 @@ export interface ServicioDeDatos {
   cotizarSinReserva(deporte: DeporteId, duracion: Duracion, modalidad?: Modalidad, palasExtra?: boolean): Promise<CotizacionSinReserva>
   /** Registra Y COBRA en el mostrador a un grupo sin reserva (empieza ahora). Con `precioEsperado` distinto al de los datos, no registra. */
   anotarSinReserva(cliente: ClienteSinReserva): Promise<Reserva>
+  /** Lo que cuesta un combo que empieza AHORA en el local. */
+  cotizarCombo(palasExtra?: boolean): Promise<CotizacionSinReserva>
+  /** Registra Y COBRA un combo en el mostrador; empieza ahora. Devuelve el turno 1. */
+  anotarComboSinReserva(combo: ComboSinReserva): Promise<Reserva>
   /** Asigna mesa y marca que llegaron. `null` quita la mesa. */
   asignarMesa(reservaId: string, mesa: string | null): Promise<Reserva>
   marcarPago(reservaId: string, parteIds: string[], medio: Exclude<MedioDePago, 'en_linea'>, nombre?: string): Promise<Reserva>

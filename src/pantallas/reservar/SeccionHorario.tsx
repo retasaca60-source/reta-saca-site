@@ -1,5 +1,6 @@
 // Dentro de la ficha: día, cuánto tiempo y a qué hora, con la disponibilidad
-// del servicio.
+// del servicio. En el combo no se elige tiempo (siempre es 1 hora) y las horas
+// son las que tienen lugar en los dos juegos.
 
 import { useEffect, type Dispatch } from 'react'
 import { servicio } from '../../datos'
@@ -16,16 +17,18 @@ interface Props {
   despachar: Dispatch<Accion>
   config: Configuracion
   deporte: DeporteId
+  /** Combo: `deporte` es el juego que va primero. */
+  combo?: boolean
 }
 
-export function SeccionHorario({ borrador, despachar, config, deporte }: Props) {
+export function SeccionHorario({ borrador, despachar, config, deporte, combo = false }: Props) {
   const { fecha, duracion, inicio, modalidad } = borrador
   const d = config.deportes[deporte]
   const ahora = ahoraEnSonora()
   const dias = diasReservables(config, ahora)
   const { datos: horarios, cargando, error } = usarDatos(
-    () => servicio.disponibilidad(deporte, fecha, duracion, modalidad),
-    [deporte, fecha, duracion, modalidad],
+    () => (combo ? servicio.disponibilidadCombo(fecha, deporte) : servicio.disponibilidad(deporte, fecha, duracion, modalidad)),
+    [combo, deporte, fecha, duracion, modalidad],
   )
 
   // Si la hora elegida ya no está libre (se llenó, o pasó el corte mientras
@@ -60,15 +63,19 @@ export function SeccionHorario({ borrador, despachar, config, deporte }: Props) 
         })}
       </div>
 
-      <h2 className="titulo-seccion">Tiempo</h2>
-      <div className="segmentado" role="group" aria-label="Cuánto tiempo">
-        {/* Los tiempos de ese juego que se venden en línea (`duracionesEnLinea`). */}
-        {duracionesEnLinea(config, d).map((m) => (
-          <button key={m} type="button" aria-pressed={duracion === m} onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}>
-            {formatoDuracion(m)}
-          </button>
-        ))}
-      </div>
+      {!combo && (
+        <>
+          <h2 className="titulo-seccion">Tiempo</h2>
+          <div className="segmentado" role="group" aria-label="Cuánto tiempo">
+            {/* Los tiempos de ese juego que se venden en línea (`duracionesEnLinea`). */}
+            {duracionesEnLinea(config, d).map((m) => (
+              <button key={m} type="button" aria-pressed={duracion === m} onClick={() => despachar({ tipo: 'elegirDuracion', duracion: m })}>
+                {formatoDuracion(m)}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="titulo-seccion">Hora</h2>
       {borrador.aviso && (
@@ -84,7 +91,9 @@ export function SeccionHorario({ borrador, despachar, config, deporte }: Props) 
       {error && <p className="aviso aviso-error">{error}</p>}
       {!horarios && cargando && <p className="cargando">Buscando horarios…</p>}
       {horarios && horarios.length === 0 && (
-        <p className="nota">No hay horarios este día para {formatoDuracion(duracion)}. Prueba otro día u otro tiempo.</p>
+        <p className="nota">
+          {combo ? 'No hay horarios para el combo este día. Prueba otro día.' : `No hay horarios este día para ${formatoDuracion(duracion)}. Prueba otro día u otro tiempo.`}
+        </p>
       )}
       {horarios && horarios.length > 0 && (
         <div className="horas" aria-busy={cargando}>

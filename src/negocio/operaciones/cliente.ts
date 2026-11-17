@@ -8,7 +8,7 @@ import { ErrorDeDatos } from '../errores'
 import { cabeEnUnBloque, estaCerrado, iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { ofreceModalidad, precioDe, precioDePalas } from '../precios'
-import { pagado, type Reserva } from '../reserva'
+import { cuentaComoReserva, pagado, type Reserva } from '../reserva'
 import { instante, momentoDe } from '../tiempo'
 import { duracionesEnLinea, type DeporteId, type Duracion, type Modalidad } from '../configuracion'
 import { abrirDevolucion, copia, type Contexto } from './contexto'
@@ -63,7 +63,7 @@ export function apartar(ctx: Contexto, s: SolicitudDeReserva): Reserva {
   // local apartado gratis. Es el freno contra el abuso torpe; contra un script
   // que cambia de número está el límite por dirección del servidor.
   const sinPagar = reservas.filter(
-    (r) => r.organizador.whatsapp === whatsapp && r.estado === 'apartada' && (r.apartadaHasta ?? 0) > ahora,
+    (r) => r.organizador.whatsapp === whatsapp && r.estado === 'apartada' && (r.apartadaHasta ?? 0) > ahora && cuentaComoReserva(r),
   ).length
   if (sinPagar >= APARTADOS_SIN_PAGAR_POR_WHATSAPP) {
     throw new ErrorDeDatos(

@@ -166,6 +166,11 @@
 .juego-nombre { font-size: 26px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
 .juego-precio { flex: none; color: rgba(255, 255, 255, 0.78); font-size: 14px; }
 .juego-precio b { color: #fff; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+/* El combo: Cornhole a la izquierda y Ping Pong a la derecha, partidos en
+   diagonal. Las dos fotos son las de cada juego, sin una nueva que cuidar. */
+.juego-combo .mitad-uno { clip-path: polygon(0 0, 58% 0, 42% 100%, 0 100%); }
+.juego-combo .mitad-dos { clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%); }
+.juego-detalle { display: block; margin-top: 2px; color: rgba(255, 255, 255, 0.78); font-size: 13px; }
 
 .inicio-nota { margin: 16px 4px 0; color: var(--tinta-2); font-size: 14px; }
 /* La lista no tiene barra fija abajo: no hace falta reservarle espacio. */
@@ -186,6 +191,9 @@
   overflow: hidden;
 }
 .ficha-foto { width: 100%; height: 100%; object-fit: cover; }
+.ficha-combo .ficha-foto { position: absolute; inset: 0; }
+.ficha-combo .mitad-uno { clip-path: polygon(0 0, 58% 0, 42% 100%, 0 100%); }
+.ficha-combo .mitad-dos { clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%); }
 .ficha-portada::after {
   content: '';
   position: absolute;

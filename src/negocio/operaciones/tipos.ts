@@ -67,6 +67,29 @@ export interface ClienteSinReserva {
   precioEsperado?: number
 }
 
+/** Un combo en línea (ver operaciones/combo.ts). */
+export interface SolicitudDeCombo {
+  fecha: string
+  inicio: number
+  primero: DeporteId
+  /** 2 palas extra de Ping Pong, aparte del combo. */
+  palasExtra?: boolean
+  organizador: { nombre: string; whatsapp: string }
+}
+
+/** Un combo que se cobra en el mostrador; empieza ahora. */
+export interface ComboSinReserva {
+  primero: DeporteId
+  nombre: string
+  whatsapp?: string
+  /** Mesa del primer juego, si recepción ya la sabe. */
+  mesa?: string
+  medio: Exclude<MedioDePago, 'en_linea'>
+  palasExtra?: boolean
+  /** El total que vio recepción; si el de los datos es otro, no se registra nada. */
+  precioEsperado?: number
+}
+
 /** Lo que cuesta AHORA un grupo sin reserva, según la hora del servidor. */
 export interface CotizacionSinReserva {
   /** De la mesa. */

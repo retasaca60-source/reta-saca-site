@@ -10,7 +10,7 @@ import { usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES } from '../negocio/configuracion'
 import { RANGOS_DE_REGLAS } from '../negocio/operaciones'
 import { formatoDinero } from '../negocio/formato'
-import { pendiente, total } from '../negocio/reserva'
+import { pendiente, total, cuentaComoReserva } from '../negocio/reserva'
 import { DIAS_CORTOS, ahoraEnSonora, diaDeLaSemana, fechaLarga, sumarDias } from '../negocio/tiempo'
 import { ListaDelDia } from './ListaDelDia'
 
@@ -40,7 +40,8 @@ export function Semana() {
     const delDia = reservas.filter((r) => r.fecha === f && r.estado !== 'cancelada')
     return {
       delDia,
-      cuenta: delDia.length,
+      // Un combo son dos turnos pero una sola reserva. Por juego sí cuenta cada turno.
+      cuenta: delDia.filter(cuentaComoReserva).length,
       suma: delDia.reduce((s, r) => s + total(r), 0),
       falta: delDia.reduce((s, r) => s + pendiente(r), 0),
     }

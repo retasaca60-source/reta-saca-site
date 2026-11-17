@@ -14,6 +14,11 @@ export interface Borrador {
   /** 1 deporte · 2 horario y datos · 3 pago */
   paso: Paso
   deporte: DeporteId | null
+  /**
+   * El combo (30 min de cada juego): `deporte` es entonces el juego que va
+   * primero, y `duracion` no se usa (el combo siempre es 1 hora).
+   */
+  combo: boolean
   /** Cornhole: estándar (4 personas) o para 2 personas. */
   modalidad: Modalidad
   /** Ping Pong: 2 palas extra. */
@@ -34,6 +39,7 @@ export function borradorNuevo(hoy: string): Borrador {
   return {
     paso: 1,
     deporte: null,
+    combo: false,
     modalidad: 'estandar',
     palasExtra: false,
     fecha: hoy,
@@ -48,6 +54,9 @@ export function borradorNuevo(hoy: string): Borrador {
 
 export type Accion =
   | { tipo: 'elegirDeporte'; deporte: DeporteId; config: Configuracion }
+  | { tipo: 'elegirCombo' }
+  /** En el combo: qué juego va primero. */
+  | { tipo: 'elegirPrimero'; deporte: DeporteId }
   | { tipo: 'elegirModalidad'; modalidad: Modalidad }
   | { tipo: 'pedirPalas'; palasExtra: boolean }
   | { tipo: 'irAPaso'; paso: Paso; config: Configuracion }
@@ -67,17 +76,25 @@ export function reducir(b: Borrador, a: Accion): Borrador {
       // Al cambiar de deporte se suelta la hora (otro deporte tiene otra
       // disponibilidad y otro precio) y se vuelve a la modalidad estándar sin
       // palas: son opciones de un juego, no se arrastran al otro.
-      if (b.deporte === a.deporte) return b
-      return { ...b, deporte: a.deporte, modalidad: 'estandar', palasExtra: false, inicio: null }
+      if (b.deporte === a.deporte && !b.combo) return b
+      return { ...b, deporte: a.deporte, combo: false, modalidad: 'estandar', palasExtra: false, inicio: null }
     }
+    case 'elegirCombo':
+      // Igual que al cambiar de juego: el combo tiene otra disponibilidad y otro precio.
+      if (b.combo) return b
+      return { ...b, combo: true, deporte: 'cornhole', modalidad: 'estandar', palasExtra: false, inicio: null }
+    case 'elegirPrimero':
+      // Cambia qué juego toca a cada media hora: la hora elegida puede ya no tener lugar.
+      return b.combo && b.deporte !== a.deporte ? { ...b, deporte: a.deporte, inicio: null, aviso: null } : b
     case 'elegirModalidad':
       // Misma mesa y mismo horario, otro precio: la hora elegida se queda.
-      return b.deporte ? { ...b, modalidad: a.modalidad } : b
+      return b.deporte && !b.combo ? { ...b, modalidad: a.modalidad } : b
     case 'pedirPalas':
       return b.deporte ? { ...b, palasExtra: a.palasExtra } : b
     case 'irAPaso':
       if (a.paso === 2) {
         if (!b.deporte) return b
+        if (b.combo) return { ...b, paso: 2 }
         // Cada juego tiene sus tiempos: si venía con una duración que este no
         // vende en línea (por ejemplo, porque Hugo la quitó en Ajustes), se
         // cambia a la primera que sí.

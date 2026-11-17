@@ -56,6 +56,8 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     configuracion: () => llamar<Configuracion>('configuracion'),
     disponibilidad: (deporte, fecha, duracion, modalidad = 'estandar') => llamar<HorarioDisponible[]>('disponibilidad', { deporte, fecha, duracion, modalidad }),
     apartar: (solicitud) => llamar<Reserva>('apartar', { solicitud: { ...solicitud } }),
+    disponibilidadCombo: (fecha, primero) => llamar<HorarioDisponible[]>('disponibilidadCombo', { fecha, primero }),
+    apartarCombo: (solicitud) => llamar<Reserva>('apartarCombo', { solicitud: { ...solicitud } }),
     iniciarPago: (token, parteIds, nombre) => llamar<{ url: string }>('iniciarPago', { token, parteIds, nombre }),
     reservaPorTokenPrivado: (token) => llamar<Reserva | null>('reservaPorTokenPrivado', { token }),
     vistaDeCobro: (token) => llamar<VistaDeCobro | null>('vistaDeCobro', { token }),
@@ -82,6 +84,8 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     cotizarSinReserva: (deporte, duracion, modalidad = 'estandar', palasExtra = false) =>
       llamar<CotizacionSinReserva>('cotizarSinReserva', { deporte, duracion, modalidad, palasExtra }),
     anotarSinReserva: (cliente) => cambia(llamar<Reserva>('anotarSinReserva', { cliente: { ...cliente } })),
+    cotizarCombo: (palasExtra = false) => llamar<CotizacionSinReserva>('cotizarCombo', { palasExtra }),
+    anotarComboSinReserva: (combo) => cambia(llamar<Reserva>('anotarComboSinReserva', { combo: { ...combo } })),
     asignarMesa: (reservaId, mesa) => cambia(llamar<Reserva>('asignarMesa', { reservaId, mesa })),
     marcarPago: (reservaId, parteIds, medio, nombre) => cambia(llamar<Reserva>('marcarPago', { reservaId, parteIds, medio, nombre })),
     extender: (reservaId, minutos) => cambia(llamar<Reserva>('extender', { reservaId, minutos })),
