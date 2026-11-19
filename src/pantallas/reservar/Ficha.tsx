@@ -17,7 +17,7 @@ import { datosCompletos, type Accion, type Borrador } from '../../mecanismos/res
 import { queHacerConLoApartado, type ApartadoDeLaFicha } from '../../mecanismos/reserva/apartadoDeLaFicha'
 import { LUGAR, mesasEnServicio, precioDeLista, type Configuracion, type Duracion } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
-import { precioDe, precioDePalas, tablaDe } from '../../negocio/precios'
+import { ahorroDelCombo, precioDe, precioDePalas, tablaDe } from '../../negocio/precios'
 import { ahoraEnSonora, formatoHora } from '../../negocio/tiempo'
 import { TURNO_DEL_COMBO, turnosDelCombo } from '../../negocio/operaciones/combo'
 import type { Reserva } from '../../negocio/reserva'
@@ -51,6 +51,7 @@ export function Ficha({ borrador, despachar, config }: Props) {
   const combo = borrador.combo
   // Las palas extra son de Ping Pong, también en el combo aunque empiece con Cornhole.
   const conPalas = combo ? config.deportes.pingpong : d
+  const ahorroCombo = combo ? ahorroDelCombo(config) : null
 
   const precio = inicio === null ? null : combo ? config.combo.precio : precioDe(config, deporte, inicio, duracion as Duracion, modalidad).precio
   const palas = precioDePalas(conPalas, palasExtra)
@@ -142,6 +143,12 @@ export function Ficha({ borrador, despachar, config }: Props) {
             <p className="nota">
               {formatoDinero(config.combo.precio)} por 30 min de cada juego, uno después del otro: 1 hora en total.
             </p>
+            {ahorroCombo && (
+              <p className="combo-ahorro numeros">
+                Por separado te saldría en {formatoDinero(ahorroCombo.porSeparado)}. Con el combo te ahorras{' '}
+                <b>{formatoDinero(ahorroCombo.ahorro)}</b>.
+              </p>
+            )}
             <h2 className="titulo-seccion">¿Cuál va primero?</h2>
             <div className="segmentado" role="group" aria-label="Qué juego va primero">
               {(['cornhole', 'pingpong'] as const).map((id) => (

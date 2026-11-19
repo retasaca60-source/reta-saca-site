@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { CONFIGURACION_INICIAL as C, type Configuracion } from './configuracion'
 import { ocupadasEn } from './disponibilidad'
 import { diasReservables, iniciosPosibles } from './horario'
-import { esPromo, precioDe } from './precios'
+import { ahorroDelCombo, esPromo, precioDe } from './precios'
 import { puedeLiberarPorRetraso, repartir, type Reserva } from './reserva'
 import { diaDeLaSemana, formatoHora, instante, momentoDe } from './tiempo'
 
@@ -91,6 +91,13 @@ describe('precios (RESERVAS.md §3 y §4)', () => {
     expect(esPromo(conPromo, 'cornhole', h(17, 30), 60)).toBe(false)
     expect(esPromo(conPromo, 'pingpong', h(18), 60)).toBe(false)
     expect(esPromo(conPromo, 'pingpong', h(17), 30)).toBe(false)
+  })
+  it('el combo dice cuánto se ahorra contra las dos medias horas, y nada si no es más barato', () => {
+    expect(ahorroDelCombo(C)).toEqual({ porSeparado: 260, ahorro: 60 })
+    expect(ahorroDelCombo({ ...C, combo: { ...C.combo, precio: 260 } })).toBeNull()
+    expect(ahorroDelCombo({ ...C, combo: { ...C.combo, precio: 300 } })).toBeNull()
+    const sinMediaHora = { ...C, deportes: { ...C.deportes, pingpong: { ...C.deportes.pingpong, precios: { 60: 150 } } } }
+    expect(ahorroDelCombo(sinMediaHora)).toBeNull()
   })
   it('partes en pesos cerrados; el organizador absorbe la diferencia', () => {
     expect(repartir(150, 4)).toEqual([39, 37, 37, 37])

@@ -6,6 +6,7 @@ import type { Dispatch } from 'react'
 import type { Accion, Borrador } from '../../mecanismos/reserva/estado'
 import { LUGAR, mesasEnServicio, ORDEN_DEPORTES, precioDeLista, type Configuracion, type DeporteId } from '../../negocio/configuracion'
 import { formatoDinero } from '../../negocio/formato'
+import { ahorroDelCombo } from '../../negocio/precios'
 import { FOTO_DE } from '../../vista/fotos'
 import { cambiarDePantalla } from '../../vista/transicion'
 
@@ -28,6 +29,8 @@ export function ElegirJuego({ despachar, config }: Props) {
       despachar({ tipo: 'elegirCombo' })
       despachar({ tipo: 'irAPaso', paso: 2, config })
     })
+
+  const ahorro = ahorroDelCombo(config)
 
   return (
     <>
@@ -98,12 +101,14 @@ export function ElegirJuego({ despachar, config }: Props) {
               <span className="juego-palabra" aria-hidden="true">
                 Combo
               </span>
+              {ahorro && <span className="pastilla juego-ahorro numeros">Ahorras {formatoDinero(ahorro.ahorro)}</span>}
               <span className="juego-pie">
                 <span>
                   <strong className="juego-nombre">Combo</strong>
                   <span className="juego-detalle">30 min de cada juego</span>
                 </span>
                 <span className="juego-precio numeros">
+                  {ahorro && <s className="juego-antes">{formatoDinero(ahorro.porSeparado)}</s>}
                   <b>{formatoDinero(config.combo.precio)}</b>
                 </span>
               </span>

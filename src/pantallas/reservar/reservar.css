@@ -171,6 +171,13 @@
 .juego-combo .mitad-uno { clip-path: polygon(0 0, 58% 0, 42% 100%, 0 100%); }
 .juego-combo .mitad-dos { clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%); }
 .juego-detalle { display: block; margin-top: 2px; color: rgba(255, 255, 255, 0.78); font-size: 13px; }
+/* Lo que ahorra el combo, en el lugar de la pastilla de mesas (el combo no la
+   lleva): en el degradado de la casa para que sea lo primero que se lea. El
+   precio de las dos medias horas por separado va tachado junto al del combo. */
+.juego-ahorro { position: absolute; z-index: 2; top: 14px; right: 14px; background: var(--acento); box-shadow: none; font-weight: 600; }
+.juego-antes { margin-right: 6px; color: rgba(255, 255, 255, 0.6); font-size: 15px; }
+.combo-ahorro { margin: 10px 0 0; padding: 10px 14px; border-radius: 14px; background: var(--ambar-suave); color: var(--ambar); font-size: 14px; line-height: 1.45; }
+.combo-ahorro b { font-weight: 700; }
 
 .inicio-nota { margin: 16px 4px 0; color: var(--tinta-2); font-size: 14px; }
 /* La lista no tiene barra fija abajo: no hace falta reservarle espacio. */
