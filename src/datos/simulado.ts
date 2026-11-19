@@ -302,7 +302,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
     configuracion: () => consultar((e) => e.config),
     disponibilidad: (deporte, fecha, duracion, modalidad) => consultar((e) => op.horariosDisponibles(contexto(e), deporte, fecha, duracion, modalidad)),
     apartar: (s) => cambiar((e) => poner(e, op.apartar(contexto(e), s))),
-    disponibilidadCombo: (fecha, primero) => consultar((e) => op.horariosDelCombo(contexto(e), fecha, primero)),
+    disponibilidadCombo: (fecha, primero, modalidad) => consultar((e) => op.horariosDelCombo(contexto(e), fecha, primero, modalidad)),
     apartarCombo: (s) => cambiar((e) => ponerCombo(e, op.apartarCombo(contexto(e), s))),
 
     iniciarPago: (token, parteIds, nombre) =>
@@ -374,10 +374,10 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
         const quien = usuarioActual(e)
         return poner(e, op.anotarSinReserva(contexto(e), c, quien.nombre))
       }),
-    cotizarCombo: (palasExtra) =>
+    cotizarCombo: (modalidad, palasExtra) =>
       consultar((e) => {
         usuarioActual(e)
-        return op.cotizarCombo(contexto(e), palasExtra)
+        return op.cotizarCombo(contexto(e), modalidad, palasExtra)
       }),
     anotarComboSinReserva: (c) =>
       cambiar((e) => {

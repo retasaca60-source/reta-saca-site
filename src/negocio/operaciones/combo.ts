@@ -1,6 +1,7 @@
 // El combo (desde el 17/11/2026): media hora de cada juego, uno después del
-// otro, por un solo precio ($200). El cliente escoge cuál va primero; las
-// palas extra de Ping Pong se cobran aparte. Se reserva en línea y en el
+// otro, por un solo precio. El cliente escoge cuál va primero y, desde el
+// 18/11/2026, cuántos juegan: 2 personas ($200) o 4 ($280, con las 2 palas
+// extra de Ping Pong incluidas para jugar dobles). Se reserva en línea y en el
 // local, todos los días.
 //
 // Decisiones:
@@ -19,13 +20,17 @@
 //   lugar. Si no lo tiene, no se guarda ninguna de las dos.
 // - **El turno 1 no se extiende**: termina justo cuando empieza el otro juego.
 //   El tiempo extra se agrega al segundo.
+// - **Sin modalidad = 2 personas.** Antes del 18/11/2026 el combo tenía un
+//   solo precio ($200), que es el de 2 personas. Una pestaña o un panel
+//   abiertos con esa versión piden el combo sin modalidad y enseñaron $200:
+//   cobrarles el de 4 sería cobrar otra cosa de la que vieron.
 
 import { mesasLibres } from '../disponibilidad'
 import { ErrorDeDatos } from '../errores'
 import { bloqueEn, cabeEnUnBloque, estaCerrado, iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDePalas } from '../precios'
-import { type DeporteId, type Configuracion } from '../configuracion'
+import { type DeporteId, type Configuracion, type Modalidad } from '../configuracion'
 import { formatoDinero } from '../formato'
 import { formatoHora, instante, momentoDe } from '../tiempo'
 import type { Reserva } from '../reserva'
@@ -47,10 +52,18 @@ export function turnosDelCombo(primero: DeporteId, inicio: number): [{ deporte: 
   ]
 }
 
-/** El combo y, si se piden, las 2 palas extra de Ping Pong. */
-export function precioDelCombo(config: Configuracion, palasExtra: boolean | undefined) {
-  const palas = precioDePalas(config.deportes.pingpong, palasExtra)
-  return { precio: config.combo.precio, palasExtra: palas, total: config.combo.precio + palas }
+/** Lo que se pidió sin modalidad: el combo de 2 personas (ver arriba, "Sin modalidad"). */
+export const modalidadDelCombo = (m: Modalidad | undefined): Modalidad => m ?? 'pareja'
+
+/**
+ * El combo en su modalidad. El de 4 personas ya trae las 2 palas extra: si
+ * además las piden, no se cobran otra vez. El de 2 no las necesita, pero se
+ * siguen cobrando si las piden, como antes del 18/11/2026.
+ */
+export function precioDelCombo(config: Configuracion, modalidad: Modalidad, palasExtra: boolean | undefined) {
+  const precio = config.combo.precios[modalidad]
+  const palas = modalidad === 'estandar' ? 0 : precioDePalas(config.deportes.pingpong, palasExtra)
+  return { precio, palasExtra: palas, total: precio + palas }
 }
 
 /** Cuántos combos caben: lo que quede libre del juego que tenga menos en su media hora. */
@@ -59,30 +72,34 @@ function combosLibres(ctx: Contexto, fecha: string, primero: DeporteId, inicio: 
 }
 
 /** Las horas que se ofrecen en línea: que quepa la hora completa y haya lugar en los dos juegos. */
-export function horariosDelCombo(ctx: Contexto, fecha: string, primero: DeporteId): HorarioDisponible[] {
+export function horariosDelCombo(ctx: Contexto, fecha: string, primero: DeporteId, modalidad?: Modalidad): HorarioDisponible[] {
   if (!ctx.config.combo.activa) return []
   return iniciosPosibles(ctx.config, fecha, 60, momentoDe(ctx.ahora)).map((inicio) => ({
     inicio,
     libres: Math.max(0, combosLibres(ctx, fecha, primero, inicio)),
-    precio: ctx.config.combo.precio,
+    precio: ctx.config.combo.precios[modalidadDelCombo(modalidad)],
     conPromo: false,
   }))
 }
 
 /**
  * Las dos reservas del combo, amarradas. El turno 1 lleva el cobro; las palas
- * extra se anotan en el turno de Ping Pong (es donde se entregan) aunque se
- * cobren con el combo.
+ * extra pagadas aparte se anotan en el turno de Ping Pong (es donde se
+ * entregan) aunque se cobren con el combo. Las incluidas en el de 4 personas no
+ * se anotan como cobro: las dice `combo.personas` (ver `llevaPalasExtra`).
+ * En el de 2 personas el turno de Cornhole lleva la modalidad, para que el
+ * panel lo diga y su tiempo extra se cobre a precio de 2 personas.
  */
 export function armarCombo(
   config: Configuracion,
   base: Omit<Reserva, 'id' | 'folio' | 'tokenPrivado' | 'tokenCobro' | 'deporte' | 'inicio' | 'duracion' | 'precio' | 'conPromo' | 'partes' | 'combo' | 'palasExtra'>,
   primero: DeporteId,
   inicio: number,
+  modalidad: Modalidad,
   palasExtra: boolean | undefined,
   pago: Reserva['partes'][number]['pago'],
 ): [Reserva, Reserva] {
-  const { precio, palasExtra: palas, total } = precioDelCombo(config, palasExtra)
+  const { precio, palasExtra: palas, total } = precioDelCombo(config, modalidad, palasExtra)
   const [t1, t2] = turnosDelCombo(primero, inicio)
   const id1 = nuevoId()
   const id2 = nuevoId()
@@ -100,8 +117,9 @@ export function armarCombo(
     precio: n === 1 ? precio : 0,
     conPromo: false,
     ...(palas && t.deporte === 'pingpong' ? { palasExtra: palas } : {}),
+    ...(modalidad === 'pareja' && t.deporte === 'cornhole' ? { modalidad } : {}),
     partes: n === 1 ? [{ id: nuevoId(), monto: total, delOrganizador: true, concepto: 'reserva', pago }] : [],
-    combo: { con, turno: n },
+    combo: { con, turno: n, personas: modalidad === 'pareja' ? 2 : 4 },
   })
   return [turno(id1, id2, t1, 1), turno(id2, id1, t2, 2)]
 }
@@ -144,14 +162,15 @@ export function apartarCombo(ctx: Contexto, s: SolicitudDeCombo): [Reserva, Rese
     },
     s.primero,
     s.inicio,
+    modalidadDelCombo(s.modalidad),
     s.palasExtra,
     null,
   )
 }
 
 /** Lo que cuesta un combo que empieza AHORA en el local. */
-export function cotizarCombo(ctx: Contexto, palasExtra = false) {
-  return { ...precioDelCombo(ctx.config, palasExtra), conPromo: false, inicio: momentoDe(ctx.ahora).minutos }
+export function cotizarCombo(ctx: Contexto, modalidad?: Modalidad, palasExtra = false) {
+  return { ...precioDelCombo(ctx.config, modalidadDelCombo(modalidad), palasExtra), conPromo: false, inicio: momentoDe(ctx.ahora).minutos }
 }
 
 /** Un combo en el mostrador: empieza ahora y se cobra al registrarlo, como cualquier grupo sin reserva. */
@@ -171,7 +190,8 @@ export function anotarComboSinReserva(ctx: Contexto, c: ComboSinReserva, quien: 
       throw new ErrorDeDatos('sin_lugar', `No hay ${config.deportes[t.deporte].nombre} libre de ${formatoHora(t.inicio)} a ${formatoHora(t.inicio + TURNO_DEL_COMBO)}.`)
     }
   }
-  const { total } = precioDelCombo(config, c.palasExtra)
+  const modalidad = modalidadDelCombo(c.modalidad)
+  const { total } = precioDelCombo(config, modalidad, c.palasExtra)
   if (c.precioEsperado !== undefined && c.precioEsperado !== total) {
     throw new ErrorDeDatos(
       'datos_invalidos',
@@ -197,6 +217,7 @@ export function anotarComboSinReserva(ctx: Contexto, c: ComboSinReserva, quien: 
     },
     c.primero,
     m.minutos,
+    modalidad,
     c.palasExtra,
     { medio: c.medio, nombre, en, marcadoPor: quien },
   )

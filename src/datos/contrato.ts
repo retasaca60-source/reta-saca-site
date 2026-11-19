@@ -97,8 +97,8 @@ export interface ServicioDeDatos {
   disponibilidad(deporte: DeporteId, fecha: string, duracion: Duracion, modalidad?: Modalidad): Promise<HorarioDisponible[]>
   /** Crea la reserva APARTADA (10 min) con sus partes. Revalida todo del lado de los datos. */
   apartar(solicitud: SolicitudDeReserva): Promise<Reserva>
-  /** Horas del combo en línea: que quepa la hora completa y haya lugar en los dos juegos. */
-  disponibilidadCombo(fecha: string, primero: DeporteId): Promise<HorarioDisponible[]>
+  /** Horas del combo en línea: que quepa la hora completa y haya lugar en los dos juegos. El precio, el de esa modalidad (sin ella, 2 personas). */
+  disponibilidadCombo(fecha: string, primero: DeporteId, modalidad?: Modalidad): Promise<HorarioDisponible[]>
   /** Aparta los dos turnos del combo. Devuelve el turno 1, que es el que se paga. */
   apartarCombo(solicitud: SolicitudDeCombo): Promise<Reserva>
   /**
@@ -126,8 +126,8 @@ export interface ServicioDeDatos {
   cotizarSinReserva(deporte: DeporteId, duracion: Duracion, modalidad?: Modalidad, palasExtra?: boolean): Promise<CotizacionSinReserva>
   /** Registra Y COBRA en el mostrador a un grupo sin reserva (empieza ahora). Con `precioEsperado` distinto al de los datos, no registra. */
   anotarSinReserva(cliente: ClienteSinReserva): Promise<Reserva>
-  /** Lo que cuesta un combo que empieza AHORA en el local. */
-  cotizarCombo(palasExtra?: boolean): Promise<CotizacionSinReserva>
+  /** Lo que cuesta un combo que empieza AHORA en el local, en esa modalidad (sin ella, 2 personas). */
+  cotizarCombo(modalidad?: Modalidad, palasExtra?: boolean): Promise<CotizacionSinReserva>
   /** Registra Y COBRA un combo en el mostrador; empieza ahora. Devuelve el turno 1. */
   anotarComboSinReserva(combo: ComboSinReserva): Promise<Reserva>
   /** Asigna mesa y marca que llegaron. `null` quita la mesa. */

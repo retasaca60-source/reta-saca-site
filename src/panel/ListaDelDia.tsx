@@ -7,7 +7,7 @@
 import { useState } from 'react'
 import type { Configuracion } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
-import { cuentaComoReserva, fin, pagado, pendiente, puedeLiberarPorRetraso, total, type Reserva } from '../negocio/reserva'
+import { cuentaComoReserva, fin, llevaPalasExtra, pagado, pendiente, puedeLiberarPorRetraso, total, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, formatoDuracion, formatoHora } from '../negocio/tiempo'
 import { FilaReserva } from './FilaReserva'
 
@@ -128,11 +128,15 @@ function Fila({
           <small>
             {d.nombre}
             {r.modalidad === 'pareja' && ' (2 personas)'} · {formatoHora(r.inicio)} – {formatoHora(fin(r))} · {formatoDuracion(r.duracion)}
-            {r.palasExtra ? ' · +2 palas' : ''}
+            {llevaPalasExtra(r) ? ' · +2 palas' : ''}
           </small>
         </span>
         <span className="dia-etiquetas">
-          {r.combo && <span className="etiqueta combo">Combo · {r.combo.turno === 1 ? '1.º' : '2.º'} juego</span>}
+          {r.combo && (
+            <span className="etiqueta combo">
+              Combo{r.combo.personas ? ` de ${r.combo.personas}` : ''} · {r.combo.turno === 1 ? '1.º' : '2.º'} juego
+            </span>
+          )}
           <span className={'etiqueta ' + (r.origen === 'sitio' ? 'en-linea' : 'local')}>{r.origen === 'sitio' ? 'Reservó en línea' : 'Sin reserva'}</span>
           <span className={'etiqueta ' + l.tono}>{l.texto}</span>
         </span>

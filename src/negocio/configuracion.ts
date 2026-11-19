@@ -69,12 +69,17 @@ export interface Configuracion {
   }
   /**
    * Combo: media hora de cada juego, uno después del otro (1 hora en total),
-   * por un solo precio. El cliente escoge cuál va primero. Las palas extra de
-   * Ping Pong se cobran aparte. Ver negocio/operaciones/combo.ts.
+   * por un solo precio. El cliente escoge cuál va primero y cuántos juegan.
+   * Ver negocio/operaciones/combo.ts.
    */
   combo: {
     activa: boolean
-    precio: number
+    /**
+     * Precio del combo en cada modalidad. El de 4 personas (estándar) trae las
+     * 2 palas extra de Ping Pong incluidas, para jugar dobles; en el de 2
+     * personas no hacen falta.
+     */
+    precios: Record<Modalidad, number>
   }
   reglas: {
     /** Cuántos días hacia adelante se puede reservar (ventana móvil). */
@@ -152,8 +157,9 @@ export const CONFIGURACION_INICIAL: Configuracion = {
   // vez de borrarse: Hugo la puede volver a prender en Ajustes con sus precios.
   promo: { activa: false, inicios: [h(17)], duracion: 60 },
   // El combo que puso Hugo el 17/11/2026: 30 min de Cornhole y 30 de Ping
-  // Pong por $200, todos los días.
-  combo: { activa: true, precio: 200 },
+  // Pong, todos los días. Desde el 18/11/2026 tiene precio para 2 personas
+  // ($200, el que tenía) y para 4 ($280, con las palas extra incluidas).
+  combo: { activa: true, precios: { estandar: 280, pareja: 200 } },
   reglas: {
     diasDeAnticipacion: 7,
     minutosDeCorte: 0,
@@ -207,7 +213,18 @@ export function normalizarConfiguracion(c: Configuracion): Configuracion {
   }
   if (!Array.isArray(x.reglas.duracionesEnLinea)) x.reglas.duracionesEnLinea = [...CONFIGURACION_INICIAL.reglas.duracionesEnLinea]
   // Lo guardado antes del 17/11/2026 no trae combo: entra con el que decidió el negocio.
-  if (!x.combo || typeof x.combo !== 'object') x.combo = { ...CONFIGURACION_INICIAL.combo }
+  if (!x.combo || typeof x.combo !== 'object') x.combo = structuredClone(CONFIGURACION_INICIAL.combo)
+  // Lo guardado entre el 17 y el 18/11/2026 trae un solo precio: era el combo
+  // sin modalidad, que desde el 18/11 es el de 2 personas. El de 4 entra con el
+  // que decidió el negocio.
+  const combo = x.combo as Configuracion['combo'] & { precio?: unknown }
+  if (!combo.precios || typeof combo.precios !== 'object') {
+    combo.precios = {
+      estandar: CONFIGURACION_INICIAL.combo.precios.estandar,
+      pareja: typeof combo.precio === 'number' ? combo.precio : CONFIGURACION_INICIAL.combo.precios.pareja,
+    }
+  }
+  delete combo.precio
   delete (x.reglas as Record<string, unknown>).horasParaCancelar
   return x
 }

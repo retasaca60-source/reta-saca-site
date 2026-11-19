@@ -221,13 +221,29 @@ export function Configuracion() {
             Combo activo, en línea y en el local
           </label>
           <label>
-            Precio del combo
-            <input className="corto" type="number" min={1} value={c.combo.precio} onChange={(e) => cambiar((x) => void (x.combo.precio = numero(e.target.value)))} />
+            Precio para 4 personas
+            <input
+              className="corto"
+              type="number"
+              min={1}
+              value={c.combo.precios.estandar}
+              onChange={(e) => cambiar((x) => void (x.combo.precios.estandar = numero(e.target.value)))}
+            />
+          </label>
+          <label>
+            Precio para 2 personas
+            <input
+              className="corto"
+              type="number"
+              min={1}
+              value={c.combo.precios.pareja}
+              onChange={(e) => cambiar((x) => void (x.combo.precios.pareja = numero(e.target.value)))}
+            />
           </label>
         </div>
         <p className="nota">
-          30 min de {c.deportes.cornhole.nombre} y 30 min de {c.deportes.pingpong.nombre}, uno después del otro; el cliente escoge cuál va primero. Las palas
-          extra se cobran aparte. Apagarlo no toca los combos ya reservados.
+          30 min de {c.deportes.cornhole.nombre} y 30 min de {c.deportes.pingpong.nombre}, uno después del otro; el cliente escoge cuál va primero y cuántos
+          juegan. El de 4 personas incluye las 2 palas extra de {c.deportes.pingpong.nombre}. Apagarlo no toca los combos ya reservados.
         </p>
       </section>
 

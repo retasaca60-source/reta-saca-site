@@ -3,7 +3,7 @@
 // primero RESERVAS.md y después esta prueba.
 
 import { describe, expect, it } from 'vitest'
-import { CONFIGURACION_INICIAL as C, type Configuracion } from './configuracion'
+import { CONFIGURACION_INICIAL as C, normalizarConfiguracion, type Configuracion } from './configuracion'
 import { ocupadasEn } from './disponibilidad'
 import { diasReservables, iniciosPosibles } from './horario'
 import { ahorroDelCombo, esPromo, precioDe } from './precios'
@@ -92,12 +92,24 @@ describe('precios (RESERVAS.md §3 y §4)', () => {
     expect(esPromo(conPromo, 'pingpong', h(18), 60)).toBe(false)
     expect(esPromo(conPromo, 'pingpong', h(17), 30)).toBe(false)
   })
-  it('el combo dice cuánto se ahorra contra las dos medias horas, y nada si no es más barato', () => {
-    expect(ahorroDelCombo(C)).toEqual({ porSeparado: 260, ahorro: 60 })
-    expect(ahorroDelCombo({ ...C, combo: { ...C.combo, precio: 260 } })).toBeNull()
-    expect(ahorroDelCombo({ ...C, combo: { ...C.combo, precio: 300 } })).toBeNull()
+  it('el combo dice cuánto se ahorra contra lo mismo por separado, y nada si no es más barato', () => {
+    // 4 personas: Cornhole $160 + Ping Pong $100 + palas $50 = $310 contra $280.
+    expect(ahorroDelCombo(C, 'estandar')).toEqual({ porSeparado: 310, ahorro: 30 })
+    // 2 personas: Cornhole para 2 $120 + Ping Pong $100 = $220 contra $200.
+    expect(ahorroDelCombo(C, 'pareja')).toEqual({ porSeparado: 220, ahorro: 20 })
+    const conPrecios = (estandar: number, pareja: number) => ({ ...C, combo: { ...C.combo, precios: { estandar, pareja } } })
+    expect(ahorroDelCombo(conPrecios(310, 200), 'estandar')).toBeNull()
+    expect(ahorroDelCombo(conPrecios(280, 250), 'pareja')).toBeNull()
     const sinMediaHora = { ...C, deportes: { ...C.deportes, pingpong: { ...C.deportes.pingpong, precios: { 60: 150 } } } }
-    expect(ahorroDelCombo(sinMediaHora)).toBeNull()
+    expect(ahorroDelCombo(sinMediaHora, 'estandar')).toBeNull()
+  })
+  it('la configuración guardada con el combo de un solo precio pasa a 2 y 4 personas: el de antes es el de 2', () => {
+    const vieja = (combo: unknown) => normalizarConfiguracion({ ...structuredClone(C), combo } as unknown as Configuracion).combo
+    expect(vieja({ activa: true, precio: 200 })).toEqual({ activa: true, precios: { estandar: 280, pareja: 200 } })
+    expect(vieja({ activa: false, precio: 220 })).toEqual({ activa: false, precios: { estandar: 280, pareja: 220 } })
+    expect(vieja(undefined)).toEqual(C.combo)
+    // La de ahora no se toca.
+    expect(vieja({ activa: true, precios: { estandar: 300, pareja: 190 } })).toEqual({ activa: true, precios: { estandar: 300, pareja: 190 } })
   })
   it('partes en pesos cerrados; el organizador absorbe la diferencia', () => {
     expect(repartir(150, 4)).toEqual([39, 37, 37, 37])

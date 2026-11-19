@@ -72,7 +72,13 @@ export interface SolicitudDeCombo {
   fecha: string
   inicio: number
   primero: DeporteId
-  /** 2 palas extra de Ping Pong, aparte del combo. */
+  /**
+   * 4 personas (estándar, con las palas extra incluidas) o 2. Sin el campo = 2
+   * personas: así pedían el combo las versiones de antes del 18/11/2026, que
+   * enseñaban ese precio.
+   */
+  modalidad?: Modalidad
+  /** 2 palas extra de Ping Pong, aparte del combo de 2 personas. El de 4 ya las trae. */
   palasExtra?: boolean
   organizador: { nombre: string; whatsapp: string }
 }
@@ -85,6 +91,8 @@ export interface ComboSinReserva {
   /** Mesa del primer juego, si recepción ya la sabe. */
   mesa?: string
   medio: Exclude<MedioDePago, 'en_linea'>
+  /** Igual que en SolicitudDeCombo: sin el campo = 2 personas. */
+  modalidad?: Modalidad
   palasExtra?: boolean
   /** El total que vio recepción; si el de los datos es otro, no se registra nada. */
   precioEsperado?: number

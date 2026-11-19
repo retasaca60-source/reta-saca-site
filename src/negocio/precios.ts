@@ -35,21 +35,25 @@ export function precioDe(config: Configuracion, deporte: DeporteId, inicio: numb
 }
 
 /**
- * Cuánto se ahorra con el combo contra pagar las dos medias horas por
- * separado, a precio regular de 4 personas (el combo no tiene modalidad para
- * 2). Con los precios del 17/11/2026: $160 + $100 = $260 contra $200, $60.
+ * Cuánto se ahorra con el combo contra reservar lo mismo por separado: la media
+ * hora de Cornhole en esa modalidad, la de Ping Pong y, en el de 4 personas,
+ * las 2 palas extra que trae incluidas. Con los precios del 18/11/2026:
+ * 4 personas $160 + $100 + $50 = $310 contra $280 ($30); 2 personas
+ * $120 + $100 = $220 contra $200 ($20).
  *
  * Sale de la configuración y no de un texto fijo porque Hugo cambia los
  * precios desde el panel: si el combo dejara de ser más barato (o algún juego
  * no tuviera precio de 30 min), da null y la pantalla no presume un ahorro que
  * no existe.
  */
-export function ahorroDelCombo(config: Configuracion): { porSeparado: number; ahorro: number } | null {
-  const pingpong = config.deportes.pingpong.precios[30]
-  const cornhole = config.deportes.cornhole.precios[30]
-  if (pingpong === undefined || cornhole === undefined) return null
-  const porSeparado = pingpong + cornhole
-  const ahorro = porSeparado - config.combo.precio
+export function ahorroDelCombo(config: Configuracion, modalidad: Modalidad): { porSeparado: number; ahorro: number } | null {
+  const { pingpong, cornhole } = config.deportes
+  const mesa = pingpong.precios[30]
+  const tablero = tablaDe(cornhole, modalidad)[30]
+  if (mesa === undefined || tablero === undefined) return null
+  const palas = modalidad === 'estandar' ? (pingpong.precioPalasExtra ?? 0) : 0
+  const porSeparado = mesa + tablero + palas
+  const ahorro = porSeparado - config.combo.precios[modalidad]
   return ahorro > 0 ? { porSeparado, ahorro } : null
 }
 

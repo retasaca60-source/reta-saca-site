@@ -19,7 +19,7 @@ export interface Borrador {
    * primero, y `duracion` no se usa (el combo siempre es 1 hora).
    */
   combo: boolean
-  /** Cornhole: estándar (4 personas) o para 2 personas. */
+  /** Cornhole y el combo: estándar (4 personas) o para 2 personas. */
   modalidad: Modalidad
   /** Ping Pong: 2 palas extra. */
   palasExtra: boolean
@@ -88,7 +88,10 @@ export function reducir(b: Borrador, a: Accion): Borrador {
       return b.combo && b.deporte !== a.deporte ? { ...b, deporte: a.deporte, inicio: null, aviso: null } : b
     case 'elegirModalidad':
       // Misma mesa y mismo horario, otro precio: la hora elegida se queda.
-      return b.deporte && !b.combo ? { ...b, modalidad: a.modalidad } : b
+      // En el combo tampoco cambian las horas con lugar (son las mismas mesas).
+      // Las palas extra se sueltan: el de 4 ya las trae y el de 2 no las ofrece.
+      if (!b.deporte) return b
+      return b.combo ? { ...b, modalidad: a.modalidad, palasExtra: false } : { ...b, modalidad: a.modalidad }
     case 'pedirPalas':
       return b.deporte ? { ...b, palasExtra: a.palasExtra } : b
     case 'irAPaso':

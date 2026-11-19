@@ -14,7 +14,7 @@ import { direccion, enlaceWhatsApp } from '../mecanismos/whatsapp/enlaces'
 import type { Configuracion, Duracion } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
 import { precioDeExtension } from '../negocio/precios'
-import { cuentaComoReserva, fin, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
+import { cuentaComoReserva, fin, llevaPalasExtra, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
 import { ahoraEnSonora, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
 
 type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar'
@@ -179,7 +179,7 @@ export function FilaReserva({
 
 function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   const e: [string, string][] = []
-  if (r.combo) e.push(['combo', `Combo · ${r.combo.turno === 1 ? '1.º' : '2.º'} juego`])
+  if (r.combo) e.push(['combo', `Combo${r.combo.personas ? ` de ${r.combo.personas}` : ''} · ${r.combo.turno === 1 ? '1.º' : '2.º'} juego`])
   if (r.estado === 'apartada') e.push(['aviso', 'Pagando…'])
   if (r.estado === 'cancelada') {
     const motivo = { cliente: 'Canceló el cliente', negocio: 'Cancelada por el negocio', no_llego: 'No llegaron', apartado_vencido: 'No pagó a tiempo' }
@@ -193,7 +193,7 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   if (r.llegaronEn && r.estado !== 'cancelada') e.push(['bien', r.mesa ? `En ${r.mesa}` : 'Llegaron'])
   else if (puedeLiberarPorRetraso(r, config, ahoraEnSonora().ms)) e.push(['mal', 'Retraso'])
   if (r.modalidad === 'pareja') e.push(['neutra', '2 personas'])
-  if (r.palasExtra) e.push(['neutra', '+2 palas'])
+  if (llevaPalasExtra(r)) e.push(['neutra', '+2 palas'])
   // Solo reservas de antes del 21/10/2026: desde entonces se paga completo.
   if (r.partesElegidas > 1) e.push(['neutra', `Entre ${r.partesElegidas}`])
   if (r.conPromo) e.push(['neutra', 'Promo'])

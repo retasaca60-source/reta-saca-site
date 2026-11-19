@@ -37,7 +37,7 @@ export function RegistrarEnMostrador({
   // Combo: `deporte` es el juego que va primero.
   const [combo, setCombo] = useState(false)
   const [duracion, setDuracion] = useState<Duracion>(60)
-  // Cornhole 2 vs 2 o 1 vs 1 (otro precio); Ping Pong con 2 palas más.
+  // Cornhole y el combo: 4 o 2 personas (otro precio); Ping Pong con 2 palas más.
   const [modalidad, setModalidad] = useState<Modalidad>('estandar')
   const [palasExtra, setPalasExtra] = useState(false)
   const [mesa, setMesa] = useState(inicial?.mesa ?? '')
@@ -50,14 +50,15 @@ export function RegistrarEnMostrador({
   const [ocupado, setOcupado] = useState(false)
 
   const d = config.deportes[deporte]
-  // Las palas extra son de Ping Pong, también en el combo aunque empiece con Cornhole.
-  const conPalas = combo ? config.deportes.pingpong : d
+  // Las palas extra son de Ping Pong. En el combo no se ofrecen: el de 4
+  // personas ya las trae y el de 2 no las necesita.
+  const conPalas = combo ? null : d
   const ahora = ahoraEnSonora()
   // El total lo da el servidor con SU hora y SU tarifa: antes se calculaba
   // aquí con el reloj de la laptop, y si iba desfasado (o terminaba la promo)
   // la pantalla decía un precio y se guardaba otro.
   const cotizacion = usarDatos(
-    () => (combo ? servicio.cotizarCombo(palasExtra) : servicio.cotizarSinReserva(deporte, duracion, modalidad, palasExtra)),
+    () => (combo ? servicio.cotizarCombo(modalidad) : servicio.cotizarSinReserva(deporte, duracion, modalidad, palasExtra)),
     [combo, deporte, duracion, modalidad, palasExtra],
   )
   // Lo que se cobra: la mesa en su modalidad más las palas, si las pidieron.
@@ -117,7 +118,7 @@ export function RegistrarEnMostrador({
     try {
       // Con el precio que se vio: si el servidor calcula otro, no registra nada.
       const r = combo
-        ? await servicio.anotarComboSinReserva({ primero: deporte, palasExtra, nombre, whatsapp, mesa: mesa || undefined, medio, precioEsperado: precio })
+        ? await servicio.anotarComboSinReserva({ primero: deporte, modalidad, nombre, whatsapp, mesa: mesa || undefined, medio, precioEsperado: precio })
         : await servicio.anotarSinReserva({
             deporte,
             duracion,
@@ -132,7 +133,7 @@ export function RegistrarEnMostrador({
       // Lo que se muestra sale de lo GUARDADO, no de lo que se calculó antes.
       const cobrado = total(r)
       const que = combo
-        ? `combo (${d.nombre} hasta las ${formatoHora(fin(r))}, luego ${config.deportes[deporte === 'pingpong' ? 'cornhole' : 'pingpong'].nombre})${palasExtra ? ' con 2 palas extra' : ''}`
+        ? `combo de ${modalidad === 'pareja' ? 2 : 4} (${d.nombre} hasta las ${formatoHora(fin(r))}, luego ${config.deportes[deporte === 'pingpong' ? 'cornhole' : 'pingpong'].nombre})${modalidad === 'estandar' ? ' con 2 palas extra incluidas' : ''}`
         : `${d.nombre}${r.modalidad === 'pareja' ? ' (2 personas)' : ''}${r.palasExtra ? ' con 2 palas extra' : ''}`
       setHecho(
         `${r.organizador.nombre}: ${que} ${formatoDinero(cobrado)} cobrado en ${medio}` +
@@ -167,7 +168,7 @@ export function RegistrarEnMostrador({
           ))}
           {config.combo.activa && (
             <button type="button" className={combo ? 'activo' : ''} aria-pressed={combo} onClick={elegirCombo}>
-              Combo · {formatoDinero(config.combo.precio)}
+              Combo
             </button>
           )}
         </div>
@@ -197,7 +198,7 @@ export function RegistrarEnMostrador({
             ))}
           </div>
         )}
-        {!combo && d.preciosPareja && (
+        {(combo || d.preciosPareja) && (
           <div className="segmentado" role="group" aria-label="Cuántos juegan">
             {(
               [
@@ -207,11 +208,12 @@ export function RegistrarEnMostrador({
             ).map(([m, texto]) => (
               <button key={m} type="button" className={modalidad === m ? 'activo' : ''} aria-pressed={modalidad === m} onClick={() => setModalidad(m)}>
                 {texto}
+                {combo && ` · ${formatoDinero(config.combo.precios[m])}`}
               </button>
             ))}
           </div>
         )}
-        {conPalas.precioPalasExtra !== null && (
+        {conPalas && conPalas.precioPalasExtra !== null && (
           <div className="segmentado" role="group" aria-label="Palas">
             <button type="button" className={!palasExtra ? 'activo' : ''} aria-pressed={!palasExtra} onClick={() => setPalasExtra(false)}>
               2 palas

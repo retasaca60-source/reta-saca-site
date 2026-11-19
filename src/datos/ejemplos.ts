@@ -73,7 +73,7 @@ export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
   nueva('pingpong', hoy, h(18), 60, { palasExtra: true })
   nueva('cornhole', hoy, h(19), 60)
   nueva('cornhole', hoy, h(20), 30, { modalidad: 'pareja' })
-  // Un combo pagado en línea: Cornhole a las 6:00 y Ping Pong a las 6:30.
+  // Un combo de 4 personas pagado en línea: Cornhole a las 6:00 y Ping Pong a las 6:30.
   const ayer = new Date(ahora.ms - 86400_000).toISOString()
   reservas.push(
     ...armarCombo(
@@ -92,6 +92,7 @@ export function sembrar(config: Configuracion, ahora: Momento): Reserva[] {
       },
       'cornhole',
       h(18),
+      'estandar',
       false,
       { medio: 'en_linea', nombre: 'Combo de prueba', en: ayer },
     ),

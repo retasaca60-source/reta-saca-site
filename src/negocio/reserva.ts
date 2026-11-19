@@ -100,9 +100,21 @@ export interface Reserva {
    * cancelan juntas. El turno 1 es el primero en la hora y lleva el cobro del
    * combo; el 2 solo lleva lo que se le agregue (tiempo extra).
    */
-  combo?: { con: string; turno: 1 | 2 }
+  combo?: {
+    con: string
+    turno: 1 | 2
+    /** Desde el 18/11/2026. Sin el campo: combo de antes, de un solo precio y sin palas incluidas. */
+    personas?: 2 | 4
+  }
   creadaEn: string
 }
+
+/**
+ * ¿Hay que entregarle 2 palas extra? Las pagadas aparte, o las que trae
+ * incluidas el combo de 4 personas en su turno de Ping Pong.
+ */
+export const llevaPalasExtra = (r: Pick<Reserva, 'palasExtra' | 'combo' | 'deporte'>) =>
+  Boolean(r.palasExtra) || (r.combo?.personas === 4 && r.deporte === 'pingpong')
 
 /** El segundo turno de un combo no cuenta como otra reserva: es la misma. */
 export const cuentaComoReserva = (r: Pick<Reserva, 'combo'>) => r.combo?.turno !== 2

@@ -101,7 +101,8 @@ export default function MiReserva() {
           config={config}
           datos={{
             deporteId: r.deporte,
-            deporte: turnos ? 'Combo' : r.modalidad === 'pareja' ? `${d.nombre} · 2 personas` : d.nombre,
+            // Los combos de antes del 18/11/2026 no dicen cuántos: eran de un solo precio.
+            deporte: turnos ? (r.combo?.personas ? `Combo · ${r.combo.personas} personas` : 'Combo') : r.modalidad === 'pareja' ? `${d.nombre} · 2 personas` : d.nombre,
             combo: Boolean(turnos),
             dia: nombreDelDia(r.fecha),
             inicio: r.inicio,
@@ -123,7 +124,11 @@ export default function MiReserva() {
           .
         </p>
       )}
-      {palasExtra ? <p className="nota">Incluye 2 palas extra para Ping Pong ({formatoDinero(palasExtra)}).</p> : null}
+      {palasExtra ? (
+        <p className="nota">Incluye 2 palas extra para Ping Pong ({formatoDinero(palasExtra)}).</p>
+      ) : r.combo?.personas === 4 ? (
+        <p className="nota">Incluye 2 palas extra para Ping Pong, para jugar dobles.</p>
+      ) : null}
 
       <h2 className="titulo-seccion">Pagos</h2>
       <ListaDePagos r={r} />

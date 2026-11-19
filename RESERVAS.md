@@ -173,14 +173,25 @@ conservan su precio.
 ### Combo
 
 Desde el 17/11/2026: **media hora de Cornhole y media hora de Ping Pong, uno
-después del otro (1 hora en total), por $200**, todos los días, en línea y en
-el local.
+después del otro (1 hora en total)**, todos los días, en línea y en el local.
+Desde el 18/11/2026 tiene precio por cuántos juegan:
 
-- **El cliente escoge qué juego va primero.** Solo se ofrecen las horas donde
-  hay lugar en los **dos** juegos a su media hora: nadie paga un combo con un
-  juego lleno.
-- Es **un solo combo**, sin modalidad para 2 personas.
-- Las **2 palas extra** de Ping Pong ($50) se cobran **aparte**.
+| Combo | Precio | Por separado saldría en |
+|---|---|---|
+| **4 personas**, con las 2 palas extra de Ping Pong incluidas | **$280** | $160 + $100 + $50 = $310 |
+| **2 personas** | **$200** | $120 + $100 = $220 |
+
+- **El cliente escoge qué juego va primero y cuántos juegan.** Solo se ofrecen
+  las horas donde hay lugar en los **dos** juegos a su media hora: nadie paga un
+  combo con un juego lleno.
+- Las **2 palas extra** de Ping Pong ya vienen en el de 4 personas: no se
+  ofrecen ni se cobran aparte. En el de 2 tampoco se ofrecen (no hacen falta).
+- En el de 2 personas, el Cornhole va como de 2 personas: su tiempo extra se
+  cobra a precio de 2 personas.
+- El sitio dice cuánto se ahorra contra reservar lo mismo por separado, con los
+  precios vigentes de Ajustes. Si el combo dejara de salir más barato, no lo dice.
+- Las peticiones **sin** modalidad (una pestaña o un panel abiertos con la
+  versión de antes) valen como **2 personas**, que es el precio que enseñaban.
 - Se paga **completo**, en un solo cobro (Clip en línea; efectivo o tarjeta en
   el local), con un solo folio.
 - En el panel, cada media hora sale en su juego con la etiqueta **"Combo"**:
@@ -194,8 +205,9 @@ el local.
   no se extiende: termina cuando empieza el otro.
 - En Semana y en las cuentas del día, un combo cuenta como **una** reserva; en
   Caja, como un solo cobro.
-- Hugo lo **prende y apaga** y cambia su precio en Ajustes. Apagarlo no toca los
-  combos ya reservados.
+- Hugo lo **prende y apaga** y cambia sus dos precios en Ajustes. Apagarlo no
+  toca los combos ya reservados, y cada combo conserva el precio con el que se
+  reservó.
 
 ---
 
@@ -585,4 +597,5 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 25/10/2026 | Sin promociones | Lo decidió el negocio. Se apaga en Ajustes en vez de borrarse, por si regresa; las reservas ya hechas con promo conservan su precio. |
 | 22/10/2026 | En línea: 1 h, hora y media o 2 h, empezando a la hora o a la media; para hoy, hasta la hora de inicio | Lo pidió Hugo. Lo que quería quitar el 21/10 era solo la media hora; las medias horas de inicio (5:30, 6:30…) y la hora y media regresan. El corte de 30 min escondía horarios que sí quería vender. |
 | 17/11/2026 | Combo: 30 min de Cornhole y 30 de Ping Pong, uno tras otro, por $200; el cliente escoge cuál va primero; palas extra aparte; todos los días, en línea y en el local | Lo puso Hugo. Cada media hora es una reserva de su juego, amarrada a la otra: así el plano, las mesas, la alarma y la caja funcionan igual, y una mesa no se vende dos veces. El cobro completo va en el primer turno. |
+| 18/11/2026 | El combo tiene precio para 2 personas ($200) y para 4 ($280, con las 2 palas extra incluidas); el sitio dice cuánto se ahorra | Lo pidió el negocio. A $280 sin palas, el de 4 habría salido más caro que por separado ($260). Lo de antes sin modalidad vale como 2 personas porque ese precio era el que se enseñaba. |
 | 03/11/2026 | El tiempo extra se cobra a precio regular: +30 min Ping Pong $100, Cornhole $160, para 2 $120; +1 h el precio de la hora | Lo decidió el negocio. Antes, de 30 min a 1 h se cobraba solo la diferencia (Ping Pong $50) para que costara igual que reservar la hora. |

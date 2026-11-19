@@ -152,6 +152,13 @@ function modalidad(d: Datos, campo = 'modalidad'): Modalidad {
   if (v !== 'pareja') throw invalido(campo)
   return v
 }
+/**
+ * La del combo: sin el campo son 2 personas, que es lo que enseñaban las
+ * versiones de antes del 18/11/2026 (ver negocio/operaciones/combo.ts).
+ */
+function modalidadDeCombo(d: Datos): Modalidad {
+  return d.modalidad === undefined ? 'pareja' : modalidad(d)
+}
 function siONo(d: Datos, campo: string): boolean {
   const v = d[campo]
   if (v === undefined) return false
@@ -428,7 +435,7 @@ const ACCIONES: Record<string, Accion> = {
     return e.repo.enTransaccion(async (repo) => guardarNueva(repo, op.apartar(await contexto(e, repo), solicitud)))
   },
 
-  disponibilidadCombo: async (d, e) => op.horariosDelCombo(await contexto(e), fecha(d, 'fecha'), primero(d)),
+  disponibilidadCombo: async (d, e) => op.horariosDelCombo(await contexto(e), fecha(d, 'fecha'), primero(d), modalidadDeCombo(d)),
 
   apartarCombo: async (d, e) => {
     await frenar(e, 'apartar')
@@ -440,6 +447,7 @@ const ACCIONES: Record<string, Accion> = {
       fecha: fecha(s, 'fecha'),
       inicio: numero(s, 'inicio'),
       primero: primero(s),
+      modalidad: modalidadDeCombo(s),
       palasExtra: siONo(s, 'palasExtra'),
       organizador: { nombre: texto(org, 'nombre'), whatsapp: texto(org, 'whatsapp') },
     }
@@ -631,7 +639,7 @@ const ACCIONES: Record<string, Accion> = {
 
   cotizarCombo: async (d, e) => {
     await usuarioDe(e)
-    return op.cotizarCombo({ config: await e.repo.config(), reservas: [], ahora: e.ahora() }, siONo(d, 'palasExtra'))
+    return op.cotizarCombo({ config: await e.repo.config(), reservas: [], ahora: e.ahora() }, modalidadDeCombo(d), siONo(d, 'palasExtra'))
   },
 
   anotarComboSinReserva: async (d, e) => {
@@ -644,6 +652,7 @@ const ACCIONES: Record<string, Accion> = {
       whatsapp: texto(c, 'whatsapp', true) || undefined,
       mesa: texto(c, 'mesa', true) || undefined,
       medio: medioDelLocal(c),
+      modalidad: modalidadDeCombo(c),
       palasExtra: siONo(c, 'palasExtra'),
       precioEsperado: c.precioEsperado === undefined ? undefined : numero(c, 'precioEsperado'),
     }

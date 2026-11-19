@@ -5,8 +5,9 @@
 // completa: desde el 21/10/2026 ya no se divide el pago.
 //
 // La misma ficha sirve para el combo (30 min de cada juego): cambia el título,
-// la portada, que se elige qué juego va primero en vez de la modalidad, y que
-// las horas y el apartado son los del combo.
+// la portada, que se elige qué juego va primero y cuántos juegan (2 o 4, con
+// su propio precio), que no hay palas extra que agregar y que las horas y el
+// apartado son los del combo.
 
 import { useRef, useState, type Dispatch } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -49,12 +50,13 @@ export function Ficha({ borrador, despachar, config }: Props) {
   const { fecha, duracion, inicio, nombre, whatsapp, modalidad, palasExtra } = borrador
   const lugar = LUGAR[deporte]
   const combo = borrador.combo
-  // Las palas extra son de Ping Pong, también en el combo aunque empiece con Cornhole.
-  const conPalas = combo ? config.deportes.pingpong : d
-  const ahorroCombo = combo ? ahorroDelCombo(config) : null
+  // Las palas extra son de Ping Pong. En el combo no se ofrecen: el de 4
+  // personas ya las trae y el de 2 no las necesita.
+  const conPalas = combo ? null : d
+  const ahorroCombo = combo ? ahorroDelCombo(config, modalidad) : null
 
-  const precio = inicio === null ? null : combo ? config.combo.precio : precioDe(config, deporte, inicio, duracion as Duracion, modalidad).precio
-  const palas = precioDePalas(conPalas, palasExtra)
+  const precio = inicio === null ? null : combo ? config.combo.precios[modalidad] : precioDe(config, deporte, inicio, duracion as Duracion, modalidad).precio
+  const palas = conPalas ? precioDePalas(conPalas, palasExtra) : 0
   const total = precio !== null ? precio + palas : null
   const [primerJuego, segundoJuego] = combo ? turnosDelCombo(deporte, inicio ?? 0).map((t) => config.deportes[t.deporte].nombre) : []
 
@@ -69,7 +71,7 @@ export function Ficha({ borrador, despachar, config }: Props) {
     const organizador = { nombre, whatsapp }
     const clave = JSON.stringify(
       combo
-        ? { combo: true, fecha, inicio, primero: deporte, palasExtra, organizador }
+        ? { combo: true, fecha, inicio, primero: deporte, modalidad, organizador }
         : { deporte, fecha, inicio, duracion, modalidad, palasExtra, organizador },
     )
     const previa = apartada.current
@@ -80,7 +82,7 @@ export function Ficha({ borrador, despachar, config }: Props) {
     if (decision.tipo === 'nueva' && decision.cancelar) servicio.cancelarComoCliente(decision.cancelar).catch(() => {})
     // El combo aparta sus dos turnos y regresa el primero, que es el que se paga.
     const reserva = combo
-      ? await servicio.apartarCombo({ fecha, inicio: inicio!, primero: deporte, palasExtra, organizador })
+      ? await servicio.apartarCombo({ fecha, inicio: inicio!, primero: deporte, modalidad, organizador })
       : await servicio.apartar({ deporte, fecha, inicio: inicio!, duracion, modalidad, palasExtra, organizador })
     apartada.current = { clave, reserva, apartadaHasta: reserva.apartadaHasta, tokenPrivado: reserva.tokenPrivado, pagoAbierto: false }
     return reserva
@@ -141,8 +143,23 @@ export function Ficha({ borrador, despachar, config }: Props) {
         {combo && (
           <>
             <p className="nota">
-              {formatoDinero(config.combo.precio)} por 30 min de cada juego, uno después del otro: 1 hora en total.
+              30 min de cada juego, uno después del otro: 1 hora en total.
             </p>
+            <h2 className="titulo-seccion">¿Cuántos juegan?</h2>
+            <div className="segmentado" role="group" aria-label="Cuántos juegan">
+              {(
+                [
+                  ['estandar', '4 personas'],
+                  ['pareja', '2 personas'],
+                ] as const
+              ).map(([m, texto]) => (
+                <button key={m} type="button" aria-pressed={modalidad === m} onClick={() => despachar({ tipo: 'elegirModalidad', modalidad: m })}>
+                  {texto}
+                  <span className="dividir-monto"> · {formatoDinero(config.combo.precios[m])}</span>
+                </button>
+              ))}
+            </div>
+            {modalidad === 'estandar' && <p className="nota">Incluye 2 palas extra de Ping Pong para jugar dobles.</p>}
             {ahorroCombo && (
               <p className="combo-ahorro numeros">
                 Por separado te saldría en {formatoDinero(ahorroCombo.porSeparado)}. Con el combo te ahorras{' '}
@@ -197,18 +214,18 @@ export function Ficha({ borrador, despachar, config }: Props) {
         )}
 
         {/* Ping Pong trae 2 palas; para jugar dobles se rentan 2 más. */}
-        {conPalas.precioPalasExtra !== null && (
+        {conPalas && conPalas.precioPalasExtra !== null && (
           <>
             <h2 className="titulo-seccion">Palas</h2>
             <div className="grupo">
               <label className="casilla">
                 <input type="checkbox" checked={palasExtra} onChange={(e) => despachar({ tipo: 'pedirPalas', palasExtra: e.target.checked })} />
                 <span>
-                  Agregar 2 palas extra{combo ? ' para Ping Pong' : ''} <b className="numeros">+{formatoDinero(conPalas.precioPalasExtra)}</b>
+                  Agregar 2 palas extra <b className="numeros">+{formatoDinero(conPalas.precioPalasExtra)}</b>
                 </span>
               </label>
             </div>
-            <p className="nota">{combo ? 'La mesa de Ping Pong incluye 2 palas; las extra se cobran aparte del combo.' : `La ${lugar.uno} incluye 2 palas.`}</p>
+            <p className="nota">{`La ${lugar.uno} incluye 2 palas.`}</p>
           </>
         )}
 
@@ -229,8 +246,8 @@ export function Ficha({ borrador, despachar, config }: Props) {
 
       <div className="barra-accion barra-reserva">
         <div className="barra-precio numeros">
-          <b>{formatoDinero(total ?? (combo ? config.combo.precio : (tablaDe(d, modalidad)[60] ?? precioDeLista(d) ?? 0)) + palas)}</b>
-          <span>{combo ? (palas ? 'combo y palas' : 'el combo') : total === null ? 'la hora' : palas ? `${lugar.el} y palas` : `por ${lugar.el}`}</span>
+          <b>{formatoDinero(total ?? (combo ? config.combo.precios[modalidad] : (tablaDe(d, modalidad)[60] ?? precioDeLista(d) ?? 0)) + palas)}</b>
+          <span>{combo ? 'el combo' : total === null ? 'la hora' : palas ? `${lugar.el} y palas` : `por ${lugar.el}`}</span>
         </div>
         <Deslizar
           etiqueta={enviando ? (combo ? 'Apartando tu combo…' : `Apartando tu ${lugar.uno}…`) : (queFalta(borrador) ?? 'Desliza para pagar')}

@@ -66,7 +66,9 @@ export function validarConfiguracion(c: Configuracion): void {
 
   // Sin combo (lo guardado antes del 17/11/2026) se acepta: normalizarConfiguracion lo agrega.
   if (x.combo !== undefined) {
-    if (!esObjeto(x.combo) || typeof x.combo.activa !== 'boolean' || !entero(x.combo.precio, 1, 100_000)) throw mal('El precio del combo no es válido.')
+    if (!esObjeto(x.combo) || typeof x.combo.activa !== 'boolean' || !esObjeto(x.combo.precios)) throw mal('El combo no es válido.')
+    if (!entero(x.combo.precios.estandar, 1, 100_000)) throw mal('El precio del combo para 4 personas no es válido.')
+    if (!entero(x.combo.precios.pareja, 1, 100_000)) throw mal('El precio del combo para 2 personas no es válido.')
   }
 
   for (const id of ORDEN_DEPORTES) {

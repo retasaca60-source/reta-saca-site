@@ -27,7 +27,7 @@ export function SeccionHorario({ borrador, despachar, config, deporte, combo = f
   const ahora = ahoraEnSonora()
   const dias = diasReservables(config, ahora)
   const { datos: horarios, cargando, error } = usarDatos(
-    () => (combo ? servicio.disponibilidadCombo(fecha, deporte) : servicio.disponibilidad(deporte, fecha, duracion, modalidad)),
+    () => (combo ? servicio.disponibilidadCombo(fecha, deporte, modalidad) : servicio.disponibilidad(deporte, fecha, duracion, modalidad)),
     [combo, deporte, fecha, duracion, modalidad],
   )
 

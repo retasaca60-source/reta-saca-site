@@ -30,7 +30,11 @@ export function ElegirJuego({ despachar, config }: Props) {
       despachar({ tipo: 'irAPaso', paso: 2, config })
     })
 
-  const ahorro = ahorroDelCombo(config)
+  // La tarjeta presume el ahorro mayor ("hasta") y el precio menor ("desde"):
+  // cada modalidad tiene el suyo y se ven en la ficha.
+  const ahorros = (['estandar', 'pareja'] as const).map((m) => ahorroDelCombo(config, m)?.ahorro ?? 0)
+  const ahorroMayor = Math.max(...ahorros)
+  const desde = Math.min(config.combo.precios.estandar, config.combo.precios.pareja)
 
   return (
     <>
@@ -101,15 +105,15 @@ export function ElegirJuego({ despachar, config }: Props) {
               <span className="juego-palabra" aria-hidden="true">
                 Combo
               </span>
-              {ahorro && <span className="pastilla juego-ahorro numeros">Ahorras {formatoDinero(ahorro.ahorro)}</span>}
+              {ahorroMayor > 0 && <span className="pastilla juego-ahorro numeros">Ahorras hasta {formatoDinero(ahorroMayor)}</span>}
               <span className="juego-pie">
                 <span>
                   <strong className="juego-nombre">Combo</strong>
                   <span className="juego-detalle">30 min de cada juego</span>
+                  <span className="juego-detalle">Para 2 o 4 personas</span>
                 </span>
                 <span className="juego-precio numeros">
-                  {ahorro && <s className="juego-antes">{formatoDinero(ahorro.porSeparado)}</s>}
-                  <b>{formatoDinero(config.combo.precio)}</b>
+                  desde <b>{formatoDinero(desde)}</b>
                 </span>
               </span>
             </button>
