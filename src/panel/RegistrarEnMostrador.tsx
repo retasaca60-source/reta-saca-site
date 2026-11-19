@@ -12,9 +12,9 @@ import { servicio } from '../datos'
 import { mensajeDeError, usarDatos } from '../mecanismos/datos/usarDatos'
 import { ORDEN_DEPORTES, type Configuracion, type DeporteId, type Duracion, type Modalidad } from '../negocio/configuracion'
 import { formatoDinero } from '../negocio/formato'
-import { bloqueEn, estaCerrado } from '../negocio/horario'
+import { bloqueEn, cabeEnElDia, cabeEnUnBloque } from '../negocio/horario'
 import { fin, ocupaMesa, total, type MedioDePago, type Reserva } from '../negocio/reserva'
-import { ahoraEnSonora, diaDeLaSemana, formatoHora } from '../negocio/tiempo'
+import { ahoraEnSonora, formatoHora } from '../negocio/tiempo'
 import { TURNO_DEL_COMBO } from '../negocio/operaciones/combo'
 
 type Medio = Exclude<MedioDePago, 'en_linea'>
@@ -78,20 +78,13 @@ export function RegistrarEnMostrador({
   )
   const recibido = Number(pagaCon) || 0
   const cambio = recibido - (precio ?? 0)
-  // Mismas razones que da la operación, pero antes de intentar cobrar.
-  const bloque = bloqueEn(config, ahora.fecha, ahora.minutos)
-  // Si está cerrado, se dice cuándo abre: antes solo decía "cerrado" en letra
-  // chica lejos del botón, y el botón gris parecía descompuesto.
-  const abreHoy = estaCerrado(config, ahora.fecha)
-    ? undefined
-    : (config.horario[diaDeLaSemana(ahora.fecha)] ?? []).find((b) => b.desde > ahora.minutos)
-  const impedimento = !bloque
-    ? abreHoy
-      ? `El local está cerrado: abre a las ${formatoHora(abreHoy.desde)}. La caja cobra solo en horario.`
-      : 'El local ya cerró por hoy. La caja cobra solo en horario.'
-    : termina > bloque.hasta
-      ? `No alcanza: se cierra a las ${formatoHora(bloque.hasta)}.${combo ? '' : ' Elige menos tiempo.'}`
-      : null
+  // La misma razón que da la operación, pero antes de intentar cobrar. La caja
+  // no mira el horario del local (ver cabeEnElDia): solo la medianoche.
+  const impedimento = cabeEnElDia(empieza, termina - empieza)
+    ? null
+    : `No alcanza antes de las 12 de la noche.${combo ? '' : ' Elige menos tiempo.'}`
+  // Fuera de horario se cobra igual; se avisa para que no sea por error.
+  const fueraDeHorario = !bloqueEn(config, ahora.fecha, ahora.minutos) || !cabeEnUnBloque(config, ahora.fecha, empieza, termina - empieza)
   const listo = precio !== undefined && !impedimento && nombre.trim().length > 1 && !ocupado && (medio !== 'efectivo' || !pagaCon || cambio >= 0)
 
   const elegirDeporte = (nuevo: DeporteId) => {
@@ -269,6 +262,7 @@ export function RegistrarEnMostrador({
         )}
         <div className="caja-cobrar">
           {impedimento && <p className="panel-error">{impedimento}</p>}
+          {!impedimento && fueraDeHorario && <p className="nota">Fuera del horario del local: se cobra y se registra igual.</p>}
           <button type="button" className="panel-boton primario grande" disabled={!listo} onClick={cobrar}>
             {ocupado ? 'Cobrando…' : precio === undefined ? 'Calculando total…' : `Cobrar ${formatoDinero(precio)} y registrar`}
           </button>

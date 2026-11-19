@@ -27,7 +27,7 @@
 
 import { mesasLibres } from '../disponibilidad'
 import { ErrorDeDatos } from '../errores'
-import { bloqueEn, cabeEnUnBloque, estaCerrado, iniciosPosibles } from '../horario'
+import { cabeEnElDia, cabeEnUnBloque, estaCerrado, iniciosPosibles } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { precioDePalas } from '../precios'
 import { type DeporteId, type Configuracion, type Modalidad } from '../configuracion'
@@ -180,11 +180,8 @@ export function anotarComboSinReserva(ctx: Contexto, c: ComboSinReserva, quien: 
   if (!config.combo.activa) throw new ErrorDeDatos('datos_invalidos', 'El combo está apagado en Ajustes.')
   if (c.primero !== 'pingpong' && c.primero !== 'cornhole') throw new ErrorDeDatos('datos_invalidos', 'Elige qué juego va primero.')
   if (c.nombre.trim().length < 2) throw new ErrorDeDatos('datos_invalidos', 'Escribe un nombre para identificar al grupo.')
-  const bloque = bloqueEn(config, m.fecha, m.minutos)
-  if (!bloque) throw new ErrorDeDatos('fuera_de_horario', 'El local está cerrado a esta hora.')
-  if (m.minutos + 2 * TURNO_DEL_COMBO > bloque.hasta) {
-    throw new ErrorDeDatos('fuera_de_horario', `No alcanza la hora del combo: se cierra a las ${formatoHora(bloque.hasta)}.`)
-  }
+  // Como todo lo del local, no mira el horario: solo que acabe antes de medianoche.
+  if (!cabeEnElDia(m.minutos, 2 * TURNO_DEL_COMBO)) throw new ErrorDeDatos('fuera_de_horario', 'No alcanza la hora del combo antes de las 12 de la noche.')
   for (const t of turnosDelCombo(c.primero, m.minutos)) {
     if (mesasLibres(config, ctx.reservas, t.deporte, m.fecha, t.inicio, TURNO_DEL_COMBO, ahora) < 1) {
       throw new ErrorDeDatos('sin_lugar', `No hay ${config.deportes[t.deporte].nombre} libre de ${formatoHora(t.inicio)} a ${formatoHora(t.inicio + TURNO_DEL_COMBO)}.`)

@@ -6,7 +6,7 @@
 import type { Duracion, Modalidad } from '../configuracion'
 import { mesasLibres } from '../disponibilidad'
 import { ErrorDeDatos } from '../errores'
-import { bloqueEn, cabeEnUnBloque, estaCerrado } from '../horario'
+import { bloqueEn, cabeEnElDia, cabeEnUnBloque, estaCerrado } from '../horario'
 import { nuevoFolio, nuevoId, nuevoToken } from '../identificadores'
 import { ofreceModalidad, precioDe, precioDePalas, precioDeExtension, precioSiExiste } from '../precios'
 import { fin, ocupaMesa, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../reserva'
@@ -60,17 +60,16 @@ export function cotizarSinReserva(
 /**
  * Un grupo que llega al mostrador sin reserva: empieza AHORA y se COBRA AL
  * REGISTRARLO (como caja: nadie se va sin pagar). El tiempo extra se cobra
- * después, con "Cobrar". `quien` es quien atiende la caja.
+ * después, con "Cobrar". `quien` es quien atiende la caja. No mira el horario
+ * del local, solo que termine antes de medianoche (ver `cabeEnElDia`).
  */
 export function anotarSinReserva(ctx: Contexto, c: ClienteSinReserva, quien: string): Reserva {
   const { config, reservas, ahora } = ctx
   const m = momentoDe(ahora)
   const d = config.deportes[c.deporte]
   if (c.nombre.trim().length < 2) throw new ErrorDeDatos('datos_invalidos', 'Escribe un nombre para identificar al grupo.')
-  const bloque = bloqueEn(config, m.fecha, m.minutos)
-  if (!bloque) throw new ErrorDeDatos('fuera_de_horario', 'El local está cerrado a esta hora.')
-  if (m.minutos + c.duracion > bloque.hasta) {
-    throw new ErrorDeDatos('fuera_de_horario', `No alcanza: se cierra a las ${formatoHora(bloque.hasta)}. Elige menos tiempo.`)
+  if (!cabeEnElDia(m.minutos, c.duracion)) {
+    throw new ErrorDeDatos('fuera_de_horario', 'No alcanza antes de las 12 de la noche. Elige menos tiempo.')
   }
   if (mesasLibres(config, reservas, c.deporte, m.fecha, m.minutos, c.duracion, ahora) < 1) {
     throw new ErrorDeDatos('sin_lugar', `No hay ${d.nombre} libre durante todo ese tiempo.`)
@@ -203,21 +202,19 @@ export function marcarPago(
 }
 
 /**
- * Tiempo extra: que alcance antes del cierre, que haya mesa libre en el
- * inventario Y que la mesa donde ya están sentados no la tenga otro grupo en
- * ese tiempo. Antes solo se revisaba el inventario: con PP 1 asignada a otro
- * grupo de 8 a 9, un grupo de 7 a 8 en PP 1 se extendía igual y quedaban dos
- * grupos en la misma mesa. Se cobra en el local.
+ * Tiempo extra: que haya mesa libre en el inventario Y que la mesa donde ya
+ * están sentados no la tenga otro grupo en ese tiempo. Antes solo se revisaba
+ * el inventario: con PP 1 asignada a otro grupo de 8 a 9, un grupo de 7 a 8 en
+ * PP 1 se extendía igual y quedaban dos grupos en la misma mesa. Se cobra en el
+ * local y, como todo lo del local, no mira el horario: solo que termine antes
+ * de medianoche (ver `cabeEnElDia`).
  */
 export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva {
   if (r.estado !== 'confirmada') throw new ErrorDeDatos('no_permitido', 'Solo se extienden reservas confirmadas.')
   // El primer juego del combo termina justo cuando empieza el otro.
   if (r.combo?.turno === 1) throw new ErrorDeDatos('no_permitido', 'En el combo el tiempo extra se agrega al segundo juego.')
   const duracion = r.duracion + minutos
-  // cabeEnUnBloque solo mira el horario de la semana: un día cerrado a mano
-  // (un festivo) seguía dejando extender.
-  if (estaCerrado(ctx.config, r.fecha)) throw new ErrorDeDatos('fuera_de_horario', 'Ese día está marcado como cerrado.')
-  if (!cabeEnUnBloque(ctx.config, r.fecha, r.inicio, duracion)) throw new ErrorDeDatos('fuera_de_horario', 'No alcanza antes del cierre.')
+  if (!cabeEnElDia(r.inicio, duracion)) throw new ErrorDeDatos('fuera_de_horario', 'No alcanza antes de las 12 de la noche.')
   if (mesasLibres(ctx.config, ctx.reservas, r.deporte, r.fecha, r.inicio, duracion, ctx.ahora, r.id) < 1) {
     throw new ErrorDeDatos('sin_lugar', 'No hay mesa libre para ese tiempo extra.')
   }

@@ -332,6 +332,9 @@ reintentar el suyo.
   tiempo extra **y** que la mesa donde ya están sentados no se la hayan dado
   a otro grupo. Si el grupo de las 8 ya está en su mesa, el panel avisa quién
   la tiene y hay que cambiarlos de mesa antes de extender.
+- Se puede extender **aunque pase de la hora de cierre** o el día esté marcado
+  como cerrado (desde el 18/11/2026): si están jugando, el local decide. Solo
+  no pasa de las 12 de la noche.
 
 ### Cambiar el horario
 
@@ -392,8 +395,10 @@ quién marcó cada pago y se le puede quitar el acceso a quien ya no trabaje ah�
   cambio. El tiempo extra se cobra después, con "Cobrar".
   - Se registra como una reserva que empieza ahora: así el sitio no vende en
     línea una mesa que ya está ocupada por alguien que llegó caminando.
-  - Si el local está cerrado, o el tiempo elegido pasa del cierre, la caja lo
-    dice antes de cobrar.
+  - **Cobra a cualquier hora** (desde el 18/11/2026): aunque el local esté
+    cerrado, sea un día cerrado o el tiempo pase de la hora de cierre. Si está
+    fuera del horario, lo avisa y cobra igual. Lo único que no deja es pasar de
+    las 12 de la noche, porque cada reserva vive en un solo día.
   - Solo se cobra la renta de mesas; no hay venta de productos.
   - El comprobante es el **ticket de la terminal** de cobro.
 - **Cambiar** horario, **extender** tiempo, **cancelar** y **liberar** una mesa
@@ -597,5 +602,6 @@ cambia, se agrega una línea nueva con la fecha; no se borra la anterior.
 | 25/10/2026 | Sin promociones | Lo decidió el negocio. Se apaga en Ajustes en vez de borrarse, por si regresa; las reservas ya hechas con promo conservan su precio. |
 | 22/10/2026 | En línea: 1 h, hora y media o 2 h, empezando a la hora o a la media; para hoy, hasta la hora de inicio | Lo pidió Hugo. Lo que quería quitar el 21/10 era solo la media hora; las medias horas de inicio (5:30, 6:30…) y la hora y media regresan. El corte de 30 min escondía horarios que sí quería vender. |
 | 17/11/2026 | Combo: 30 min de Cornhole y 30 de Ping Pong, uno tras otro, por $200; el cliente escoge cuál va primero; palas extra aparte; todos los días, en línea y en el local | Lo puso Hugo. Cada media hora es una reserva de su juego, amarrada a la otra: así el plano, las mesas, la alarma y la caja funcionan igual, y una mesa no se vende dos veces. El cobro completo va en el primer turno. |
+| 18/11/2026 | Lo del local (la caja y el tiempo extra) no mira el horario: se cobra y se extiende a cualquier hora, hasta las 12 de la noche. Lo que se reserva en línea sigue el horario | Lo pidió el negocio: después de las 10 la caja ya no dejaba registrar a quien seguía jugando. La medianoche es el tope porque una reserva vive en un solo día. |
 | 18/11/2026 | El combo tiene precio para 2 personas ($200) y para 4 ($280, con las 2 palas extra incluidas); el sitio dice cuánto se ahorra | Lo pidió el negocio. A $280 sin palas, el de 4 habría salido más caro que por separado ($260). Lo de antes sin modalidad vale como 2 personas porque ese precio era el que se enseñaba. |
 | 03/11/2026 | El tiempo extra se cobra a precio regular: +30 min Ping Pong $100, Cornhole $160, para 2 $120; +1 h el precio de la hora | Lo decidió el negocio. Antes, de 30 min a 1 h se cobraba solo la diferencia (Ping Pong $50) para que costara igual que reservar la hora. |

@@ -56,3 +56,18 @@ export function bloqueEn(config: Configuracion, fecha: string, minuto: number) {
 export function cabeEnUnBloque(config: Configuracion, fecha: string, inicio: number, duracion: number): boolean {
   return (config.horario[diaDeLaSemana(fecha)] ?? []).some((b) => inicio >= b.desde && inicio + duracion <= b.hasta)
 }
+
+/**
+ * Lo que se hace en el local (cobrar a quien llega sin reserva y el tiempo
+ * extra) no mira el horario desde el 18/11/2026: si hay gente jugando después
+ * del cierre, o en un día cerrado, recepción cobra y alarga igual. Antes la
+ * caja no dejaba registrar a nadie después de las 10 y quedaban jugando sin
+ * registro ni cobro en la caja. Lo que se reserva en línea sí sigue el horario.
+ *
+ * El único tope es la medianoche: una reserva vive en un solo día (fecha y
+ * minutos), y una que cruzara al día siguiente no la verían el plano ni la
+ * disponibilidad de ese día.
+ */
+export function cabeEnElDia(inicio: number, minutos: number): boolean {
+  return inicio + minutos <= 24 * 60
+}

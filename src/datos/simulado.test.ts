@@ -381,13 +381,19 @@ describe.each(['simulado', 'real'] as const)('versión %s', (version) => {
       const caja = await s.pagosDelDia(VIERNES)
       expect(caja.find((p) => p.reservaId === r.id)).toMatchObject({ monto: 150, medio: 'tarjeta' })
     })
-    it('caja: con el local cerrado lo dice; si no alcanza el tiempo, dice a qué hora se cierra', async () => {
+    it('caja: cobra a cualquier hora, aunque el local esté cerrado o pase del cierre; solo no cruza la medianoche', async () => {
       reloj = instante(VIERNES, h(15))
-      expect(await codigoDe(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Temprano', medio: 'efectivo' }))).toBe('fuera_de_horario')
-      // El viernes se cierra a las 11 PM.
+      expect(await s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Temprano', medio: 'efectivo' })).toMatchObject({ inicio: h(15), estado: 'confirmada' })
+      // El viernes se cierra a las 11 PM: de 10:30 a 11:30 se cobra igual.
       reloj = instante(VIERNES, h(22, 30))
-      await s.anotarSinReserva({ deporte: 'pingpong', duracion: 30, nombre: 'Media hora', medio: 'efectivo' })
-      await expect(s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Tarde', medio: 'efectivo' })).rejects.toThrow('11:00 PM')
+      expect(await s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Tarde', medio: 'efectivo' })).toMatchObject({ inicio: h(22, 30), duracion: 60 })
+      // A las 11:30, una hora (o el combo) acabaría el sábado: no. Media hora sí.
+      reloj = instante(VIERNES, h(23, 30))
+      await expect(s.anotarSinReserva({ deporte: 'cornhole', duracion: 60, nombre: 'Muy tarde', medio: 'efectivo' })).rejects.toThrow('12 de la noche')
+      expect(await codigoDe(s.anotarComboSinReserva({ primero: 'pingpong', modalidad: 'pareja', nombre: 'Combo tarde', medio: 'efectivo' }))).toBe('fuera_de_horario')
+      expect((await s.anotarSinReserva({ deporte: 'cornhole', duracion: 30, nombre: 'Media hora', medio: 'efectivo' })).inicio).toBe(h(23, 30))
+      reloj = instante(VIERNES, h(23))
+      expect(await s.anotarComboSinReserva({ primero: 'pingpong', modalidad: 'pareja', nombre: 'Combo de las 11', medio: 'efectivo' })).toMatchObject({ inicio: h(23) })
     })
     it('caja: no registra si no hay mesa libre todo el tiempo, y no cobra nada', async () => {
       reloj = instante(VIERNES, h(19))

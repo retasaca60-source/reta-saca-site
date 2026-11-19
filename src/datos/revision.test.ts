@@ -168,13 +168,18 @@ describe.each(['simulado', 'real'] as const)('revisión, versión %s', (version)
     expect(await codigoDe(s.cambiarHorario(r.id, VIERNES, h(17, 30)))).toBe('fuera_de_horario')
   })
 
-  it('11. no extiende en un día marcado como cerrado', async () => {
+  // Hasta el 18/11/2026 no se extendía en un día cerrado ni después del cierre.
+  // Desde entonces lo del local no mira el horario (RESERVAS.md §10): si están
+  // jugando, recepción les da más tiempo. Solo no cruza la medianoche.
+  it('11. extiende aunque el día esté marcado como cerrado o pase del cierre, pero no después de medianoche', async () => {
     await s.iniciarSesion('hugo', '')
-    reloj = instante(VIERNES, h(19, 5))
+    reloj = instante(VIERNES, h(22, 5))
     const r = await s.anotarSinReserva({ deporte: 'pingpong', duracion: 60, nombre: 'Beto', medio: 'efectivo' })
     const c = await s.configuracion()
     c.diasCerrados = [VIERNES]
     await s.guardarConfiguracion(c, true)
+    // De 10:05 a 11:05, más media hora: 11:35, después del cierre de las 11.
+    expect((await s.extender(r.id, 30)).duracion).toBe(90)
     expect(await codigoDe(s.extender(r.id, 30))).toBe('fuera_de_horario')
   })
 
