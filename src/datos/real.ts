@@ -94,6 +94,7 @@ export function crearServicioReal(conexion: Conexion): ServicioReal {
     devolucionesPorRevisar: () => llamar<Reserva[]>('devolucionesPorRevisar', {}),
     resolverDevolucion: (reservaId, decision) => cambia(llamar<Reserva>('resolverDevolucion', { reservaId, decision })),
     liberarPorRetraso: (reservaId) => cambia(llamar<Reserva>('liberarPorRetraso', { reservaId })),
+    levantarMesa: (reservaId) => cambia(llamar<Reserva>('levantarMesa', { reservaId })),
     guardarConfiguracion: (config, aunqueHayaConflictos = false) =>
       cambia(llamar<{ guardada: boolean; conflictos: Conflicto[] }>('guardarConfiguracion', { config, aunqueHayaConflictos })),
     usuarios: () => llamar<Usuario[]>('usuarios'),

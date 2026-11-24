@@ -15,9 +15,9 @@ import type { Configuracion, Duracion } from '../negocio/configuracion'
 import { formatoDinero, whatsappLegible } from '../negocio/formato'
 import { precioDeExtension } from '../negocio/precios'
 import { cuentaComoReserva, fin, llevaPalasExtra, pagado, pagadoEnLinea, partesPendientes, pendiente, puedeLiberarPorRetraso, total, type MedioDePago, type Reserva } from '../negocio/reserva'
-import { ahoraEnSonora, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe } from '../negocio/tiempo'
+import { ahoraEnSonora, etiquetaFecha, formatoDuracion, formatoHora, horaDe24, minutosDe, instante, momentoDe } from '../negocio/tiempo'
 
-type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar'
+type Panelito = null | 'sentar' | 'cobrar' | 'extender' | 'cambiar' | 'cancelar' | 'levantar'
 
 export function FilaReserva({
   r,
@@ -37,6 +37,8 @@ export function FilaReserva({
   const d = config.deportes[r.deporte]
   const cancelada = r.estado === 'cancelada'
   const falta = pendiente(r)
+  // Levantar: solo una confirmada que ya empezó y no se ha levantado.
+  const puedeLevantar = r.estado === 'confirmada' && !r.levantada && instante(r.fecha, r.inicio) <= ahoraEnSonora().ms
 
   const hacer = async (f: () => Promise<unknown>) => {
     setOcupado(true)
@@ -88,23 +90,33 @@ export function FilaReserva({
 
       {!cancelada && (
         <div className="fila-acciones">
-          <button type="button" className={'panel-boton' + (abierto === 'sentar' ? ' activo' : '')} onClick={() => alternar('sentar')}>
-            {r.mesa ? `Mesa ${r.mesa}` : 'Sentar'}
-          </button>
+          {/* Ya levantada, ya jugaron: solo queda cobrar lo que falte. */}
+          {!r.levantada && (
+            <button type="button" className={'panel-boton' + (abierto === 'sentar' ? ' activo' : '')} onClick={() => alternar('sentar')}>
+              {r.mesa ? `Mesa ${r.mesa}` : 'Sentar'}
+            </button>
+          )}
           {falta > 0 && (
             <button type="button" className={'panel-boton' + (abierto === 'cobrar' ? ' activo' : '')} onClick={() => alternar('cobrar')}>
               Cobrar {formatoDinero(falta)}
             </button>
           )}
           {/* El primer juego del combo termina cuando empieza el otro: el tiempo extra va en el segundo. */}
-          {r.estado === 'confirmada' && r.combo?.turno !== 1 && (
+          {r.estado === 'confirmada' && r.combo?.turno !== 1 && !r.levantada && (
             <button type="button" className={'panel-boton' + (abierto === 'extender' ? ' activo' : '')} onClick={() => alternar('extender')}>
               Extender
             </button>
           )}
-          <button type="button" className={'panel-boton' + (abierto === 'cambiar' ? ' activo' : '')} onClick={() => alternar('cambiar')}>
-            Cambiar horario
-          </button>
+          {puedeLevantar && (
+            <button type="button" className={'panel-boton' + (abierto === 'levantar' ? ' activo' : '')} onClick={() => alternar('levantar')}>
+              Levantar mesa
+            </button>
+          )}
+          {!r.levantada && (
+            <button type="button" className={'panel-boton' + (abierto === 'cambiar' ? ' activo' : '')} onClick={() => alternar('cambiar')}>
+              Cambiar horario
+            </button>
+          )}
           {puedeLiberarPorRetraso(r, config, ahoraEnSonora().ms) && (
             <button type="button" className="panel-boton" disabled={ocupado} onClick={() => confirm(`¿Liberar la mesa de ${r.organizador.nombre}? No llegaron en ${config.reglas.minutosDeTolerancia} minutos. No hay devolución.`) && hacer(() => servicio.liberarPorRetraso(r.id))}>
               Liberar (no llegaron)
@@ -121,9 +133,11 @@ export function FilaReserva({
               WhatsApp
             </a>
           )}
-          <button type="button" className={'panel-boton peligro' + (abierto === 'cancelar' ? ' activo' : '')} onClick={() => alternar('cancelar')}>
-            Cancelar
-          </button>
+          {!r.levantada && (
+            <button type="button" className={'panel-boton peligro' + (abierto === 'cancelar' ? ' activo' : '')} onClick={() => alternar('cancelar')}>
+              Cancelar
+            </button>
+          )}
         </div>
       )}
 
@@ -160,6 +174,14 @@ export function FilaReserva({
         </div>
       )}
       {abierto === 'cambiar' && <Cambiar r={r} ocupado={ocupado} hacer={hacer} />}
+      {abierto === 'levantar' && (
+        <div className="fila-detalle">
+          <span>{textoDeLevantar(r, falta)}</span>
+          <button type="button" className="panel-boton peligro" disabled={ocupado} onClick={() => hacer(() => servicio.levantarMesa(r.id))}>
+            Sí, levantar
+          </button>
+        </div>
+      )}
       {abierto === 'cancelar' && (
         <div className="fila-detalle">
           <span>
@@ -181,6 +203,7 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
   const e: [string, string][] = []
   if (r.combo) e.push(['combo', `Combo${r.combo.personas ? ` de ${r.combo.personas}` : ''} · ${r.combo.turno === 1 ? '1.º' : '2.º'} juego`])
   if (r.estado === 'apartada') e.push(['aviso', 'Pagando…'])
+  if (r.levantada) e.push(['neutra', `Se levantó ${formatoHora(momentoDe(Date.parse(r.levantada.en)).minutos)}`])
   if (r.estado === 'cancelada') {
     const motivo = { cliente: 'Canceló el cliente', negocio: 'Cancelada por el negocio', no_llego: 'No llegaron', apartado_vencido: 'No pagó a tiempo' }
     e.push(['apagada', r.cancelacion ? motivo[r.cancelacion.motivo] : 'Cancelada'])
@@ -206,6 +229,21 @@ function Etiquetas({ r, config }: { r: Reserva; config: Configuracion }) {
       ))}
     </>
   )
+}
+
+/**
+ * Lo que pasa al levantar, dicho antes de confirmar: si es antes de su hora se
+ * corta su tiempo y no se devuelve nada; en el primer juego de un combo se va
+ * también el segundo; y si deben algo, que se cobre antes.
+ */
+function textoDeLevantar(r: Reserva, falta: number): string {
+  const ahora = ahoraEnSonora()
+  const antesDeSuHora = r.fecha === ahora.fecha && fin(r) > ahora.minutos
+  const que = antesDeSuHora
+    ? `Dejan de jugar: su tiempo termina ahora (${formatoHora(ahora.minutos)}) en vez de a las ${formatoHora(fin(r))} y la mesa queda libre. No se devuelve nada.` +
+      (r.combo?.turno === 1 ? ' También se libera el segundo juego del combo.' : '')
+    : 'Ya se les acabó el tiempo: queda anotado que se levantaron y se quita el aviso en todos los aparatos.'
+  return que + (falta > 0 ? ` Ojo: faltan ${formatoDinero(falta)} por cobrar.` : '')
 }
 
 type Hacer = (f: () => Promise<unknown>) => Promise<void>

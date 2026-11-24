@@ -94,6 +94,13 @@ export interface Reserva {
   /** Solo en canceladas que tenían pagos en línea. Falta en las guardadas antes de que existiera. */
   devolucion?: Devolucion | null
   /**
+   * Recepción levantó la mesa (desde el 23/11/2026): el grupo dejó de jugar
+   * antes de su hora, o ya se fue con el tiempo cumplido. Si fue antes, la
+   * reserva se corta a esa hora (`duracion` baja) y el resto queda libre para
+   * vender; `duracionAntes` guarda lo que tenían. No se devuelve nada.
+   */
+  levantada?: { en: string; por: string; duracionAntes: number }
+  /**
    * Un turno de un combo (30 min de cada juego, uno tras otro). Cada turno es
    * una reserva de su juego, para que el plano, las mesas, la alarma y el
    * tiempo extra funcionen igual; las dos se apartan, pagan, mueven y

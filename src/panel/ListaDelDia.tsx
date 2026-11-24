@@ -91,6 +91,7 @@ export function ListaDelDia({ reservas, config }: { reservas: Reserva[]; config:
 /** Si ya llegaron, si vienen, si van tarde: lo que recepción necesita saber de cada grupo. */
 function llegada(r: Reserva, config: Configuracion): { tono: string; texto: string } {
   if (r.estado === 'apartada') return { tono: 'aviso', texto: 'Pagando en línea…' }
+  if (r.levantada) return { tono: 'neutra', texto: 'Se levantaron' }
   if (r.mesa) return { tono: 'bien', texto: `Llegó · en ${r.mesa}` }
   if (r.llegaronEn) return { tono: 'bien', texto: 'Llegó · falta mesa' }
   const ahora = ahoraEnSonora()

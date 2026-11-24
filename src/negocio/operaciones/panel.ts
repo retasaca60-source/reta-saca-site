@@ -130,6 +130,7 @@ export function asignarMesa(ctx: Contexto, r: Reserva, mesa: string | null): Res
   // La pantalla esconde el botón en una cancelada, pero una petición atrasada
   // (otra laptop, una pestaña vieja) llegaba igual y la sentaba.
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada: no se le puede asignar mesa.')
+  if (r.levantada) throw new ErrorDeDatos('no_permitido', 'Esa mesa ya se levantó: ya no se le asigna mesa.')
   const d = ctx.config.deportes[r.deporte]
   const n = Number(mesa.replace(d.clave, '').trim())
   if (!Number.isInteger(n) || n < 1 || n > d.mesas) throw new ErrorDeDatos('datos_invalidos', `${mesa} no existe.`)
@@ -211,6 +212,7 @@ export function marcarPago(
  */
 export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva {
   if (r.estado !== 'confirmada') throw new ErrorDeDatos('no_permitido', 'Solo se extienden reservas confirmadas.')
+  if (r.levantada) throw new ErrorDeDatos('no_permitido', 'Esa mesa ya se levantó: ya no se extiende.')
   // El primer juego del combo termina justo cuando empieza el otro.
   if (r.combo?.turno === 1) throw new ErrorDeDatos('no_permitido', 'En el combo el tiempo extra se agrega al segundo juego.')
   const duracion = r.duracion + minutos
@@ -244,6 +246,7 @@ export function extender(ctx: Contexto, r: Reserva, minutos: Duracion): Reserva 
  */
 export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio: number): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'La reserva está cancelada.')
+  if (r.levantada) throw new ErrorDeDatos('no_permitido', 'Esa mesa ya se levantó: ya jugaron.')
   if (!esFechaValida(fecha) || !Number.isInteger(inicio)) throw new ErrorDeDatos('datos_invalidos', 'Esa fecha u hora no es válida.')
   // "Mover" al mismo horario no es mover: antes cobraba la diferencia si la
   // tarifa había subido mientras tanto, y borraba la mesa y la llegada.
@@ -281,9 +284,33 @@ export function cambiarHorario(ctx: Contexto, r: Reserva, fecha: string, inicio:
   return nueva
 }
 
+/**
+ * Levantar la mesa: el grupo deja de jugar. Si fue antes de su hora, la
+ * reserva se corta AHORA y el resto del tiempo queda libre para el plano, la
+ * caja y las reservas en línea; si ya se les había acabado, solo queda
+ * anotado (quita el aviso de "Tiempo cumplido" en todos los aparatos). Lo
+ * pagado no cambia: no se devuelve nada (lo decidió el negocio el 23/11/2026),
+ * y lo que deban sigue por cobrar.
+ *
+ * Solo una reserva que ya empezó: una que no ha empezado se cancela o se
+ * libera por retraso, no se levanta.
+ */
+export function levantarMesa(ctx: Contexto, r: Reserva, quien: string): Reserva {
+  if (r.estado !== 'confirmada') throw new ErrorDeDatos('no_permitido', 'Solo se levanta una reserva confirmada.')
+  if (r.levantada) throw new ErrorDeDatos('no_permitido', 'Esa mesa ya se había levantado.')
+  const m = momentoDe(ctx.ahora)
+  if (instante(r.fecha, r.inicio) > ctx.ahora) throw new ErrorDeDatos('no_permitido', 'Todavía no empieza su tiempo: no hay mesa que levantar.')
+  const nueva = copia(r)
+  nueva.levantada = { en: new Date(ctx.ahora).toISOString(), por: quien, duracionAntes: r.duracion }
+  // Antes de su hora: se corta aquí. (Si la reserva es de un día anterior, ya terminó.)
+  if (r.fecha === m.fecha && fin(r) > m.minutos) nueva.duracion = Math.max(0, m.minutos - r.inicio)
+  return nueva
+}
+
 /** Cancela el negocio. Lo pagado en línea queda por devolver, por transferencia. */
 export function cancelarComoNegocio(ctx: Contexto, r: Reserva, quien: string): Reserva {
   if (r.estado === 'cancelada') throw new ErrorDeDatos('no_permitido', 'Ya estaba cancelada.')
+  if (r.levantada) throw new ErrorDeDatos('no_permitido', 'Esa mesa ya se levantó: ya jugaron, no se cancela.')
   const nueva = copia(r)
   abrirDevolucion(nueva)
   nueva.estado = 'cancelada'

@@ -138,6 +138,7 @@ function esReservaValida(r: Reserva): boolean {
     (r.llegaronEn === null || typeof r.llegaronEn === 'string') &&
     (r.cancelacion === null || (typeof r.cancelacion === 'object' && typeof r.cancelacion.en === 'string')) &&
     (r.devolucion == null || (typeof r.devolucion === 'object' && typeof r.devolucion.monto === 'number')) &&
+    (r.levantada === undefined || (typeof r.levantada === 'object' && r.levantada !== null && typeof r.levantada.en === 'string')) &&
     (r.combo === undefined || (typeof r.combo === 'object' && r.combo !== null && typeof r.combo.con === 'string' && (r.combo.turno === 1 || r.combo.turno === 2))) &&
     typeof r.creadaEn === 'string' &&
     Array.isArray(r.partes) &&
@@ -396,6 +397,7 @@ export function crearServicioSimulado(opciones: OpcionesSimulado = {}): Servicio
       }),
     resolverDevolucion: (id, decision) => enPanel(id, (ctx, r, quien) => op.resolverDevolucion(ctx, r, decision, quien.nombre)),
     liberarPorRetraso: (id) => enPanel(id, (ctx, r, quien) => op.liberarPorRetraso(ctx, r, quien.nombre)),
+    levantarMesa: (id) => enPanel(id, (ctx, r, quien) => op.levantarMesa(ctx, r, quien.nombre)),
 
     guardarConfiguracion: (config, aunqueHayaConflictos = false) =>
       cambiar((e) => {

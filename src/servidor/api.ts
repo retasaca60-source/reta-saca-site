@@ -684,6 +684,7 @@ const ACCIONES: Record<string, Accion> = {
     return op.resolverDevolucion(ctx, r, decision, quien.nombre)
   }),
   liberarPorRetraso: enPanel((_d, ctx, r, quien) => op.liberarPorRetraso(ctx, r, quien.nombre)),
+  levantarMesa: enPanel((_d, ctx, r, quien) => op.levantarMesa(ctx, r, quien.nombre)),
 
   guardarConfiguracion: async (d, e) => {
     await dueno(e)

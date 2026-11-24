@@ -143,6 +143,12 @@ export interface ServicioDeDatos {
   resolverDevolucion(reservaId: string, decision: 'transferida' | 'sin_devolucion'): Promise<Reserva>
   /** Pasada la tolerancia sin llegar: libera la mesa, sin devolución. */
   liberarPorRetraso(reservaId: string): Promise<Reserva>
+  /**
+   * El grupo dejó de jugar: si fue antes de su hora, la reserva se corta ahora
+   * y el resto queda libre. Sin devolución. En el primer juego de un combo,
+   * libera también el segundo.
+   */
+  levantarMesa(reservaId: string): Promise<Reserva>
   /** Solo el dueño. Sin `aunqueHayaConflictos`, si hay conflictos NO guarda y los devuelve. */
   guardarConfiguracion(config: Configuracion, aunqueHayaConflictos?: boolean): Promise<{ guardada: boolean; conflictos: Conflicto[] }>
   usuarios(): Promise<Usuario[]>

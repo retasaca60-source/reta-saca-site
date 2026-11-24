@@ -34,3 +34,11 @@ describe('cuándo suena la alarma de tiempo cumplido', () => {
     expect(seAcabaronEntre([sinMesa, levantado, cancelada], 18 * 60 + 59, 19 * 60, new Set(['b']))).toEqual([])
   })
 })
+
+describe('la alarma y las mesas levantadas', () => {
+  it('no suena por una mesa que recepción levantó antes de su hora', () => {
+    // Se levantaron a las 6:40: la reserva se cortó ahí, no se les acabó el tiempo.
+    const levantada = grupo('a', 18 * 60, 40, { levantada: { en: '', por: 'Recepción', duracionAntes: 60 } })
+    expect(seAcabaronEntre([levantada], 18 * 60 + 39, 18 * 60 + 40, ninguna)).toEqual([])
+  })
+})

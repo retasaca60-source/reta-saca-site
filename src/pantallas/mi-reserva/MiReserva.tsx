@@ -124,6 +124,9 @@ export default function MiReserva() {
           .
         </p>
       )}
+      {r.levantada && r.duracion < r.levantada.duracionAntes && (
+        <p className="nota numeros">Terminaron de jugar a las {formatoHora(r.inicio + r.duracion)}, antes de su hora.</p>
+      )}
       {palasExtra ? (
         <p className="nota">Incluye 2 palas extra para Ping Pong ({formatoDinero(palasExtra)}).</p>
       ) : r.combo?.personas === 4 ? (

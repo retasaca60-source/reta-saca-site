@@ -134,6 +134,7 @@ el cliente o para recepción, en español.
 | `cancelarComoNegocio(id)` | ambos | Lo pagado en línea queda con `devolucion` por revisar. |
 | `devolucionesPorRevisar()` | ambos | Canceladas con devolución pendiente, de cualquier fecha. |
 | `resolverDevolucion(id, 'transferida' \| 'sin_devolucion')` | ambos | El negocio ya transfirió (los pagos en línea quedan `devuelto`) o decidió no devolver. Guarda quién y cuándo. |
+| `levantarMesa(id)` | ambos | El grupo dejó de jugar. Solo una confirmada que ya empezó. Antes de su hora, corta `duracion` a ahora y guarda `levantada` (quién, cuándo, cuánto tenían); si ya había terminado, solo `levantada`. Sin devolución. En el turno 1 de un combo, antes de su hora, libera también el turno 2. |
 | `liberarPorRetraso(id)` | ambos | Solo pasados los 20 min sin llegar. Sin devolución. |
 | `guardarConfiguracion(config, aunqueHayaConflictos?)` | dueño | Revisa la configuración completa (rangos de las reglas, precios que suben con el tiempo, horarios sin encimarse, fechas que existen). Si con ella alguna reserva que no ha terminado —de cualquier fecha futura, apartados vigentes incluidos— se queda sin mesa, fuera de horario o en una mesa que deja de existir, **no guarda** y devuelve los conflictos, salvo que venga `aunqueHayaConflictos`. Nunca cancela nada. |
 | `usuarios()`, `agregarUsuario(u, contraseña)`, `quitarUsuario()` | dueño | Acceso al panel: el dueño crea la cuenta con usuario y contraseña, sin correos. Nadie se puede quitar a sí mismo. |

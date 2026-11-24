@@ -255,6 +255,16 @@ export function seguirAlCombo(ctx: Contexto, antes: Reserva, nueva: Reserva, otr
     if (!s.cancelacion) s.mesa = null
     cambio = true
   }
+  // Se levantaron durante el primer juego, antes de su hora: se van del combo y
+  // el segundo juego se libera también (lo decidió el negocio el 23/11/2026).
+  // Si el primero ya había terminado, levantarlo solo quita el aviso: el grupo
+  // pasa al segundo juego y ese se queda como está.
+  if (nueva.levantada && !antes.levantada && antes.combo.turno === 1 && nueva.duracion < antes.duracion && !otra.levantada && otra.estado === 'confirmada') {
+    s.levantada = { ...nueva.levantada, duracionAntes: otra.duracion }
+    s.duracion = 0
+    s.mesa = null
+    return s
+  }
   if (!cambio) return null
 
   // El otro juego tiene que tener lugar donde queda: al moverse o al revivir.

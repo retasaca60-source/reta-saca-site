@@ -209,7 +209,7 @@ function Plano({
     reservas.filter((r) => r.deporte === id && ocupaMesa(r, ahora.ms) && r.inicio <= ahora.minutos && fin(r) > ahora.minutos)
   /** Grupos sentados a los que ya se les acabó la hora y nadie ha levantado. */
   const terminaron = (id: DeporteId) =>
-    reservas.filter((r) => r.deporte === id && r.estado === 'confirmada' && r.mesa && fin(r) <= ahora.minutos && !yaSeLevantaron.has(r.id))
+    reservas.filter((r) => r.deporte === id && r.estado === 'confirmada' && r.mesa && !r.levantada && fin(r) <= ahora.minutos && !yaSeLevantaron.has(r.id))
   const mesasDe = (id: DeporteId): Mesa[] => {
     const dd = config.deportes[id]
     const jugandoAhi = enJuego(id)
@@ -506,6 +506,19 @@ function DatosDeMesa({
 function TiempoCumplido({ r, config }: { r: Reserva; config: Configuracion }) {
   const ahora = ahoraEnSonora()
   const falta = pendiente(r)
+  const [error, setError] = useState<string | null>(null)
+  // Se anota en la base (levantarMesa) para que el aviso se quite en todos los
+  // aparatos; antes solo se quitaba en el que se tocó. Se marca también aquí
+  // para que desaparezca al instante, aunque la red tarde.
+  const levantar = async () => {
+    setError(null)
+    marcarLevantada(r.id)
+    try {
+      await servicio.levantarMesa(r.id)
+    } catch (e) {
+      setError(mensajeDeError(e))
+    }
+  }
   return (
     <div className="lado-tiempo">
       <p className="lado-nombre">
@@ -515,9 +528,10 @@ function TiempoCumplido({ r, config }: { r: Reserva; config: Configuracion }) {
         </small>
       </p>
       {falta > 0 && <p className="lado-debe">Falta cobrar {formatoDinero(falta)} antes de que se vayan.</p>}
-      <button type="button" className="panel-boton peligro-lleno grande ancho" onClick={() => marcarLevantada(r.id)}>
+      <button type="button" className="panel-boton peligro-lleno grande ancho" onClick={levantar}>
         Ya se levantaron · quitar aviso
       </button>
+      {error && <p className="panel-error">{error}</p>}
       <FilaReserva key={r.id} r={r} config={config} soloAcciones />
       <p className="nota">La mesa ya cuenta como libre para reservar; esto solo quita el aviso rojo.</p>
     </div>

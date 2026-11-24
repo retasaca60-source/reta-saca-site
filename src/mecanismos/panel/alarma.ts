@@ -22,7 +22,8 @@ import { fin, type Reserva } from '../../negocio/reserva'
  * como levantados.
  */
 export function seAcabaronEntre(reservas: Reserva[], antes: number, ahora: number, yaLevantadas: Set<string>): Reserva[] {
-  return reservas.filter((r) => r.estado === 'confirmada' && r.mesa && antes < fin(r) && fin(r) <= ahora && !yaLevantadas.has(r.id))
+  // Una levantada antes de su hora también "termina" en ese momento: no es un tiempo cumplido.
+  return reservas.filter((r) => r.estado === 'confirmada' && r.mesa && !r.levantada && antes < fin(r) && fin(r) <= ahora && !yaLevantadas.has(r.id))
 }
 
 let audio: AudioContext | null = null
